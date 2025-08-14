@@ -1,4 +1,4 @@
-package com.example.handheld3d.config;
+package com.aeolyn.better_experience.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ConfigManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger("Handheld3D-Config");
+    private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Config");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     
     private static ItemsConfig itemsConfig;
@@ -35,7 +35,7 @@ public class ConfigManager {
     private static void loadItemsConfig() {
         try {
             InputStream stream = ConfigManager.class.getClassLoader()
-                .getResourceAsStream("assets/handheld3d/config/items.json");
+                .getResourceAsStream("assets/better_experience/config/items.json");
             
             if (stream != null) {
                 itemsConfig = GSON.fromJson(new InputStreamReader(stream), ItemsConfig.class);
@@ -53,7 +53,7 @@ public class ConfigManager {
     private static void loadItemConfigs() {
         for (String itemId : itemsConfig.getEnabledItems()) {
             try {
-                String configPath = "assets/handheld3d/config/item_configs/" + itemId.replace(":", "_") + ".json";
+                String configPath = "assets/better_experience/config/item_configs/" + itemId.replace(":", "_") + ".json";
                 InputStream stream = ConfigManager.class.getClassLoader().getResourceAsStream(configPath);
                 
                 if (stream != null) {

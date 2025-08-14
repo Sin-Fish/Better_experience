@@ -18,7 +18,7 @@
     "rotation_y": 0.0,
     "rotation_z": 0.0,
     "translate_x": 0.0,
-    "translate_y": -0.3,
-    "translate_z": -0.3
+    "translate_y": 0.3,
+    "translate_z": -0.4
   }
 }

@@ -1,4 +1,4 @@
-package com.example.handheld3d.config;
+package com.aeolyn.better_experience.config;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;

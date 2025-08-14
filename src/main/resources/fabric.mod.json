@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "id": "handheld3d",
+  "id": "better_experience",
   "version": "${version}",
-  "name": "Handheld3D",
-  "description": "一个3D手持设备mod",
+  "name": "Better Experience",
+  "description": "一个提升游戏体验的mod，包含3D手持物品渲染等功能",
   "authors": [
-    "YourName"
+    "Aeolyn"
   ],
   "contact": {
-    "homepage": "https://github.com/Tanfreefish/handheld3d",
-    "sources": "https://github.com/Tanfreefish/handheld3d"
+    "homepage": "https://github.com/Tanfreefish/Better_experience",
+    "sources": "https://github.com/Tanfreefish/Better_experience"
   },
   "license": "MIT",
-  "icon": "assets/handheld3d/icon.png",
+  "icon": "assets/better_experience/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.example.handheld3d.Handheld3DMod"
+      "com.aeolyn.better_experience.BetterExperienceMod"
     ]
   },
   "mixins": [
-    "handheld3d.mixins.json"
+    "better_experience.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.16.14",
