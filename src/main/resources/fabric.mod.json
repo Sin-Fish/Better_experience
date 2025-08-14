@@ -8,8 +8,8 @@
     "Aeolyn"
   ],
   "contact": {
-    "homepage": "https://github.com/Tanfreefish/Better_experience",
-    "sources": "https://github.com/Tanfreefish/Better_experience"
+    "homepage": "https://github.com/Tanfreefish/better_experience",
+    "sources": "https://github.com/Tanfreefish/better_experience"
   },
   "license": "MIT",
   "icon": "assets/better_experience/icon.png",
@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "com.aeolyn.better_experience.BetterExperienceMod"
+    ],
+    "client": [
+      "com.aeolyn.better_experience.BetterExperienceClientMod"
     ]
   },
   "mixins": [

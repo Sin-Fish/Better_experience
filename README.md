@@ -67,7 +67,7 @@ cd better_experience
 ### 构建输出
 构建成功后，jar文件位于：
 ```
-build/libs/better_experience-1.0.0.jar
+build/libs/better_experience-1.1.0.jar
 ```
 
 ## 📋 功能特性
@@ -150,4 +150,4 @@ build/libs/better_experience-1.0.0.jar
 ## 📞 联系方式
 
 - GitHub: [@Aeolyn](https://github.com/Tanfreefish)
-- 项目主页: [Better Experience](https://github.com/Aeolyn/better_experience)
+- 项目主页: [Better Experience](https://github.com/Tanfreefish/better_experience)
