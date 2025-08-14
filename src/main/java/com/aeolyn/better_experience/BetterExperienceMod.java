@@ -36,7 +36,7 @@ public class BetterExperienceMod implements ModInitializer {
                     // 向所有在线玩家发送消息
                     if (server.getPlayerManager().getPlayerList().size() > 0) {
                         server.getPlayerManager().getPlayerList().get(0).sendMessage(
-                            Text.literal("🎯 [Better Experience] 通用3D渲染mod已成功加载!"), false
+                            Text.literal("[Better Experience] 通用3D渲染mod已成功加载!"), false
                         );
                     }
                 } catch (InterruptedException e) {

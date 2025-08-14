@@ -54,7 +54,7 @@ BetterExperience/
 ### 构建项目
 ```bash
 # 克隆项目
-git clone https://github.com/Aeolyn/better_experience.git
+git clone https://github.com/Tanfreefish/better_experience.git
 cd better_experience
 
 # 构建项目
