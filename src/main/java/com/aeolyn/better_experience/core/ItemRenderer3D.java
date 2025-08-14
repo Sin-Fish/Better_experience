@@ -7,7 +7,12 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnReason;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.registry.Registries;
@@ -59,19 +64,33 @@ public class ItemRenderer3D {
                 return;
             }
             
-            // 获取对应的BlockState
-            BlockState blockState = getBlockStateForItem(item, config);
-            if (blockState == null) {
-                LOGGER.debug("无法获取方块状态，回退到原版渲染");
-                LOGGER.warn("无法为物品 {} 找到对应的方块状态", Registries.ITEM.getId(item));
-                return;
-            }
-            
             // 应用矩阵变换
             applyMatrixTransform(matrices, displayContext, config);
             
-            // 渲染3D模型
-            renderBlockModel(blockState, matrices, vertexConsumers, light, overlay);
+            // 根据配置选择渲染方式
+            if (config.isRenderAsEntity()) {
+                // 渲染实体模型
+                Entity entity = getEntityForItem(item, config);
+                if (entity != null) {
+                    renderEntityModel(entity, matrices, vertexConsumers, light, overlay);
+                } else {
+                    LOGGER.debug("无法获取实体，回退到原版渲染");
+                    LOGGER.warn("无法为物品 {} 找到对应的实体", Registries.ITEM.getId(item));
+                    return;
+                }
+            } else if (config.isRenderAsBlock()) {
+                // 渲染方块模型
+                BlockState blockState = getBlockStateForItem(item, config);
+                if (blockState == null) {
+                    LOGGER.debug("无法获取方块状态，回退到原版渲染");
+                    LOGGER.warn("无法为物品 {} 找到对应的方块状态", Registries.ITEM.getId(item));
+                    return;
+                }
+                renderBlockModel(blockState, matrices, vertexConsumers, light, overlay);
+            } else {
+                LOGGER.debug("未指定渲染方式，回退到原版渲染");
+                return;
+            }
             
             LOGGER.debug("3D渲染完成: {}", Registries.ITEM.getId(item));
             
@@ -89,6 +108,66 @@ public class ItemRenderer3D {
                contextName.contains("FIRST_PERSON_RIGHT_HAND") ||
                contextName.contains("THIRD_PERSON_LEFT_HAND") ||
                contextName.contains("THIRD_PERSON_RIGHT_HAND");
+    }
+    
+    /**
+     * 根据物品获取对应的实体
+     */
+    private Entity getEntityForItem(Item item, ItemConfig config) {
+        LOGGER.debug("获取实体，物品: {}", Registries.ITEM.getId(item));
+        
+        if (!config.isRenderAsEntity()) {
+            LOGGER.debug("物品配置为不渲染为实体");
+            return null;
+        }
+        
+        String entityTypeId = config.getEntityType();
+        LOGGER.debug("配置中的entityType: '{}', 配置是否启用: {}", entityTypeId, config.isEnabled());
+        
+        if (entityTypeId == null || entityTypeId.isEmpty()) {
+            LOGGER.debug("entityType为空或空字符串，回退到原版渲染");
+            LOGGER.warn("物品配置中entityType为空或空字符串: {}", Registries.ITEM.getId(item));
+            return null;
+        }
+        
+        LOGGER.debug("使用实体类型: {}", entityTypeId);
+        LOGGER.info("渲染物品 {} 使用实体: {}", Registries.ITEM.getId(item), entityTypeId);
+        
+        try {
+            // 通过实体类型ID获取实体类型
+            Identifier identifier = Identifier.of(entityTypeId);
+            EntityType<?> entityType = Registries.ENTITY_TYPE.get(identifier);
+            
+            if (entityType == null) {
+                LOGGER.debug("无法找到实体类型: {}", entityTypeId);
+                return null;
+            }
+            
+            // 创建实体实例
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client.world == null) {
+                LOGGER.debug("世界未加载，无法创建实体");
+                return null;
+            }
+            
+            // 使用简单的create方法创建实体
+            Entity entity = entityType.create(client.world, SpawnReason.NATURAL);
+            if (entity == null) {
+                LOGGER.debug("无法创建实体实例: {}", entityTypeId);
+                return null;
+            }
+            
+            // 设置实体的基本属性
+            entity.setPosition(0, 0, 0);
+            entity.setVelocity(0, 0, 0);
+            
+            LOGGER.debug("成功创建实体: {}", entity);
+            return entity;
+        } catch (Exception e) {
+            LOGGER.debug("无法找到实体类型: {}, 错误: {}", entityTypeId, e.getMessage());
+            LOGGER.warn("无法找到实体类型: {}", entityTypeId);
+            return null;
+        }
     }
     
     /**
@@ -153,6 +232,20 @@ public class ItemRenderer3D {
         if (viewConfig.getRotationZ() != 0) {
             matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(viewConfig.getRotationZ()));
         }
+    }
+    
+    /**
+     * 渲染实体模型
+     */
+    private void renderEntityModel(Entity entity, MatrixStack matrices, 
+                                 VertexConsumerProvider vertexConsumers, int light, int overlay) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.world == null) {
+            return;
+        }
+        
+        EntityRenderDispatcher dispatcher = client.getEntityRenderDispatcher();
+        dispatcher.render(entity, 0.0, 0.0, 0.0, 0.0f, matrices, vertexConsumers, light);
     }
     
     /**

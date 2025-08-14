@@ -12,8 +12,14 @@ public class ItemConfig {
     @SerializedName("render_as_block")
     private boolean renderAsBlock;
     
+    @SerializedName("render_as_entity")
+    private boolean renderAsEntity;
+    
     @SerializedName("block_id")
     private String blockId;
+    
+    @SerializedName("entity_type")
+    private String entityType;
     
     @SerializedName("first_person")
     private RenderSettings firstPerson;
@@ -57,7 +63,9 @@ public class ItemConfig {
     public String getItemId() { return itemId; }
     public boolean isEnabled() { return enabled; }
     public boolean isRenderAsBlock() { return renderAsBlock; }
+    public boolean isRenderAsEntity() { return renderAsEntity; }
     public String getBlockId() { return blockId; }
+    public String getEntityType() { return entityType; }
     public RenderSettings getFirstPerson() { return firstPerson; }
     public RenderSettings getThirdPerson() { return thirdPerson; }
 }

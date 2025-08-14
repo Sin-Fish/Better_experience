@@ -1,0 +1,25 @@
+{
+  "item_id": "minecraft:tipped_arrow",
+  "enabled": true,
+  "render_as_block": false,
+  "render_as_entity": true,
+  "entity_type": "minecraft:arrow",
+  "first_person": {
+    "scale": 0.7,
+    "rotation_x": 0.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.0,
+    "translate_z": 0.0
+  },
+  "third_person": {
+    "scale": 0.6,
+    "rotation_x": 0.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.0,
+    "translate_z": 0.0
+  }
+}
