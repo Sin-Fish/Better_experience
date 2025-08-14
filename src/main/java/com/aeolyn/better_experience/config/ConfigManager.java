@@ -122,6 +122,7 @@ public class ConfigManager {
                 } else {
                     // 创建空的默认配置
                     itemsConfig = new ItemsConfig();
+                    itemsConfig.setLogConfig(LogConfig.getDefault());
                     saveItemsConfig();
                 }
             }
@@ -272,21 +273,36 @@ public class ConfigManager {
     }
     
     /**
-     * 检查物品是否启用
+     * 检查物品是否启用（使用缓存）
      */
     public boolean isItemEnabled(String itemId) {
+        return ConfigCache.isItemEnabled(itemId);
+    }
+    
+    /**
+     * 直接检查物品是否启用（绕过缓存）
+     */
+    public boolean isItemEnabledDirect(String itemId) {
         configLock.readLock().lock();
         try {
-            return itemsConfig != null && itemsConfig.getEnabledItems().contains(itemId);
+            return itemsConfig != null && itemsConfig.getEnabledItems() != null && 
+                   itemsConfig.getEnabledItems().contains(itemId);
         } finally {
             configLock.readLock().unlock();
         }
     }
     
     /**
-     * 获取物品配置
+     * 获取物品配置（使用缓存）
      */
     public ItemConfig getItemConfig(String itemId) {
+        return ConfigCache.getItemConfig(itemId);
+    }
+    
+    /**
+     * 直接获取物品配置（绕过缓存）
+     */
+    public ItemConfig getItemConfigDirect(String itemId) {
         configLock.readLock().lock();
         try {
             return itemConfigs.get(itemId);
@@ -308,12 +324,89 @@ public class ConfigManager {
     }
     
     /**
+     * 检查渲染日志是否启用
+     */
+    public boolean isRenderLogsEnabled() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig != null && itemsConfig.getLogConfig() != null && 
+                   itemsConfig.getLogConfig().isEnableRenderLogs();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * 检查配置日志是否启用
+     */
+    public boolean isConfigLogsEnabled() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig != null && itemsConfig.getLogConfig() != null && 
+                   itemsConfig.getLogConfig().isEnableConfigLogs();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * 检查GUI日志是否启用
+     */
+    public boolean isGuiLogsEnabled() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig != null && itemsConfig.getLogConfig() != null && 
+                   itemsConfig.getLogConfig().isEnableGuiLogs();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * 检查Mixin日志是否启用
+     */
+    public boolean isMixinLogsEnabled() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig != null && itemsConfig.getLogConfig() != null && 
+                   itemsConfig.getLogConfig().isEnableMixinLogs();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * 检查性能日志是否启用
+     */
+    public boolean isPerformanceLogsEnabled() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig != null && itemsConfig.getLogConfig() != null && 
+                   itemsConfig.getLogConfig().isEnablePerformanceLogs();
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
      * 获取默认设置
      */
     public ItemsConfig.Settings getDefaultSettings() {
         configLock.readLock().lock();
         try {
             return itemsConfig != null ? itemsConfig.getSettings() : null;
+        } finally {
+            configLock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * 获取主配置
+     */
+    public ItemsConfig getItemsConfig() {
+        configLock.readLock().lock();
+        try {
+            return itemsConfig;
         } finally {
             configLock.readLock().unlock();
         }
@@ -453,7 +546,13 @@ public class ConfigManager {
         try {
             itemConfigs.put(itemId, config);
             saveItemConfig(itemId, config);
-            LOGGER.info("物品配置更新成功: {}", itemId);
+            
+            // 失效缓存
+            ConfigCache.invalidateCache();
+            
+            if (isConfigLogsEnabled()) {
+                LOGGER.info("物品配置更新成功，缓存已失效: {}", itemId);
+            }
         } catch (Exception e) {
             LOGGER.error("更新物品配置失败 " + itemId + ": " + e.getMessage(), e);
         } finally {

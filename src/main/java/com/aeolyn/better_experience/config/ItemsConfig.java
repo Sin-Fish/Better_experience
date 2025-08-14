@@ -10,6 +10,9 @@ public class ItemsConfig {
     @SerializedName("settings")
     private Settings settings;
     
+    @SerializedName("log_config")
+    private LogConfig logConfig;
+    
     public static class Settings {
         @SerializedName("enable_debug_logs")
         private boolean enableDebugLogs = true;
@@ -49,4 +52,10 @@ public class ItemsConfig {
     // Getters
     public List<String> getEnabledItems() { return enabledItems; }
     public Settings getSettings() { return settings; }
+    public LogConfig getLogConfig() { return logConfig; }
+    
+    // Setters
+    public void setEnabledItems(List<String> enabledItems) { this.enabledItems = enabledItems; }
+    public void setSettings(Settings settings) { this.settings = settings; }
+    public void setLogConfig(LogConfig logConfig) { this.logConfig = logConfig; }
 }
