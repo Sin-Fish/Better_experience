@@ -15,9 +15,14 @@ public class ConfigManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Config");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     
+    private ConfigManager() {
+        // 私有构造函数，防止外部实例化
+    }
+    
     private static ItemsConfig itemsConfig;
     private static Map<String, ItemConfig> itemConfigs = new HashMap<>();
     private static boolean initialized = false;
+    private static ConfigManager instance;
     
     public static void initialize() {
         if (initialized) return;
@@ -26,10 +31,18 @@ public class ConfigManager {
             loadItemsConfig();
             loadItemConfigs();
             initialized = true;
+            instance = new ConfigManager();
             LOGGER.info("配置管理器初始化完成");
         } catch (Exception e) {
             LOGGER.error("配置管理器初始化失败: " + e.getMessage(), e);
         }
+    }
+    
+    public static ConfigManager getInstance() {
+        if (!initialized) {
+            initialize();
+        }
+        return instance;
     }
     
     private static void loadItemsConfig() {

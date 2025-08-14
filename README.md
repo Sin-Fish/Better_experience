@@ -150,4 +150,4 @@ build/libs/better_experience-1.0.0.jar
 ## 📞 联系方式
 
 - GitHub: [@Aeolyn](https://github.com/Tanfreefish)
-- 项目主页: [Better Experience](https://github.com/Aeolyn/better_experience)
+- 项目主页: [Better Experience](https://github.com/Tanfreefish/better_experience)

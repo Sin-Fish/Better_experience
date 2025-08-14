@@ -27,8 +27,8 @@ public class BetterExperienceMod implements ModInitializer {
         
         // 注册服务器启动事件，在游戏完全加载后显示消息
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            // 使用新线程避免阻塞主线程
-            new Thread(() -> {
+            // 使用延迟任务避免阻塞主线程
+            server.execute(() -> {
                 try {
                     // 等待一段时间确保游戏完全加载
                     Thread.sleep(3000);
@@ -42,7 +42,7 @@ public class BetterExperienceMod implements ModInitializer {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-            }).start();
+            });
         });
     }
 }
