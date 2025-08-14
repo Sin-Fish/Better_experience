@@ -67,7 +67,7 @@ cd better_experience
 ### 构建输出
 构建成功后，jar文件位于：
 ```
-build/libs/better_experience-1.0.0.jar
+build/libs/better_experience-1.1.0.jar
 ```
 
 ## 📋 功能特性
