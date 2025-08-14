@@ -103,4 +103,33 @@ public class ConfigManager {
         itemConfigs.clear();
         initialize();
     }
+    
+    public static java.util.Set<String> getAllConfiguredItems() {
+        return itemConfigs.keySet();
+    }
+    
+    public static void saveConfig(String itemId) {
+        try {
+            ItemConfig config = itemConfigs.get(itemId);
+            if (config != null) {
+                // 确保配置已更新到内存中
+                itemConfigs.put(itemId, config);
+                LOGGER.info("配置已保存到内存: " + itemId + " (缩放: " + config.getFirstPerson().getScale() + ")");
+            }
+        } catch (Exception e) {
+            LOGGER.error("保存配置失败 " + itemId + ": " + e.getMessage(), e);
+        }
+    }
+    
+    public static void saveAllConfigs() {
+        try {
+            // 保存所有配置到运行时内存
+            for (String itemId : itemConfigs.keySet()) {
+                saveConfig(itemId);
+            }
+            LOGGER.info("所有配置已保存到内存");
+        } catch (Exception e) {
+            LOGGER.error("保存所有配置失败: " + e.getMessage(), e);
+        }
+    }
 }

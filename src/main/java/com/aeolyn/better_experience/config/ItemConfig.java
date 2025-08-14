@@ -57,6 +57,15 @@ public class ItemConfig {
         public float getTranslateX() { return translateX; }
         public float getTranslateY() { return translateY; }
         public float getTranslateZ() { return translateZ; }
+        
+        // Setters
+        public void setScale(float scale) { this.scale = scale; }
+        public void setRotationX(float rotationX) { this.rotationX = rotationX; }
+        public void setRotationY(float rotationY) { this.rotationY = rotationY; }
+        public void setRotationZ(float rotationZ) { this.rotationZ = rotationZ; }
+        public void setTranslateX(float translateX) { this.translateX = translateX; }
+        public void setTranslateY(float translateY) { this.translateY = translateY; }
+        public void setTranslateZ(float translateZ) { this.translateZ = translateZ; }
     }
     
     // Getters
@@ -68,4 +77,9 @@ public class ItemConfig {
     public String getEntityType() { return entityType; }
     public RenderSettings getFirstPerson() { return firstPerson; }
     public RenderSettings getThirdPerson() { return thirdPerson; }
+    
+    // Setters
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public void setRenderAsBlock(boolean renderAsBlock) { this.renderAsBlock = renderAsBlock; }
+    public void setRenderAsEntity(boolean renderAsEntity) { this.renderAsEntity = renderAsEntity; }
 }

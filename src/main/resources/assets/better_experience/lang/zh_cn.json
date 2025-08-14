@@ -1,5 +1,11 @@
 {
   "itemGroup.handheld3d.main": "Handheld3D",
   "item.minecraft.lantern": "灯笼",
-  "handheld3d.tooltip.lantern_3d": "3D渲染已启用"
+  "handheld3d.tooltip.lantern_3d": "3D渲染已启用",
+  "better_experience.config.title": "Better Experience 配置",
+  "better_experience.config.save": "保存配置",
+  "better_experience.config.enabled": "已启用",
+  "better_experience.config.disabled": "已禁用",
+  "key.better_experience.open_config": "打开配置界面",
+  "category.better_experience.general": "Better Experience"
 }

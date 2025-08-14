@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "com.aeolyn.better_experience.BetterExperienceMod"
+    ],
+    "client": [
+      "com.aeolyn.better_experience.BetterExperienceClientMod"
     ]
   },
   "mixins": [
