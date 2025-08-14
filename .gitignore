@@ -63,3 +63,7 @@ classes/
 *.rar
 hs_err_pid*
 replay_pid*
+
+
+#project
+REFACTOR_SUMMARY.md

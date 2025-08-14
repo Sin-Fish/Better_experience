@@ -1,6 +1,6 @@
 package com.aeolyn.better_experience.util;
 
-import com.aeolyn.better_experience.config.ConfigManager;
+import com.aeolyn.better_experience.config.manager.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

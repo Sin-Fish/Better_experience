@@ -1,6 +1,6 @@
 package com.aeolyn.better_experience.core;
 
-import com.aeolyn.better_experience.config.ConfigManager;
+import com.aeolyn.better_experience.config.manager.ConfigManager;
 import com.aeolyn.better_experience.config.ItemConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;

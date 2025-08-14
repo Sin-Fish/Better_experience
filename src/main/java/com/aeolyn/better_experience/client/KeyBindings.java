@@ -1,7 +1,7 @@
 package com.aeolyn.better_experience.client;
 
 import com.aeolyn.better_experience.client.gui.ModConfigScreen;
-import com.aeolyn.better_experience.config.ConfigManager;
+import com.aeolyn.better_experience.config.manager.ConfigManager;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;

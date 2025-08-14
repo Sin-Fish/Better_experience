@@ -1,7 +1,7 @@
 package com.aeolyn.better_experience.mixin;
 
 import com.aeolyn.better_experience.BetterExperienceMod;
-import com.aeolyn.better_experience.config.ConfigManager;
+import com.aeolyn.better_experience.config.manager.ConfigManager;
 import com.aeolyn.better_experience.core.ItemRenderer3D;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexConsumerProvider;

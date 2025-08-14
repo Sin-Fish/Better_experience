@@ -1,6 +1,6 @@
 package com.aeolyn.better_experience;
 
-import com.aeolyn.better_experience.config.ConfigManager;
+import com.aeolyn.better_experience.config.manager.ConfigManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.text.Text;
