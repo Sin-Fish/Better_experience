@@ -62,16 +62,21 @@ public class ModConfigScreen extends Screen {
         int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         maxScrollOffset = Math.max(0, itemConfigs.size() - visibleItems);
         
-        // 添加新建物品按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("+ 新建物品"), button -> {
-            this.client.setScreen(new AddItemConfigScreen(this, configManager));
-        }).dimensions(this.width / 2 - 100, 20, 200, 20).build());
-        
         // 添加保存按钮
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("better_experience.config.save"), button -> {
             configManager.saveAllConfigs();
             this.close();
         }).dimensions(this.width / 2 - 100, this.height - 30, 200, 20).build());
+        
+        // 添加关闭按钮（不保存设置）
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("关闭"), button -> {
+            this.close();
+        }).dimensions(this.width / 2 - 100, this.height - 60, 200, 20).build());
+        
+        // 添加新建物品按钮（放在列表下方）
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("+ 新建物品"), button -> {
+            this.client.setScreen(new AddItemConfigScreen(this, configManager));
+        }).dimensions(this.width / 2 - 100, LIST_END_Y + 10, 200, 20).build());
         
         // 添加滚动按钮
         this.addDrawableChild(ButtonWidget.builder(Text.literal("↑"), button -> {
@@ -108,14 +113,16 @@ public class ModConfigScreen extends Screen {
     }
     
     private void addConfigEntry(ItemConfig config, int y) {
-        // 启用/禁用按钮
-        ButtonWidget toggleButton = ButtonWidget.builder(
-            Text.literal(config.isEnabled() ? "✓" : "✗"),
+        // 创建自定义物品图标按钮（正方形）
+        ItemIconButton iconButton = new ItemIconButton(
+            this.width / 2 - 100, y, 20, 20, // 居中显示
+            config.getItemId(), config.isEnabled(),
             button -> {
                 config.setEnabled(!config.isEnabled());
-                button.setMessage(Text.literal(config.isEnabled() ? "✓" : "✗"));
+                // 更新按钮外观
+                ((ItemIconButton) button).setEnabled(config.isEnabled());
             }
-        ).dimensions(this.width / 2 - 140, y, 30, 20).build();
+        );
         
         // 物品名称按钮
         Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
@@ -124,26 +131,30 @@ public class ModConfigScreen extends Screen {
             Text.literal(displayName),
             button -> {
                 // 打开详细配置界面
-                this.client.setScreen(new ItemDetailConfigScreen(configManager, config));
+                this.client.setScreen(new ItemDetailConfigScreen(this, configManager, config));
             }
-        ).dimensions(this.width / 2 - 100, y, 150, 20).build();
+        ).dimensions(this.width / 2 - 70, y, 120, 20).build(); // 居中显示
         
         // 删除按钮
         ButtonWidget deleteButton = ButtonWidget.builder(
             Text.literal("×"),
             button -> {
-                // 删除配置
-                configManager.removeItemConfig(config.getItemId());
-                refreshItemList();
+                // 显示删除确认对话框
+                showDeleteConfirmation(config.getItemId());
             }
         ).dimensions(this.width / 2 + 60, y, 20, 20).build();
         
-        this.addDrawableChild(toggleButton);
+        this.addDrawableChild(iconButton);
         this.addDrawableChild(nameButton);
         this.addDrawableChild(deleteButton);
-        itemWidgets.add(toggleButton);
+        itemWidgets.add(iconButton);
         itemWidgets.add(nameButton);
         itemWidgets.add(deleteButton);
+    }
+    
+    private void showDeleteConfirmation(String itemId) {
+        // 创建确认对话框
+        this.client.setScreen(new ConfirmDeleteScreen(this, configManager, itemId));
     }
     
     @Override
@@ -156,17 +167,6 @@ public class ModConfigScreen extends Screen {
         
         // 绘制列表背景
         context.fill(this.width / 2 - 160, LIST_START_Y - 5, this.width / 2 + 180, LIST_END_Y + 5, 0x44000000);
-        
-        // 绘制物品图标 - 调整位置和大小，让图标更明显
-        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
-        for (int i = 0; i < visibleItems && i + scrollOffset < itemConfigs.size(); i++) {
-            ItemConfig config = itemConfigs.get(i + scrollOffset);
-            Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
-            ItemStack stack = new ItemStack(item);
-            int y = LIST_START_Y + i * ITEM_HEIGHT;
-            // 调整图标位置，让它更居中且更大，避免与按钮重叠
-            context.drawItem(stack, this.width / 2 - 180, y + 5);
-        }
         
         // 绘制滚动信息
         if (maxScrollOffset > 0) {
@@ -199,5 +199,53 @@ public class ModConfigScreen extends Screen {
     public void refreshItemList() {
         loadItemConfigs();
         updateItemWidgets();
+    }
+    
+    // 自定义物品图标按钮类
+    private static class ItemIconButton extends ButtonWidget {
+        private final String itemId;
+        private boolean enabled;
+        
+        public ItemIconButton(int x, int y, int width, int height, String itemId, boolean enabled, PressAction onPress) {
+            super(x, y, width, height, Text.literal(""), onPress, DEFAULT_NARRATION_SUPPLIER);
+            this.itemId = itemId;
+            this.enabled = enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+        
+        @Override
+        public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+            // 绘制按钮背景
+            context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44000000);
+            
+            // 绘制物品图标
+            Item item = Registries.ITEM.get(Identifier.of(itemId));
+            if (item != null) {
+                ItemStack stack = new ItemStack(item);
+                // 根据启用状态设置不同的渲染参数
+                if (enabled) {
+                    // 正常显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2);
+                } else {
+                    // 变暗显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2, 0x88888888);
+                }
+            }
+            
+            // 绘制边框
+            if (this.isHovered()) {
+                context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44FFFFFF);
+            }
+            
+            // 绘制状态指示器（小圆点）
+            if (enabled) {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFF00FF00); // 绿色
+            } else {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFFFF0000); // 红色
+            }
+        }
     }
 }

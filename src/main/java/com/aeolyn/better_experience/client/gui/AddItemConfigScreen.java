@@ -13,6 +13,15 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minecraft.block.Block;
+import net.minecraft.entity.EntityType;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.Entity;
+import net.minecraft.world.World;
+import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.entity.projectile.ArrowEntity;
 
 public class AddItemConfigScreen extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-AddItemScreen");
@@ -55,6 +64,8 @@ public class AddItemConfigScreen extends Screen {
         renderIdField.setChangedListener(text -> {
             // 根据渲染类型设置不同的提示
             updateRenderIdPlaceholder();
+            // 实时验证渲染ID
+            validateRenderId(text);
         });
         
         // 渲染方式切换按钮
@@ -102,6 +113,30 @@ public class AddItemConfigScreen extends Screen {
                 }
             } catch (Exception e) {
                 LOGGER.debug("物品ID格式错误: {}", itemId);
+            }
+        }
+    }
+    
+    private void validateRenderId(String renderId) {
+        if (renderId != null && !renderId.isEmpty()) {
+            try {
+                if (isEntityRender) {
+                    // 验证实体类型
+                    if (Registries.ENTITY_TYPE.get(Identifier.of(renderId)) != null) {
+                        LOGGER.debug("实体ID有效: {}", renderId);
+                    } else {
+                        LOGGER.debug("实体ID无效: {}", renderId);
+                    }
+                } else {
+                    // 验证方块
+                    if (Registries.BLOCK.get(Identifier.of(renderId)) != null) {
+                        LOGGER.debug("方块ID有效: {}", renderId);
+                    } else {
+                        LOGGER.debug("方块ID无效: {}", renderId);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.debug("渲染ID格式错误: {}", renderId);
             }
         }
     }
@@ -206,6 +241,69 @@ public class AddItemConfigScreen extends Screen {
                 if (item != null) {
                     ItemStack stack = new ItemStack(item);
                     context.drawItem(stack, this.width / 2 + 120, 70);
+                }
+            } catch (Exception ignored) {}
+        }
+        
+        // 绘制渲染ID预览（如果渲染ID有效）
+        String renderId = renderIdField.getText().trim();
+        if (!renderId.isEmpty()) {
+            try {
+                if (isEntityRender) {
+                    // 实体预览
+                    EntityType<?> entityType = Registries.ENTITY_TYPE.get(Identifier.of(renderId));
+                    if (entityType != null) {
+                        // 显示实体名称
+                        context.drawTextWithShadow(this.textRenderer, Text.literal("实体: " + renderId), this.width / 2 + 120, 100, 0x00FF00);
+                        
+                        // 渲染实体预览
+                        try {
+                            MinecraftClient client = MinecraftClient.getInstance();
+                            World world = client.world;
+                            if (world != null) {
+                                // 创建实体实例
+                                Entity entity = entityType.create(world, net.minecraft.entity.SpawnReason.NATURAL);
+                                if (entity != null) {
+                                    // 设置实体位置
+                                    entity.setPos(0, 0, 0);
+                                    
+                                    // 准备渲染
+                                    VertexConsumerProvider vertexConsumers = client.getBufferBuilders().getEntityVertexConsumers();
+                                    
+                                    // 创建新的矩阵栈
+                                    MatrixStack matrices = new MatrixStack();
+                                    
+                                    // 调整渲染位置和缩放
+                                    matrices.translate(this.width / 2 + 120, 110, 0);
+                                    matrices.scale(0.3f, 0.3f, 0.3f);
+                                    
+                                    // 特殊处理箭的旋转
+                                    if (entity instanceof ArrowEntity) {
+                                        matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotationDegrees(90.0f));
+                                    }
+                                    
+                                    // 渲染实体
+                                    EntityRenderDispatcher dispatcher = client.getEntityRenderDispatcher();
+                                    dispatcher.render(entity, 0.0, 0.0, 0.0, 0.0f, matrices, vertexConsumers, 15728880);
+                                    
+                                    // 清理实体
+                                    entity.discard();
+                                }
+                            }
+                        } catch (Exception e) {
+                            // 如果实体渲染失败，只显示状态指示器
+                            context.drawTextWithShadow(this.textRenderer, Text.literal("✓"), this.width / 2 + 120, 110, 0x00FF00);
+                        }
+                    }
+                    // 无效的实体ID不显示任何内容
+                } else {
+                    // 方块预览
+                    Block block = Registries.BLOCK.get(Identifier.of(renderId));
+                    if (block != null) {
+                        ItemStack blockStack = new ItemStack(block.asItem());
+                        context.drawItem(blockStack, this.width / 2 + 120, 100);
+                    }
+                    // 无效的方块ID不显示任何内容
                 }
             } catch (Exception ignored) {}
         }

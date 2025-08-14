@@ -14,6 +14,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class ItemDetailConfigScreen extends Screen {
+    private final ModConfigScreen parentScreen;
     private final ConfigManager configManager;
     private final ItemConfig config;
     
@@ -34,8 +35,9 @@ public class ItemDetailConfigScreen extends Screen {
     private boolean isFirstPersonView = true;
     private ButtonWidget viewToggleButton;
     
-    public ItemDetailConfigScreen(ConfigManager configManager, ItemConfig config) {
+    public ItemDetailConfigScreen(ModConfigScreen parentScreen, ConfigManager configManager, ItemConfig config) {
         super(Text.literal("配置: " + config.getItemId()));
+        this.parentScreen = parentScreen;
         this.configManager = configManager;
         this.config = config;
     }
@@ -45,7 +47,7 @@ public class ItemDetailConfigScreen extends Screen {
         super.init();
         
         int centerX = this.width / 2;
-        int startY = 80;
+        int startY = 180; // 增加起始位置，避免重叠
         int fieldWidth = 80;
         int fieldHeight = 20;
         int spacing = 10;
@@ -60,12 +62,7 @@ public class ItemDetailConfigScreen extends Screen {
             }
         ).dimensions(centerX - 100, 50, 200, 20).build();
         
-        // 渲染ID编辑字段
-        renderIdField = new TextFieldWidget(this.textRenderer, centerX - 100, 80, 200, fieldHeight, Text.literal("渲染ID"));
-        renderIdField.setText(config.isRenderAsEntity() ? config.getEntityType() : config.getBlockId());
-        renderIdField.setPlaceholder(Text.literal("输入新的渲染ID"));
-        
-        // 渲染方式切换按钮
+        // 渲染方式切换按钮（放在缩放按钮上面）
         isEntityRender = config.isRenderAsEntity();
         renderTypeButton = ButtonWidget.builder(
             Text.literal("渲染方式: " + (isEntityRender ? "实体" : "方块")),
@@ -74,10 +71,15 @@ public class ItemDetailConfigScreen extends Screen {
                 button.setMessage(Text.literal("渲染方式: " + (isEntityRender ? "实体" : "方块")));
                 updateRenderIdPlaceholder();
             }
-        ).dimensions(centerX - 100, 110, 200, fieldHeight).build();
+        ).dimensions(centerX - 100, 80, 200, fieldHeight).build();
+        
+        // 渲染ID编辑字段
+        renderIdField = new TextFieldWidget(this.textRenderer, centerX - 100, 110, 200, fieldHeight, Text.literal("渲染ID"));
+        renderIdField.setText(config.isRenderAsEntity() ? config.getEntityType() : config.getBlockId());
+        renderIdField.setPlaceholder(Text.literal("输入新的渲染ID"));
         
         // 缩放滑块
-        scaleSlider = new SliderWidget(centerX - 100, startY, 200, 20, 
+        scaleSlider = new SliderWidget(centerX - 100, 140, 200, 20, 
             Text.literal("缩放: " + String.format("%.1f", getCurrentViewConfig().getScale())),
             getCurrentViewConfig().getScale() / 5.0) {
             @Override
@@ -164,8 +166,8 @@ public class ItemDetailConfigScreen extends Screen {
         
         // 添加所有控件到GUI
         this.addDrawableChild(viewToggleButton);
-        this.addDrawableChild(renderIdField);
         this.addDrawableChild(renderTypeButton);
+        this.addDrawableChild(renderIdField);
         this.addDrawableChild(scaleSlider);
         this.addDrawableChild(rotationXField);
         this.addDrawableChild(rotationYField);
@@ -247,6 +249,11 @@ public class ItemDetailConfigScreen extends Screen {
     }
     
     @Override
+    public void close() {
+        this.client.setScreen(parentScreen);
+    }
+    
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         // 绘制半透明背景
         context.fill(0, 0, this.width, this.height, 0x88000000);
@@ -260,19 +267,19 @@ public class ItemDetailConfigScreen extends Screen {
         context.drawItem(stack, this.width / 2 - 10, 25);
         
         // 先绘制标签，确保在控件上方显示
-        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染ID:"), this.width / 2 - 100, 65, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染方式:"), this.width / 2 - 100, 95, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("缩放:"), this.width / 2 - 100, 125, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染ID:"), this.width / 2 - 100, 95, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染方式:"), this.width / 2 - 100, 125, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("缩放:"), this.width / 2 - 100, 155, 0xFFFFFF);
         
-        context.drawTextWithShadow(this.textRenderer, Text.literal("旋转 (度):"), this.width / 2 - 150, 165, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴旋转:"), this.width / 2 - 150, 185, 0xFFFF00);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴旋转:"), this.width / 2 - 50, 185, 0xFFFF00);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴旋转:"), this.width / 2 + 50, 185, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("旋转 (度):"), this.width / 2 - 150, 215, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴旋转:"), this.width / 2 - 150, 235, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴旋转:"), this.width / 2 - 50, 235, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴旋转:"), this.width / 2 + 50, 235, 0xFFFF00);
         
-        context.drawTextWithShadow(this.textRenderer, Text.literal("平移:"), this.width / 2 - 150, 205, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴平移:"), this.width / 2 - 150, 225, 0x00FFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴平移:"), this.width / 2 - 50, 225, 0x00FFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴平移:"), this.width / 2 + 50, 225, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("平移:"), this.width / 2 - 150, 255, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴平移:"), this.width / 2 - 150, 275, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴平移:"), this.width / 2 - 50, 275, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴平移:"), this.width / 2 + 50, 275, 0x00FFFF);
         
         // 渲染控件
         scaleSlider.render(context, mouseX, mouseY, delta);

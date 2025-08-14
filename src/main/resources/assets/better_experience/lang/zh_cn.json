@@ -23,6 +23,11 @@
   "better_experience.config.first_person": "第一人称",
   "better_experience.config.third_person": "第三人称",
   "better_experience.config.scroll": "滚动",
+  "better_experience.config.confirm_delete": "确认删除",
+  "better_experience.config.confirm_delete.message": "确定要删除物品配置吗？",
+  "better_experience.config.confirm_delete.confirm": "确认删除",
+  "better_experience.config.confirm_delete.cancel": "取消",
+  "better_experience.config.close": "关闭",
   "key.better_experience.open_config": "打开配置界面",
   "category.better_experience.general": "Better Experience"
 }
