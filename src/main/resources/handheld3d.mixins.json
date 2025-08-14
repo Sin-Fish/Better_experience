@@ -6,8 +6,6 @@
   "mixins": [
   ],
   "client": [
-    "LanternItemRendererMixin",
-    "PlayerArmRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
