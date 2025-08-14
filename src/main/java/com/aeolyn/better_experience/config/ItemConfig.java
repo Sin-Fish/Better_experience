@@ -85,6 +85,8 @@ public class ItemConfig {
     public void setItemId(String itemId) { this.itemId = itemId; }
     public void setEntityType(String entityType) { this.entityType = entityType; }
     public void setBlockId(String blockId) { this.blockId = blockId; }
+    public void setFirstPerson(RenderSettings firstPerson) { this.firstPerson = firstPerson; }
+    public void setThirdPerson(RenderSettings thirdPerson) { this.thirdPerson = thirdPerson; }
     
     // 构造函数，用于创建新的配置
     public ItemConfig() {

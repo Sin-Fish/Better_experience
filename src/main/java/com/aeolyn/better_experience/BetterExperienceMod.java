@@ -19,6 +19,9 @@ public class BetterExperienceMod implements ModInitializer {
         // 初始化配置管理器
         ConfigManager.initialize();
         
+        // 测试配置持久化功能
+        ConfigManager.getInstance().testConfigPersistence();
+        
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.

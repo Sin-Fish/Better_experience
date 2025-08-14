@@ -92,7 +92,7 @@ public class ItemDetailConfigScreen extends Screen {
                 float scale = (float) (this.value * 5.0);
                 getCurrentViewConfig().setScale(scale);
                 // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
+                configManager.updateItemConfig(config.getItemId(), config);
             }
         };
         
@@ -103,9 +103,10 @@ public class ItemDetailConfigScreen extends Screen {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setRotationX(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
         rotationYField = new TextFieldWidget(this.textRenderer, centerX - 50, startY + 40, fieldWidth, fieldHeight, Text.literal("Y"));
@@ -114,9 +115,10 @@ public class ItemDetailConfigScreen extends Screen {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setRotationY(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
         rotationZField = new TextFieldWidget(this.textRenderer, centerX + 50, startY + 40, fieldWidth, fieldHeight, Text.literal("Z"));
@@ -125,50 +127,54 @@ public class ItemDetailConfigScreen extends Screen {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setRotationZ(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
         // 平移字段
-        translateXField = new TextFieldWidget(this.textRenderer, centerX - 150, startY + 80, fieldWidth, fieldHeight, Text.literal("X"));
+        translateXField = new TextFieldWidget(this.textRenderer, centerX - 150, startY + 60, fieldWidth, fieldHeight, Text.literal("X"));
         translateXField.setText(String.format("%.1f", getCurrentViewConfig().getTranslateX()));
         translateXField.setChangedListener(text -> {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setTranslateX(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
-        translateYField = new TextFieldWidget(this.textRenderer, centerX - 50, startY + 80, fieldWidth, fieldHeight, Text.literal("Y"));
+        translateYField = new TextFieldWidget(this.textRenderer, centerX - 50, startY + 60, fieldWidth, fieldHeight, Text.literal("Y"));
         translateYField.setText(String.format("%.1f", getCurrentViewConfig().getTranslateY()));
         translateYField.setChangedListener(text -> {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setTranslateY(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
-        translateZField = new TextFieldWidget(this.textRenderer, centerX + 50, startY + 80, fieldWidth, fieldHeight, Text.literal("Z"));
+        translateZField = new TextFieldWidget(this.textRenderer, centerX + 50, startY + 60, fieldWidth, fieldHeight, Text.literal("Z"));
         translateZField.setText(String.format("%.1f", getCurrentViewConfig().getTranslateZ()));
         translateZField.setChangedListener(text -> {
             try {
                 float value = Float.parseFloat(text);
                 getCurrentViewConfig().setTranslateZ(value);
-                // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
-            } catch (NumberFormatException ignored) {}
+                configManager.updateItemConfig(config.getItemId(), config);
+            } catch (NumberFormatException e) {
+                // 忽略无效输入
+            }
         });
         
-        // 添加所有控件到GUI
+        // 添加所有控件
         this.addDrawableChild(viewToggleButton);
         this.addDrawableChild(renderTypeButton);
-        this.addDrawableChild(renderIdField);
         this.addDrawableChild(scaleSlider);
+        this.addDrawableChild(renderIdField);
         this.addDrawableChild(rotationXField);
         this.addDrawableChild(rotationYField);
         this.addDrawableChild(rotationZField);
@@ -176,26 +182,7 @@ public class ItemDetailConfigScreen extends Screen {
         this.addDrawableChild(translateYField);
         this.addDrawableChild(translateZField);
         
-        // 按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("保存"), button -> {
-            // 保存渲染ID更改
-            String newRenderId = renderIdField.getText().trim();
-            if (!newRenderId.isEmpty()) {
-                if (isEntityRender) {
-                    config.setEntityType(newRenderId);
-                    config.setRenderAsEntity(true);
-                    config.setRenderAsBlock(false);
-                } else {
-                    config.setBlockId(newRenderId);
-                    config.setRenderAsEntity(false);
-                    config.setRenderAsBlock(true);
-                }
-            }
-            
-            configManager.saveConfig(config.getItemId());
-            this.close();
-        }).dimensions(centerX - 100, this.height - 40, 200, 20).build());
-        
+        // 返回按钮
         this.addDrawableChild(ButtonWidget.builder(Text.literal("返回"), button -> {
             this.close();
         }).dimensions(centerX - 100, this.height - 70, 200, 20).build());
@@ -228,7 +215,7 @@ public class ItemDetailConfigScreen extends Screen {
                 float scale = (float) (this.value * 5.0);
                 getCurrentViewConfig().setScale(scale);
                 // 立即保存到ConfigManager
-                configManager.saveConfig(config.getItemId());
+                configManager.updateItemConfig(config.getItemId(), config);
             }
         };
         

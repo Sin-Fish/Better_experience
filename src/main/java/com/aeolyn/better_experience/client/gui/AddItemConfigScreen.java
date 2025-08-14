@@ -275,7 +275,7 @@ public class AddItemConfigScreen extends Screen {
                                     
                                     // 调整渲染位置和缩放
                                     matrices.translate(this.width / 2 + 120, 110, 0);
-                                    matrices.scale(0.3f, 0.3f, 0.3f);
+                                    matrices.scale(0.5f, 0.5f, 0.5f);
                                     
                                     // 特殊处理箭的旋转
                                     if (entity instanceof ArrowEntity) {
@@ -288,9 +288,17 @@ public class AddItemConfigScreen extends Screen {
                                     
                                     // 清理实体
                                     entity.discard();
+                                    
+                                    // 添加调试信息
+                                    LOGGER.debug("成功渲染实体: {}", renderId);
+                                } else {
+                                    LOGGER.debug("无法创建实体: {}", renderId);
                                 }
+                            } else {
+                                LOGGER.debug("世界为空，无法渲染实体");
                             }
                         } catch (Exception e) {
+                            LOGGER.debug("实体渲染失败: {} - {}", renderId, e.getMessage());
                             // 如果实体渲染失败，只显示状态指示器
                             context.drawTextWithShadow(this.textRenderer, Text.literal("✓"), this.width / 2 + 120, 110, 0x00FF00);
                         }
