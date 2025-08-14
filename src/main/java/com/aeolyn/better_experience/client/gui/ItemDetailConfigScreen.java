@@ -215,16 +215,7 @@ public class ItemDetailConfigScreen extends Screen {
         ItemStack stack = new ItemStack(item);
         context.drawItem(stack, this.width / 2 - 10, 25);
         
-        // 渲染控件
-        scaleSlider.render(context, mouseX, mouseY, delta);
-        rotationXField.render(context, mouseX, mouseY, delta);
-        rotationYField.render(context, mouseX, mouseY, delta);
-        rotationZField.render(context, mouseX, mouseY, delta);
-        translateXField.render(context, mouseX, mouseY, delta);
-        translateYField.render(context, mouseX, mouseY, delta);
-        translateZField.render(context, mouseX, mouseY, delta);
-        
-        // 绘制标签 - 在控件后面渲染，确保显示在上层，调整Y坐标让标签更明显
+        // 先绘制标签，确保在控件上方显示
         context.drawTextWithShadow(this.textRenderer, Text.literal("缩放:"), this.width / 2 - 100, 75, 0xFFFFFF);
         
         context.drawTextWithShadow(this.textRenderer, Text.literal("旋转 (度):"), this.width / 2 - 150, 115, 0xFFFFFF);
@@ -236,6 +227,15 @@ public class ItemDetailConfigScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, Text.literal("X轴平移:"), this.width / 2 - 150, 175, 0x00FFFF);
         context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴平移:"), this.width / 2 - 50, 175, 0x00FFFF);
         context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴平移:"), this.width / 2 + 50, 175, 0x00FFFF);
+        
+        // 渲染控件
+        scaleSlider.render(context, mouseX, mouseY, delta);
+        rotationXField.render(context, mouseX, mouseY, delta);
+        rotationYField.render(context, mouseX, mouseY, delta);
+        rotationZField.render(context, mouseX, mouseY, delta);
+        translateXField.render(context, mouseX, mouseY, delta);
+        translateYField.render(context, mouseX, mouseY, delta);
+        translateZField.render(context, mouseX, mouseY, delta);
         
         super.render(context, mouseX, mouseY, delta);
     }

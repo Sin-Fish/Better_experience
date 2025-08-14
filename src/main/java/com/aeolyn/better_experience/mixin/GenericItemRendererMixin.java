@@ -37,8 +37,8 @@ public abstract class GenericItemRendererMixin {
         }
 
         if (item != null && ConfigManager.isItemEnabled(Registries.ITEM.getId(item).toString())) {
-            // 使用3D渲染器，传入ConfigManager实例
-            ItemRenderer3D renderer3D = new ItemRenderer3D(ConfigManager.getInstance());
+            // 使用3D渲染器
+            ItemRenderer3D renderer3D = new ItemRenderer3D(null);
             
             if (renderer3D.shouldRender3D(item, displayContext)) {
                 // 取消原版渲染

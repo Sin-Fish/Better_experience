@@ -110,7 +110,7 @@ public class ModConfigScreen extends Screen {
                 config.setEnabled(!config.isEnabled());
                 button.setMessage(Text.literal(config.isEnabled() ? "✓" : "✗"));
             }
-        ).dimensions(this.width / 2 - 150, y, 30, 20).build();
+        ).dimensions(this.width / 2 - 140, y, 30, 20).build();
         
         // 物品名称按钮
         Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
@@ -121,7 +121,7 @@ public class ModConfigScreen extends Screen {
                 // 打开详细配置界面
                 this.client.setScreen(new ItemDetailConfigScreen(configManager, config));
             }
-        ).dimensions(this.width / 2 - 110, y, 200, 20).build();
+        ).dimensions(this.width / 2 - 100, y, 200, 20).build();
         
         this.addDrawableChild(toggleButton);
         this.addDrawableChild(nameButton);
@@ -147,8 +147,8 @@ public class ModConfigScreen extends Screen {
             Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
             ItemStack stack = new ItemStack(item);
             int y = LIST_START_Y + i * ITEM_HEIGHT;
-            // 调整图标位置，让它更居中且更大
-            context.drawItem(stack, this.width / 2 - 150, y + 1);
+            // 调整图标位置，让它更居中且更大，避免与按钮重叠
+            context.drawItem(stack, this.width / 2 - 180, y + 5);
         }
         
         // 绘制滚动信息

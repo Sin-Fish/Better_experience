@@ -64,14 +64,13 @@ public class ItemRenderer3D {
                 return;
             }
             
-            // 应用矩阵变换
-            applyMatrixTransform(matrices, displayContext, config);
-            
             // 根据配置选择渲染方式
             if (config.isRenderAsEntity()) {
                 // 渲染实体模型
                 Entity entity = getEntityForItem(item, config);
                 if (entity != null) {
+                    // 应用实体专用矩阵变换
+                    applyEntityMatrixTransform(matrices, displayContext, config);
                     renderEntityModel(entity, matrices, vertexConsumers, light, overlay);
                 } else {
                     LOGGER.debug("无法获取实体，回退到原版渲染");
@@ -86,6 +85,8 @@ public class ItemRenderer3D {
                     LOGGER.warn("无法为物品 {} 找到对应的方块状态", Registries.ITEM.getId(item));
                     return;
                 }
+                // 应用方块专用矩阵变换
+                applyBlockMatrixTransform(matrices, displayContext, config);
                 renderBlockModel(blockState, matrices, vertexConsumers, light, overlay);
             } else {
                 LOGGER.debug("未指定渲染方式，回退到原版渲染");
@@ -208,9 +209,9 @@ public class ItemRenderer3D {
     }
     
     /**
-     * 应用矩阵变换
+     * 应用实体专用矩阵变换
      */
-    private void applyMatrixTransform(MatrixStack matrices, ItemDisplayContext displayContext, ItemConfig config) {
+    private void applyEntityMatrixTransform(MatrixStack matrices, ItemDisplayContext displayContext, ItemConfig config) {
         // 判断是否为第一人称
         boolean isFirstPerson = displayContext.name().contains("FIRST_PERSON");
         ItemConfig.RenderSettings viewConfig = isFirstPerson ? config.getFirstPerson() : config.getThirdPerson();
@@ -236,9 +237,47 @@ public class ItemRenderer3D {
             matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(viewConfig.getRotationZ()));
         }
         
-        // 副手镜像处理 - 在应用完所有旋转后，对X轴进行镜像
+        // 副手处理 - 实体使用更温和的镜像和位置补偿
         if (isOffhand) {
             // 对X轴进行镜像变换
+            matrices.scale(-1.0f, 1.0f, 1.0f);
+            
+            // 副手位置补偿 - 将实体拉回屏幕内
+            matrices.translate(-0.3f, 0.0f, 0.0f);
+        }
+    }
+    
+    /**
+     * 应用方块专用矩阵变换
+     */
+    private void applyBlockMatrixTransform(MatrixStack matrices, ItemDisplayContext displayContext, ItemConfig config) {
+        // 判断是否为第一人称
+        boolean isFirstPerson = displayContext.name().contains("FIRST_PERSON");
+        ItemConfig.RenderSettings viewConfig = isFirstPerson ? config.getFirstPerson() : config.getThirdPerson();
+        
+        // 判断是否为副手
+        boolean isOffhand = displayContext.name().contains("OFFHAND");
+        
+        // 应用缩放
+        float scale = viewConfig.getScale();
+        matrices.scale(scale, scale, scale);
+        
+        // 应用平移
+        matrices.translate(viewConfig.getTranslateX(), viewConfig.getTranslateY(), viewConfig.getTranslateZ());
+        
+        // 应用旋转 - 注意旋转顺序很重要
+        if (viewConfig.getRotationX() != 0) {
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(viewConfig.getRotationX()));
+        }
+        if (viewConfig.getRotationY() != 0) {
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(viewConfig.getRotationY()));
+        }
+        if (viewConfig.getRotationZ() != 0) {
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(viewConfig.getRotationZ()));
+        }
+        
+        // 副手镜像处理 - 方块使用标准镜像
+        if (isOffhand) {
             matrices.scale(-1.0f, 1.0f, 1.0f);
         }
     }
@@ -251,6 +290,11 @@ public class ItemRenderer3D {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.world == null) {
             return;
+        }
+        
+        // 特殊处理箭的旋转 - 将水平箭转为垂直
+        if (entity instanceof ArrowEntity) {
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90.0f));
         }
         
         EntityRenderDispatcher dispatcher = client.getEntityRenderDispatcher();

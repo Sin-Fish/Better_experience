@@ -6,20 +6,20 @@
   "entity_type": "minecraft:arrow",
   "first_person": {
     "scale": 1.5,
-    "rotation_x": -45.0,
+    "rotation_x": 180.0,
     "rotation_y": 0.0,
     "rotation_z": 0.0,
-    "translate_x": 0.0,
-    "translate_y": 0.5,
-    "translate_z": 0.0
+    "translate_x": 0.32,
+    "translate_y": 0.8,
+    "translate_z": 0.2
   },
   "third_person": {
     "scale": 1.5,
     "rotation_x": 0.0,
-    "rotation_y": 180.0,
+    "rotation_y": 90.0,
     "rotation_z": 0.0,
-    "translate_x": 0.3,
+    "translate_x": 0.33,
     "translate_y": 0.0,
-    "translate_z": 0.3
+    "translate_z": -0.3
   }
 }
