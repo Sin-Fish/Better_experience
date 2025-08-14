@@ -82,4 +82,13 @@ public class ItemConfig {
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public void setRenderAsBlock(boolean renderAsBlock) { this.renderAsBlock = renderAsBlock; }
     public void setRenderAsEntity(boolean renderAsEntity) { this.renderAsEntity = renderAsEntity; }
+    public void setItemId(String itemId) { this.itemId = itemId; }
+    public void setEntityType(String entityType) { this.entityType = entityType; }
+    public void setBlockId(String blockId) { this.blockId = blockId; }
+    
+    // 构造函数，用于创建新的配置
+    public ItemConfig() {
+        this.firstPerson = new RenderSettings();
+        this.thirdPerson = new RenderSettings();
+    }
 }

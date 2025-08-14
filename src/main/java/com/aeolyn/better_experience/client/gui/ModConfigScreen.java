@@ -62,6 +62,11 @@ public class ModConfigScreen extends Screen {
         int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         maxScrollOffset = Math.max(0, itemConfigs.size() - visibleItems);
         
+        // 添加新建物品按钮
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("+ 新建物品"), button -> {
+            this.client.setScreen(new AddItemConfigScreen(this, configManager));
+        }).dimensions(this.width / 2 - 100, 20, 200, 20).build());
+        
         // 添加保存按钮
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("better_experience.config.save"), button -> {
             configManager.saveAllConfigs();
@@ -176,5 +181,11 @@ public class ModConfigScreen extends Screen {
             }
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+    
+    // 刷新物品列表
+    public void refreshItemList() {
+        loadItemConfigs();
+        updateItemWidgets();
     }
 }

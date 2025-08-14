@@ -132,4 +132,23 @@ public class ConfigManager {
             LOGGER.error("保存所有配置失败: " + e.getMessage(), e);
         }
     }
+    
+    /**
+     * 添加新的物品配置
+     */
+    public static void addItemConfig(String itemId, ItemConfig config) {
+        try {
+            // 添加到内存中的配置
+            itemConfigs.put(itemId, config);
+            
+            // 添加到启用的物品列表
+            if (!itemsConfig.getEnabledItems().contains(itemId)) {
+                itemsConfig.getEnabledItems().add(itemId);
+            }
+            
+            LOGGER.info("成功添加物品配置: {}", itemId);
+        } catch (Exception e) {
+            LOGGER.error("添加物品配置失败 " + itemId + ": " + e.getMessage(), e);
+        }
+    }
 }
