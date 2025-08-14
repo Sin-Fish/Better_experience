@@ -1,16 +1,24 @@
 package com.example.handheld3d.mixin;
 
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemRenderer.class)
+@Mixin(MinecraftClient.class)
 public class LanternItemRendererMixin {
     
-    // 暂时移除所有Mixin注入，只保留基础类结构
-    // 这样可以确保mod能正常加载，不会导致游戏崩溃
-    
-    // TODO: 后续实现3D渲染功能
-    // 当前版本只作为基础框架，确保兼容性
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void onTick(CallbackInfo ci) {
+        // 在游戏tick时检查是否是第一次tick
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.player != null) {
+            // 只在第一次tick时显示消息
+            if (client.player.age == 1) {
+                client.player.sendMessage(Text.literal("🎯 [Handheld3D] Mixin 已成功加载!"), false);
+            }
+        }
+    }
 }
