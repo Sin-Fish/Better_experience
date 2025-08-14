@@ -33,6 +33,8 @@ public class AddItemConfigScreen extends Screen {
     private TextFieldWidget renderIdField;
     private ButtonWidget renderTypeButton;
     private boolean isEntityRender = true; // true = 实体渲染, false = 方块渲染
+    private String errorMessage = "";
+    private int errorMessageTicks = 0;
     
     public AddItemConfigScreen(ModConfigScreen parentScreen, ConfigManager configManager) {
         super(Text.literal("新建物品配置"));
@@ -52,7 +54,7 @@ public class AddItemConfigScreen extends Screen {
         
         // 物品ID输入框
         itemIdField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth/2, startY, fieldWidth, fieldHeight, Text.literal("物品ID"));
-        itemIdField.setPlaceholder(Text.literal("例如: minecraft:diamond_sword"));
+        itemIdField.setPlaceholder(Text.literal("格式: namespace:item_name"));
         itemIdField.setChangedListener(text -> {
             // 实时验证物品ID
             validateItemId(text);
@@ -103,6 +105,12 @@ public class AddItemConfigScreen extends Screen {
     
     private void validateItemId(String itemId) {
         if (itemId != null && !itemId.isEmpty()) {
+            // 首先检查格式
+            if (!itemId.contains(":")) {
+                LOGGER.debug("物品ID格式错误，缺少命名空间: {}", itemId);
+                return;
+            }
+            
             try {
                 Item item = Registries.ITEM.get(Identifier.of(itemId));
                 if (item != null) {
@@ -119,6 +127,12 @@ public class AddItemConfigScreen extends Screen {
     
     private void validateRenderId(String renderId) {
         if (renderId != null && !renderId.isEmpty()) {
+            // 首先检查格式
+            if (!renderId.contains(":")) {
+                LOGGER.debug("渲染ID格式错误，缺少命名空间: {}", renderId);
+                return;
+            }
+            
             try {
                 if (isEntityRender) {
                     // 验证实体类型
@@ -143,10 +157,16 @@ public class AddItemConfigScreen extends Screen {
     
     private void updateRenderIdPlaceholder() {
         if (isEntityRender) {
-            renderIdField.setPlaceholder(Text.literal("例如: minecraft:arrow"));
+            renderIdField.setPlaceholder(Text.literal("格式: namespace:entity_name"));
         } else {
-            renderIdField.setPlaceholder(Text.literal("例如: minecraft:stone"));
+            renderIdField.setPlaceholder(Text.literal("格式: namespace:block_name"));
         }
+    }
+    
+    private void showError(String message) {
+        errorMessage = message;
+        errorMessageTicks = 120; // 显示6秒 (20 ticks/秒)
+        LOGGER.warn("配置创建错误: {}", message);
     }
     
     private void createItemConfig() {
@@ -155,12 +175,18 @@ public class AddItemConfigScreen extends Screen {
         
         // 验证输入
         if (itemId.isEmpty()) {
-            LOGGER.warn("物品ID不能为空");
+            showError("物品ID不能为空");
             return;
         }
         
         if (renderId.isEmpty()) {
-            LOGGER.warn("渲染ID不能为空");
+            showError("渲染ID不能为空");
+            return;
+        }
+        
+        // 验证物品ID格式
+        if (!itemId.contains(":")) {
+            showError("物品ID格式错误，必须包含命名空间 (例如: minecraft:diamond_sword)");
             return;
         }
         
@@ -168,11 +194,17 @@ public class AddItemConfigScreen extends Screen {
         try {
             Item item = Registries.ITEM.get(Identifier.of(itemId));
             if (item == null) {
-                LOGGER.warn("物品不存在: {}", itemId);
+                showError("物品不存在: " + itemId);
                 return;
             }
         } catch (Exception e) {
-            LOGGER.warn("物品ID格式错误: {}", itemId);
+            showError("物品ID格式错误: " + itemId);
+            return;
+        }
+        
+        // 验证渲染ID格式
+        if (!renderId.contains(":")) {
+            showError("渲染ID格式错误，必须包含命名空间 (例如: minecraft:arrow)");
             return;
         }
         
@@ -181,18 +213,18 @@ public class AddItemConfigScreen extends Screen {
             if (isEntityRender) {
                 // 验证实体类型
                 if (Registries.ENTITY_TYPE.get(Identifier.of(renderId)) == null) {
-                    LOGGER.warn("实体类型不存在: {}", renderId);
+                    showError("实体类型不存在: " + renderId);
                     return;
                 }
             } else {
                 // 验证方块
                 if (Registries.BLOCK.get(Identifier.of(renderId)) == null) {
-                    LOGGER.warn("方块不存在: {}", renderId);
+                    showError("方块不存在: " + renderId);
                     return;
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("渲染ID格式错误: {}", renderId);
+            showError("渲染ID格式错误: " + renderId);
             return;
         }
         
@@ -212,13 +244,16 @@ public class AddItemConfigScreen extends Screen {
         }
         
         // 添加到配置管理器
-        configManager.addItemConfig(itemId, newConfig);
+        boolean success = configManager.addItemConfig(itemId, newConfig);
         
-        LOGGER.info("成功创建物品配置: {}", itemId);
-        
-        // 返回主界面并刷新列表
-        this.close();
-        parentScreen.refreshItemList();
+        if (success) {
+            LOGGER.info("成功创建物品配置: {}", itemId);
+            // 返回主界面并刷新列表
+            this.close();
+            parentScreen.refreshItemList();
+        } else {
+            showError("创建配置失败，请检查输入是否正确");
+        }
     }
     
     @Override
@@ -230,8 +265,14 @@ public class AddItemConfigScreen extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
         
         // 绘制说明文字
-        context.drawTextWithShadow(this.textRenderer, Text.literal("物品ID: 要渲染的物品的ID"), this.width / 2 - 100, 60, 0xCCCCCC);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染ID: 用于渲染的实体或方块ID"), this.width / 2 - 100, 90, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("物品ID: 要渲染的物品的ID (格式: minecraft:item_name)"), this.width / 2 - 100, 60, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染ID: 用于渲染的实体或方块ID (格式: minecraft:entity_name)"), this.width / 2 - 100, 90, 0xCCCCCC);
+        
+        // 显示错误消息
+        if (errorMessageTicks > 0) {
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(errorMessage), this.width / 2, 120, 0xFF5555);
+            errorMessageTicks--;
+        }
         
         // 绘制物品预览（如果物品ID有效）
         String itemId = itemIdField.getText().trim();

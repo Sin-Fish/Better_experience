@@ -103,8 +103,8 @@ public class ConfigManager {
     /**
      * 添加物品配置
      */
-    public void addItemConfig(String itemId, ItemConfig config) {
-        impl.addItemConfig(itemId, config);
+    public boolean addItemConfig(String itemId, ItemConfig config) {
+        return impl.addItemConfig(itemId, config);
     }
     
     /**

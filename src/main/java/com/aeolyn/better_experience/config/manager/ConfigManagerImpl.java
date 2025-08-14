@@ -199,7 +199,7 @@ public class ConfigManagerImpl {
     /**
      * 添加物品配置
      */
-    public void addItemConfig(String itemId, ItemConfig config) {
+    public boolean addItemConfig(String itemId, ItemConfig config) {
         ensureInitialized();
         
         try {
@@ -207,7 +207,7 @@ public class ConfigManagerImpl {
             ValidationResult validation = validator.validate(config);
             if (!validation.isValid()) {
                 LOGGER.error("配置验证失败: {}", validation.getErrors());
-                throw new IllegalArgumentException("Invalid config: " + validation.getErrors());
+                return false;
             }
             
             // 保存配置
@@ -225,10 +225,11 @@ public class ConfigManagerImpl {
             cache.putEnabled(itemId, config.isEnabled());
             
             LOGGER.info("物品配置添加成功: {}", itemId);
+            return true;
             
         } catch (Exception e) {
             LOGGER.error("添加物品配置失败 {}: {}", itemId, e.getMessage(), e);
-            throw new RuntimeException("Failed to add item config", e);
+            return false;
         }
     }
     
