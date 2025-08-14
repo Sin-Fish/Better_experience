@@ -140,14 +140,15 @@ public class ModConfigScreen extends Screen {
         // 绘制列表背景
         context.fill(this.width / 2 - 160, LIST_START_Y - 5, this.width / 2 + 180, LIST_END_Y + 5, 0x44000000);
         
-        // 绘制物品图标
+        // 绘制物品图标 - 调整位置和大小，让图标更明显
         int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         for (int i = 0; i < visibleItems && i + scrollOffset < itemConfigs.size(); i++) {
             ItemConfig config = itemConfigs.get(i + scrollOffset);
             Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
             ItemStack stack = new ItemStack(item);
             int y = LIST_START_Y + i * ITEM_HEIGHT;
-            context.drawItem(stack, this.width / 2 - 155, y + 2);
+            // 调整图标位置，让它更居中且更大
+            context.drawItem(stack, this.width / 2 - 150, y + 1);
         }
         
         // 绘制滚动信息

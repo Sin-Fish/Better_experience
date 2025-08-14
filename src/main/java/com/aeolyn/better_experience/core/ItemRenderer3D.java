@@ -215,6 +215,9 @@ public class ItemRenderer3D {
         boolean isFirstPerson = displayContext.name().contains("FIRST_PERSON");
         ItemConfig.RenderSettings viewConfig = isFirstPerson ? config.getFirstPerson() : config.getThirdPerson();
         
+        // 判断是否为副手
+        boolean isOffhand = displayContext.name().contains("OFFHAND");
+        
         // 应用缩放
         float scale = viewConfig.getScale();
         matrices.scale(scale, scale, scale);
@@ -222,7 +225,7 @@ public class ItemRenderer3D {
         // 应用平移
         matrices.translate(viewConfig.getTranslateX(), viewConfig.getTranslateY(), viewConfig.getTranslateZ());
         
-        // 应用旋转
+        // 应用旋转 - 注意旋转顺序很重要
         if (viewConfig.getRotationX() != 0) {
             matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(viewConfig.getRotationX()));
         }
@@ -231,6 +234,12 @@ public class ItemRenderer3D {
         }
         if (viewConfig.getRotationZ() != 0) {
             matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(viewConfig.getRotationZ()));
+        }
+        
+        // 副手镜像处理 - 在应用完所有旋转后，对X轴进行镜像
+        if (isOffhand) {
+            // 对X轴进行镜像变换
+            matrices.scale(-1.0f, 1.0f, 1.0f);
         }
     }
     
