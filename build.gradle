@@ -59,9 +59,10 @@ java {
 }
 
 jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}"}
-    }
+    // 移除对LICENSE文件的引用，因为文件不存在
+    // from("LICENSE") {
+    //     rename { "${it}_${project.archivesBaseName}"}
+    // }
 }
 
 // configure the maven publication

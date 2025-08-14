@@ -13,11 +13,11 @@ import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.RotationAxis;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import java.util.List;
 
 @Mixin(ItemRenderer.class)
@@ -41,7 +41,7 @@ public class LanternItemRendererMixin {
         try {
             // 检查是否是手持模式
             if (isHandheldMode(displayContext)) {
-                System.out.println("🎯 [Handheld3D] 检测到手持渲染模式!");
+                System.out.println("🎯 [Handheld3D] 检测到手持渲染模式: " + displayContext.name());
                 
                 // 显示检测消息（只显示一次）
                 if (!hasShownMessage) {
@@ -53,7 +53,7 @@ public class LanternItemRendererMixin {
                 }
                 
                 // 检查当前渲染的物品是否是灯笼
-                if (isRenderingLantern(quads)) {
+                if (isRenderingLantern(displayContext)) {
                     System.out.println("🎯 [Handheld3D] 检测到灯笼，开始3D渲染!");
                     
                     // 取消原始渲染
@@ -61,6 +61,8 @@ public class LanternItemRendererMixin {
                     
                     // 渲染3D灯笼
                     render3DLantern(matrices, vertexConsumers, light, overlay, displayContext);
+                } else {
+                    System.out.println("🎯 [Handheld3D] 不是灯笼，跳过3D渲染");
                 }
             }
         } catch (Exception e) {
@@ -72,25 +74,38 @@ public class LanternItemRendererMixin {
     private static boolean isHandheldMode(ItemDisplayContext displayContext) {
         try {
             String contextName = displayContext.name();
-            return contextName.contains("FIRST_PERSON_LEFT_HAND") ||
-                   contextName.contains("FIRST_PERSON_RIGHT_HAND") ||
-                   contextName.contains("THIRD_PERSON_LEFT_HAND") ||
-                   contextName.contains("THIRD_PERSON_RIGHT_HAND");
+            boolean isHandheld = contextName.contains("FIRST_PERSON_LEFT_HAND") ||
+                               contextName.contains("FIRST_PERSON_RIGHT_HAND") ||
+                               contextName.contains("THIRD_PERSON_LEFT_HAND") ||
+                               contextName.contains("THIRD_PERSON_RIGHT_HAND");
+            System.out.println("🎯 [Handheld3D] 渲染上下文: " + contextName + ", 是否手持: " + isHandheld);
+            return isHandheld;
         } catch (Exception e) {
             return false;
         }
     }
     
-    private static boolean isRenderingLantern(List quads) {
-        // 检查当前玩家手持的物品是否是灯笼
+    private static boolean isRenderingLantern(ItemDisplayContext displayContext) {
+        // 根据渲染上下文分别判断主手和副手
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client != null && client.player != null) {
+                String contextName = displayContext.name();
                 ItemStack mainHand = client.player.getMainHandStack();
                 ItemStack offHand = client.player.getOffHandStack();
                 
-                return (mainHand != null && mainHand.isOf(Items.LANTERN)) || 
-                       (offHand != null && offHand.isOf(Items.LANTERN));
+                boolean isMainHand = contextName.contains("RIGHT_HAND");
+                boolean isOffHand = contextName.contains("LEFT_HAND");
+                
+                System.out.println("🎯 [Handheld3D] 主手物品: " + (mainHand != null ? mainHand.getItem().toString() : "空"));
+                System.out.println("🎯 [Handheld3D] 副手物品: " + (offHand != null ? offHand.getItem().toString() : "空"));
+                System.out.println("🎯 [Handheld3D] 当前渲染: " + (isMainHand ? "主手" : "副手"));
+                
+                if (isMainHand) {
+                    return mainHand != null && mainHand.isOf(Items.LANTERN);
+                } else if (isOffHand) {
+                    return offHand != null && offHand.isOf(Items.LANTERN);
+                }
             }
         } catch (Exception e) {
             System.err.println("🎯 [Handheld3D] 灯笼检测错误: " + e.getMessage());
@@ -130,9 +145,12 @@ public class LanternItemRendererMixin {
             matrices.scale(1.2f, 1.2f, 1.2f);  // 增大灯笼尺寸
             matrices.translate(0.0, -0.2, 0.0); // 调整位置
         } else if (contextName.contains("THIRD_PERSON")) {
-            // 第三人称视角 - 调整位置和大小
-            matrices.scale(0.8f, 0.8f, 0.8f);   // 适中的尺寸
-            matrices.translate(0.0, -0.1, 0.0); // 调整位置
+            // 第三人称视角 - 让灯笼挂在手下方，保持竖直
+            matrices.scale(1.0f, 1.0f, 1.0f);   // 适中的尺寸
+            matrices.translate(0.0, 0.7, 0.0); // 调整位置，让灯笼挂在手下方
+            
+            // 添加前倾角度，让灯笼更自然
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90.0f));
         }
     }
 }
