@@ -1,0 +1,20 @@
+{
+  "enabled_items": [
+    "minecraft:lantern",
+    "minecraft:soul_lantern",
+    "minecraft:torch",
+    "minecraft:soul_torch",
+    "minecraft:redstone_torch",
+    "minecraft:campfire"
+  ],
+  "settings": {
+    "enable_debug_logs": true,
+    "default_scale": 1.0,
+    "default_rotation_x": 0.0,
+    "default_rotation_y": 0.0,
+    "default_rotation_z": 0.0,
+    "default_translate_x": 0.0,
+    "default_translate_y": 0.0,
+    "default_translate_z": 0.0
+  }
+}

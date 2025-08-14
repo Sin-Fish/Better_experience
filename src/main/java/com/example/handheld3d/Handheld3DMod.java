@@ -1,5 +1,6 @@
 package com.example.handheld3d;
 
+import com.example.handheld3d.config.ConfigManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.text.Text;
@@ -15,11 +16,14 @@ public class Handheld3DMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // 初始化配置管理器
+        ConfigManager.initialize();
+        
         // This code runs as soon as Minecraft is in a mod-load-ready state.
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
 
-        LOGGER.info("Handheld3D mod 初始化完成! 灯笼3D渲染已启用!");
+        LOGGER.info("Handheld3D mod 初始化完成! 通用3D渲染系统已启用!");
         
         // 注册服务器启动事件，在游戏完全加载后显示消息
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -29,7 +33,7 @@ public class Handheld3DMod implements ModInitializer {
                     Thread.sleep(5000); // 等待5秒
                     if (server.getPlayerManager().getPlayerList().size() > 0) {
                         server.getPlayerManager().getPlayerList().get(0).sendMessage(
-                            Text.literal("🎯 [Handheld3D] 主mod已成功加载!"), false
+                            Text.literal("🎯 [Handheld3D] 通用3D渲染mod已成功加载!"), false
                         );
                     }
                 } catch (Exception e) {

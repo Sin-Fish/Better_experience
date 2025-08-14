@@ -1,0 +1,24 @@
+{
+  "item_id": "minecraft:soul_lantern",
+  "enabled": true,
+  "render_as_block": true,
+  "block_id": "minecraft:soul_lantern",
+  "first_person": {
+    "scale": 1.2,
+    "rotation_x": 0.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": -0.2,
+    "translate_z": 0.0
+  },
+  "third_person": {
+    "scale": 1.0,
+    "rotation_x": 90.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.7,
+    "translate_z": 0.0
+  }
+}
