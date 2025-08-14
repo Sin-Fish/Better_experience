@@ -126,12 +126,24 @@ public class ModConfigScreen extends Screen {
                 // 打开详细配置界面
                 this.client.setScreen(new ItemDetailConfigScreen(configManager, config));
             }
-        ).dimensions(this.width / 2 - 100, y, 200, 20).build();
+        ).dimensions(this.width / 2 - 100, y, 150, 20).build();
+        
+        // 删除按钮
+        ButtonWidget deleteButton = ButtonWidget.builder(
+            Text.literal("×"),
+            button -> {
+                // 删除配置
+                configManager.removeItemConfig(config.getItemId());
+                refreshItemList();
+            }
+        ).dimensions(this.width / 2 + 60, y, 20, 20).build();
         
         this.addDrawableChild(toggleButton);
         this.addDrawableChild(nameButton);
+        this.addDrawableChild(deleteButton);
         itemWidgets.add(toggleButton);
         itemWidgets.add(nameButton);
+        itemWidgets.add(deleteButton);
     }
     
     @Override

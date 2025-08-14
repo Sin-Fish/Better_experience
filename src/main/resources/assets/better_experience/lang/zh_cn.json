@@ -15,6 +15,14 @@
   "better_experience.config.render_type.block": "方块",
   "better_experience.config.create": "创建配置",
   "better_experience.config.back": "返回",
+  "better_experience.config.delete": "删除",
+  "better_experience.config.edit": "编辑",
+  "better_experience.config.scale": "缩放",
+  "better_experience.config.rotation": "旋转",
+  "better_experience.config.translation": "平移",
+  "better_experience.config.first_person": "第一人称",
+  "better_experience.config.third_person": "第三人称",
+  "better_experience.config.scroll": "滚动",
   "key.better_experience.open_config": "打开配置界面",
   "category.better_experience.general": "Better Experience"
 }

@@ -14,5 +14,13 @@
   "better_experience.config.render_type.entity": "Entity",
   "better_experience.config.render_type.block": "Block",
   "better_experience.config.create": "Create Config",
-  "better_experience.config.back": "Back"
+  "better_experience.config.back": "Back",
+  "better_experience.config.delete": "Delete",
+  "better_experience.config.edit": "Edit",
+  "better_experience.config.scale": "Scale",
+  "better_experience.config.rotation": "Rotation",
+  "better_experience.config.translation": "Translation",
+  "better_experience.config.first_person": "First Person",
+  "better_experience.config.third_person": "Third Person",
+  "better_experience.config.scroll": "Scroll"
 }

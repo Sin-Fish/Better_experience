@@ -25,6 +25,11 @@ public class ItemDetailConfigScreen extends Screen {
     private TextFieldWidget translateZField;
     private SliderWidget scaleSlider;
     
+    // 渲染ID编辑字段
+    private TextFieldWidget renderIdField;
+    private ButtonWidget renderTypeButton;
+    private boolean isEntityRender;
+    
     // 视图模式切换
     private boolean isFirstPersonView = true;
     private ButtonWidget viewToggleButton;
@@ -54,6 +59,22 @@ public class ItemDetailConfigScreen extends Screen {
                 updateFieldsFromConfig();
             }
         ).dimensions(centerX - 100, 50, 200, 20).build();
+        
+        // 渲染ID编辑字段
+        renderIdField = new TextFieldWidget(this.textRenderer, centerX - 100, 80, 200, fieldHeight, Text.literal("渲染ID"));
+        renderIdField.setText(config.isRenderAsEntity() ? config.getEntityType() : config.getBlockId());
+        renderIdField.setPlaceholder(Text.literal("输入新的渲染ID"));
+        
+        // 渲染方式切换按钮
+        isEntityRender = config.isRenderAsEntity();
+        renderTypeButton = ButtonWidget.builder(
+            Text.literal("渲染方式: " + (isEntityRender ? "实体" : "方块")),
+            button -> {
+                isEntityRender = !isEntityRender;
+                button.setMessage(Text.literal("渲染方式: " + (isEntityRender ? "实体" : "方块")));
+                updateRenderIdPlaceholder();
+            }
+        ).dimensions(centerX - 100, 110, 200, fieldHeight).build();
         
         // 缩放滑块
         scaleSlider = new SliderWidget(centerX - 100, startY, 200, 20, 
@@ -143,6 +164,8 @@ public class ItemDetailConfigScreen extends Screen {
         
         // 添加所有控件到GUI
         this.addDrawableChild(viewToggleButton);
+        this.addDrawableChild(renderIdField);
+        this.addDrawableChild(renderTypeButton);
         this.addDrawableChild(scaleSlider);
         this.addDrawableChild(rotationXField);
         this.addDrawableChild(rotationYField);
@@ -153,6 +176,20 @@ public class ItemDetailConfigScreen extends Screen {
         
         // 按钮
         this.addDrawableChild(ButtonWidget.builder(Text.literal("保存"), button -> {
+            // 保存渲染ID更改
+            String newRenderId = renderIdField.getText().trim();
+            if (!newRenderId.isEmpty()) {
+                if (isEntityRender) {
+                    config.setEntityType(newRenderId);
+                    config.setRenderAsEntity(true);
+                    config.setRenderAsBlock(false);
+                } else {
+                    config.setBlockId(newRenderId);
+                    config.setRenderAsEntity(false);
+                    config.setRenderAsBlock(true);
+                }
+            }
+            
             configManager.saveConfig(config.getItemId());
             this.close();
         }).dimensions(centerX - 100, this.height - 40, 200, 20).build());
@@ -201,6 +238,13 @@ public class ItemDetailConfigScreen extends Screen {
         translateYField.setText(String.format("%.1f", viewConfig.getTranslateY()));
         translateZField.setText(String.format("%.1f", viewConfig.getTranslateZ()));
     }
+
+    /**
+     * 更新渲染ID字段的占位符
+     */
+    private void updateRenderIdPlaceholder() {
+        renderIdField.setPlaceholder(Text.literal("输入新的渲染ID"));
+    }
     
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -216,20 +260,24 @@ public class ItemDetailConfigScreen extends Screen {
         context.drawItem(stack, this.width / 2 - 10, 25);
         
         // 先绘制标签，确保在控件上方显示
-        context.drawTextWithShadow(this.textRenderer, Text.literal("缩放:"), this.width / 2 - 100, 75, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染ID:"), this.width / 2 - 100, 65, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("渲染方式:"), this.width / 2 - 100, 95, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("缩放:"), this.width / 2 - 100, 125, 0xFFFFFF);
         
-        context.drawTextWithShadow(this.textRenderer, Text.literal("旋转 (度):"), this.width / 2 - 150, 115, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴旋转:"), this.width / 2 - 150, 135, 0xFFFF00);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴旋转:"), this.width / 2 - 50, 135, 0xFFFF00);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴旋转:"), this.width / 2 + 50, 135, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("旋转 (度):"), this.width / 2 - 150, 165, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴旋转:"), this.width / 2 - 150, 185, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴旋转:"), this.width / 2 - 50, 185, 0xFFFF00);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴旋转:"), this.width / 2 + 50, 185, 0xFFFF00);
         
-        context.drawTextWithShadow(this.textRenderer, Text.literal("平移:"), this.width / 2 - 150, 155, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴平移:"), this.width / 2 - 150, 175, 0x00FFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴平移:"), this.width / 2 - 50, 175, 0x00FFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴平移:"), this.width / 2 + 50, 175, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("平移:"), this.width / 2 - 150, 205, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("X轴平移:"), this.width / 2 - 150, 225, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Y轴平移:"), this.width / 2 - 50, 225, 0x00FFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("Z轴平移:"), this.width / 2 + 50, 225, 0x00FFFF);
         
         // 渲染控件
         scaleSlider.render(context, mouseX, mouseY, delta);
+        renderIdField.render(context, mouseX, mouseY, delta);
+        renderTypeButton.render(context, mouseX, mouseY, delta);
         rotationXField.render(context, mouseX, mouseY, delta);
         rotationYField.render(context, mouseX, mouseY, delta);
         rotationZField.render(context, mouseX, mouseY, delta);

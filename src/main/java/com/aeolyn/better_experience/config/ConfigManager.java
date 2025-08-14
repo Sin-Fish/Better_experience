@@ -151,4 +151,21 @@ public class ConfigManager {
             LOGGER.error("添加物品配置失败 " + itemId + ": " + e.getMessage(), e);
         }
     }
+    
+    /**
+     * 删除物品配置
+     */
+    public static void removeItemConfig(String itemId) {
+        try {
+            // 从内存中的配置移除
+            itemConfigs.remove(itemId);
+            
+            // 从启用的物品列表移除
+            itemsConfig.getEnabledItems().remove(itemId);
+            
+            LOGGER.info("成功删除物品配置: {}", itemId);
+        } catch (Exception e) {
+            LOGGER.error("删除物品配置失败 " + itemId + ": " + e.getMessage(), e);
+        }
+    }
 }

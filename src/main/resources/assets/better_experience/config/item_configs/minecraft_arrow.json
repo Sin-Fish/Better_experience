@@ -16,7 +16,7 @@
   "third_person": {
     "scale": 1.5,
     "rotation_x": 0.0,
-    "rotation_y": 90.0,
+    "rotation_y": 180.0,
     "rotation_z": 0.0,
     "translate_x": 0.33,
     "translate_y": 0.0,
