@@ -202,9 +202,13 @@ public class OffHandRestrictionConfigScreen extends Screen {
             }
         );
         
+        // 获取物品的实际显示名称
+        Item item = Registries.ITEM.get(Identifier.of(itemId));
+        String displayName = item != null ? item.getName().getString() : itemId;
+        
         // 物品名称按钮
         ButtonWidget nameButton = ButtonWidget.builder(
-            Text.literal(itemId),
+            Text.literal(displayName),
             button -> {
                 // 可以在这里添加点击物品的详细配置
             }
