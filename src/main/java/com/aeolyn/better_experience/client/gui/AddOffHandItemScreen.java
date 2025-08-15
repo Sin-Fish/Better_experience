@@ -18,14 +18,12 @@ public class AddOffHandItemScreen extends Screen {
     
     private final Screen parentScreen;
     private final ConfigManager configManager;
-    private final OffHandRestrictionConfigScreen.DisplayMode mode;
     private TextFieldWidget itemIdField;
     
-    public AddOffHandItemScreen(Screen parentScreen, ConfigManager configManager, OffHandRestrictionConfigScreen.DisplayMode mode) {
+    public AddOffHandItemScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.translatable("better_experience.config.offhand_restrictions.add_item"));
         this.parentScreen = parentScreen;
         this.configManager = configManager;
-        this.mode = mode;
     }
     
     @Override
@@ -68,21 +66,21 @@ public class AddOffHandItemScreen extends Screen {
         
         OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
         
-        if (mode == OffHandRestrictionConfigScreen.DisplayMode.BLOCK_PLACEMENT_LIST) {
-            List<String> items = new ArrayList<>(config.getBlockPlacement().getAllowedItems());
-            if (!items.contains(itemId)) {
-                items.add(itemId);
-                config.getBlockPlacement().setAllowedItems(items);
-                LOGGER.info("添加方块放置允许物品: {}", itemId);
-            }
-        } else {
-            List<String> items = new ArrayList<>(config.getItemUsage().getAllowedItems());
-            if (!items.contains(itemId)) {
-                items.add(itemId);
-                config.getItemUsage().setAllowedItems(items);
-                LOGGER.info("添加道具使用允许物品: {}", itemId);
-            }
+        // 同时添加到两个列表中
+        List<String> blockItems = new ArrayList<>(config.getBlockPlacement().getAllowedItems());
+        List<String> itemItems = new ArrayList<>(config.getItemUsage().getAllowedItems());
+        
+        if (!blockItems.contains(itemId)) {
+            blockItems.add(itemId);
+            config.getBlockPlacement().setAllowedItems(blockItems);
         }
+        
+        if (!itemItems.contains(itemId)) {
+            itemItems.add(itemId);
+            config.getItemUsage().setAllowedItems(itemItems);
+        }
+        
+        LOGGER.info("添加副手白名单物品: {}", itemId);
         
         // 保存配置
         configManager.updateOffHandRestrictionConfig(config);
@@ -101,9 +99,7 @@ public class AddOffHandItemScreen extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
         
         // 绘制说明文字
-        String description = mode == OffHandRestrictionConfigScreen.DisplayMode.BLOCK_PLACEMENT_LIST ? 
-            "输入要添加到方块放置白名单的物品ID" : "输入要添加到道具使用白名单的物品ID";
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(description), this.width / 2, 40, 0xAAAAAA);
+        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("输入要添加到副手白名单的物品ID"), this.width / 2, 40, 0xAAAAAA);
         
         // 绘制示例
         context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("示例: minecraft:torch"), this.width / 2, 60, 0x888888);

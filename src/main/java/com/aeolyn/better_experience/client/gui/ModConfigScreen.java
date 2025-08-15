@@ -65,21 +65,20 @@ public class ModConfigScreen extends Screen {
         int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         maxScrollOffset = Math.max(0, itemConfigs.size() - visibleItems);
         
-        // 添加返回按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.translatable("better_experience.config.back"), button -> {
-            this.client.setScreen(parentScreen);
-        }).dimensions(this.width / 2 - 100, this.height - 30, 200, 20).build());
-        
         // 添加保存按钮
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("better_experience.config.save"), button -> {
             configManager.saveAllConfigs();
-            this.close();
+        }).dimensions(this.width / 2 - 100, this.height - 90, 200, 20).build());
+        
+        // 添加返回按钮
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("better_experience.config.back"), button -> {
+            this.client.setScreen(parentScreen);
         }).dimensions(this.width / 2 - 100, this.height - 60, 200, 20).build());
         
         // 添加关闭按钮（不保存设置）
         this.addDrawableChild(ButtonWidget.builder(Text.literal("关闭"), button -> {
             this.close();
-        }).dimensions(this.width / 2 - 100, this.height - 90, 200, 20).build());
+        }).dimensions(this.width / 2 - 100, this.height - 30, 200, 20).build());
         
         // 添加新建物品按钮（放在列表下方）
         this.addDrawableChild(ButtonWidget.builder(Text.literal("+ 新建物品"), button -> {

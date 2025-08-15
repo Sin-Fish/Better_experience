@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OffHandRestrictionConfigScreen extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-OffHandConfig");
@@ -35,8 +36,7 @@ public class OffHandRestrictionConfigScreen extends Screen {
     // 当前显示模式
     public enum DisplayMode {
         MAIN_MENU,
-        BLOCK_PLACEMENT_LIST,
-        ITEM_USAGE_LIST
+        WHITELIST
     }
     private DisplayMode currentMode = DisplayMode.MAIN_MENU;
     private List<ClickableWidget> listWidgets;
@@ -56,7 +56,7 @@ public class OffHandRestrictionConfigScreen extends Screen {
         if (currentMode == DisplayMode.MAIN_MENU) {
             initMainMenu();
         } else {
-            initListMode();
+            initWhitelistMode();
         }
     }
     
@@ -81,15 +81,6 @@ public class OffHandRestrictionConfigScreen extends Screen {
             }
         ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
         
-        // 方块放置白名单配置齿轮按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("⚙"),
-            button -> {
-                currentMode = DisplayMode.BLOCK_PLACEMENT_LIST;
-                refreshScreen();
-            }
-        ).dimensions(centerX + buttonWidth / 2 + 5, startY, gearButtonSize, buttonHeight).build());
-        
         // 道具使用限制开关
         this.addDrawableChild(ButtonWidget.builder(
             getToggleText(config.getItemUsage().isEnabled(), "item_usage"),
@@ -103,14 +94,14 @@ public class OffHandRestrictionConfigScreen extends Screen {
             }
         ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
         
-        // 道具使用白名单配置齿轮按钮
+        // 白名单配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("⚙"),
+            Text.literal("白名单 ⚙"),
             button -> {
-                currentMode = DisplayMode.ITEM_USAGE_LIST;
+                currentMode = DisplayMode.WHITELIST;
                 refreshScreen();
             }
-        ).dimensions(centerX + buttonWidth / 2 + 5, startY + spacing, gearButtonSize, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
         
         // 返回按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -121,7 +112,7 @@ public class OffHandRestrictionConfigScreen extends Screen {
         ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build());
     }
     
-    private void initListMode() {
+    private void initWhitelistMode() {
         // 计算最大滚动偏移
         List<String> currentItems = getCurrentItems();
         int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
@@ -140,7 +131,7 @@ public class OffHandRestrictionConfigScreen extends Screen {
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("+ 添加物品"),
             button -> {
-                this.client.setScreen(new AddOffHandItemScreen(this, configManager, currentMode));
+                this.client.setScreen(new AddOffHandItemScreen(this, configManager));
             }
         ).dimensions(this.width / 2 - 100, LIST_END_Y + 10, 200, 20).build());
         
@@ -168,11 +159,11 @@ public class OffHandRestrictionConfigScreen extends Screen {
     }
     
     private List<String> getCurrentItems() {
-        if (currentMode == DisplayMode.BLOCK_PLACEMENT_LIST) {
-            return config.getBlockPlacement().getAllowedItems();
-        } else {
-            return config.getItemUsage().getAllowedItems();
-        }
+        // 统一白名单：合并两个列表，去重
+        List<String> allItems = new ArrayList<>();
+        allItems.addAll(config.getBlockPlacement().getAllowedItems());
+        allItems.addAll(config.getItemUsage().getAllowedItems());
+        return allItems.stream().distinct().collect(Collectors.toList());
     }
     
     private void updateListWidgets() {
@@ -231,15 +222,13 @@ public class OffHandRestrictionConfigScreen extends Screen {
     }
     
     private void removeItem(String itemId) {
-        if (currentMode == DisplayMode.BLOCK_PLACEMENT_LIST) {
-            List<String> items = new ArrayList<>(config.getBlockPlacement().getAllowedItems());
-            items.remove(itemId);
-            config.getBlockPlacement().setAllowedItems(items);
-        } else {
-            List<String> items = new ArrayList<>(config.getItemUsage().getAllowedItems());
-            items.remove(itemId);
-            config.getItemUsage().setAllowedItems(items);
-        }
+        // 从两个列表中同时移除
+        List<String> blockItems = new ArrayList<>(config.getBlockPlacement().getAllowedItems());
+        List<String> itemItems = new ArrayList<>(config.getItemUsage().getAllowedItems());
+        blockItems.remove(itemId);
+        itemItems.remove(itemId);
+        config.getBlockPlacement().setAllowedItems(blockItems);
+        config.getItemUsage().setAllowedItems(itemItems);
         
         // 保存配置
         configManager.updateOffHandRestrictionConfig(config);
@@ -264,9 +253,7 @@ public class OffHandRestrictionConfigScreen extends Screen {
             context.drawCenteredTextWithShadow(this.textRenderer, description, this.width / 2, 40, 0xAAAAAA);
         } else {
             // 绘制列表标题
-            String listTitle = currentMode == DisplayMode.BLOCK_PLACEMENT_LIST ? 
-                "方块放置白名单" : "道具使用白名单";
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(listTitle), this.width / 2, 50, 0xFFFFFF);
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("副手白名单"), this.width / 2, 50, 0xFFFFFF);
             
             // 绘制列表背景
             context.fill(this.width / 2 - 160, LIST_START_Y - 5, this.width / 2 + 180, LIST_END_Y + 5, 0x44000000);
