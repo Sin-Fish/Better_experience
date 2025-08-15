@@ -1,0 +1,52 @@
+{
+  "disable_block_placement": {
+    "enabled": false,
+    "allowed_items": [
+      "minecraft:torch",
+      "minecraft:soul_torch",
+      "minecraft:lantern",
+      "minecraft:soul_lantern",
+      "minecraft:campfire",
+      "minecraft:fire",
+      "minecraft:item_frame",
+      "minecraft:flower_pot",
+      "minecraft:oak_sign",
+      "minecraft:lever",
+      "minecraft:repeater",
+      "minecraft:comparator",
+      "minecraft:redstone_torch",
+      "minecraft:chain",
+      "minecraft:wildflowers",
+      "minecraft:poppy",
+      "minecraft:dandelion",
+      "minecraft:oak_sapling",
+      "minecraft:jungle_sapling",
+      "minecraft:spruce_sapling",
+      "minecraft:dark_oak_sapling",
+      "minecraft:birch_sapling",
+      "minecraft:cherry_sapling",
+      "minecraft:mangrove_propagule",
+      "minecraft:turtle_egg",
+      "minecraft:sniffer_egg"
+    ]
+  },
+  "disable_item_usage": {
+    "enabled": false,
+    "allowed_items": [
+      "minecraft:shield",
+      "minecraft:totem_of_undying",
+      "minecraft:torch",
+      "minecraft:soul_torch",
+      "minecraft:lantern",
+      "minecraft:soul_lantern",
+      "minecraft:campfire",
+      "minecraft:arrow",
+      "minecraft:spectral_arrow",
+      "minecraft:tipped_arrow",
+      "minecraft:minecart",
+      "minecraft:bamboo",
+      "minecraft:firework_rocket",
+      "minecraft:wind_charge"
+    ]
+  }
+}

@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.manager;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.cache.CacheStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -292,5 +293,26 @@ public class ConfigManager {
      */
     public boolean isInitialized() {
         return impl.isInitialized();
+    }
+    
+    /**
+     * 获取副手限制配置
+     */
+    public OffHandRestrictionConfig getOffHandRestrictionConfig() {
+        return impl.getOffHandRestrictionConfig();
+    }
+    
+    /**
+     * 保存副手限制配置
+     */
+    public void saveOffHandRestrictionConfig() {
+        impl.saveOffHandRestrictionConfig();
+    }
+    
+    /**
+     * 更新副手限制配置
+     */
+    public void updateOffHandRestrictionConfig(OffHandRestrictionConfig config) {
+        impl.updateOffHandRestrictionConfig(config);
     }
 }

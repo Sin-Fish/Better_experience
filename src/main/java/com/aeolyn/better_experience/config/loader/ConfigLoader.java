@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.loader;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.exception.ConfigLoadException;
 
 /**
@@ -28,4 +29,9 @@ public interface ConfigLoader {
      * 获取所有可用的物品配置ID
      */
     java.util.Set<String> getAvailableItemConfigs();
+    
+    /**
+     * 加载副手限制配置
+     */
+    OffHandRestrictionConfig loadOffHandRestrictionConfig() throws ConfigLoadException;
 }

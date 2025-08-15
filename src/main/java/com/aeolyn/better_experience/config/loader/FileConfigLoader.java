@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.loader;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.exception.ConfigLoadException;
 import com.aeolyn.better_experience.config.factory.ConfigFactory;
 import com.google.gson.Gson;
@@ -189,5 +190,61 @@ public class FileConfigLoader implements ConfigLoader {
      */
     private Path getConfigPath(String... parts) {
         return Paths.get(configDir, parts);
+    }
+    
+    @Override
+    public OffHandRestrictionConfig loadOffHandRestrictionConfig() throws ConfigLoadException {
+        Path configPath = getConfigPath("offhand_restrictions.json");
+        
+        try {
+            // 如果配置文件不存在，创建默认配置
+            if (!Files.exists(configPath)) {
+                createDefaultOffHandRestrictionConfig(configPath);
+            }
+            
+            // 读取配置文件
+            try (Reader reader = Files.newBufferedReader(configPath)) {
+                OffHandRestrictionConfig config = GSON.fromJson(reader, OffHandRestrictionConfig.class);
+                if (config == null) {
+                    config = new OffHandRestrictionConfig();
+                }
+                LOGGER.info("副手限制配置文件加载成功: {}", configPath);
+                return config;
+            }
+        } catch (Exception e) {
+            LOGGER.error("加载副手限制配置文件失败: " + e.getMessage(), e);
+            throw new ConfigLoadException("Failed to load offhand restriction config from " + configPath, e);
+        }
+    }
+    
+    /**
+     * 创建默认副手限制配置文件
+     */
+    private void createDefaultOffHandRestrictionConfig(Path configPath) throws ConfigLoadException {
+        try {
+            // 确保目录存在
+            Files.createDirectories(configPath.getParent());
+            
+            // 从资源文件读取默认配置
+            try (InputStream resourceStream = getClass().getClassLoader()
+                    .getResourceAsStream("assets/better_experience/config/offhand_restrictions.json")) {
+                
+                if (resourceStream != null) {
+                    // 复制默认配置到配置文件
+                    Files.copy(resourceStream, configPath);
+                    LOGGER.info("创建默认副手限制配置文件: {}", configPath);
+                } else {
+                    // 创建空的默认配置
+                    OffHandRestrictionConfig defaultConfig = new OffHandRestrictionConfig();
+                    try (Writer writer = Files.newBufferedWriter(configPath)) {
+                        GSON.toJson(defaultConfig, writer);
+                    }
+                    LOGGER.info("创建默认副手限制配置文件: {}", configPath);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("创建默认副手限制配置文件失败: " + e.getMessage(), e);
+            throw new ConfigLoadException("Failed to create default offhand restriction config", e);
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.saver;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.exception.ConfigSaveException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -131,5 +132,29 @@ public class FileConfigSaver implements ConfigSaver {
      */
     private Path getConfigPath(String... parts) {
         return Paths.get(configDir, parts);
+    }
+    
+    @Override
+    public void saveOffHandRestrictionConfig(OffHandRestrictionConfig config) throws ConfigSaveException {
+        if (config == null) {
+            throw new ConfigSaveException("OffHandRestrictionConfig cannot be null");
+        }
+        
+        Path configPath = getConfigPath("offhand_restrictions.json");
+        
+        try {
+            // 确保目录存在
+            Files.createDirectories(configPath.getParent());
+            
+            // 保存配置文件
+            try (Writer writer = Files.newBufferedWriter(configPath)) {
+                GSON.toJson(config, writer);
+            }
+            
+            LOGGER.info("副手限制配置文件保存成功: {}", configPath);
+        } catch (Exception e) {
+            LOGGER.error("保存副手限制配置文件失败: " + e.getMessage(), e);
+            throw new ConfigSaveException("Failed to save offhand restriction config to " + configPath, e);
+        }
     }
 }

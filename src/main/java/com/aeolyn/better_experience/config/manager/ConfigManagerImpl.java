@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.manager;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.cache.ConfigCache;
 import com.aeolyn.better_experience.config.cache.MemoryConfigCache;
 import com.aeolyn.better_experience.config.exception.ConfigLoadException;
@@ -371,5 +372,47 @@ public class ConfigManagerImpl {
      */
     public boolean isInitialized() {
         return initialized;
+    }
+    
+    /**
+     * 获取副手限制配置
+     */
+    public OffHandRestrictionConfig getOffHandRestrictionConfig() {
+        ensureInitialized();
+        try {
+            return loader.loadOffHandRestrictionConfig();
+        } catch (Exception e) {
+            LOGGER.error("加载副手限制配置失败: " + e.getMessage(), e);
+            return new OffHandRestrictionConfig(); // 返回默认配置
+        }
+    }
+    
+    /**
+     * 保存副手限制配置
+     */
+    public void saveOffHandRestrictionConfig() {
+        ensureInitialized();
+        try {
+            OffHandRestrictionConfig config = getOffHandRestrictionConfig();
+            saver.saveOffHandRestrictionConfig(config);
+            LOGGER.info("副手限制配置保存成功");
+        } catch (Exception e) {
+            LOGGER.error("保存副手限制配置失败: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to save offhand restriction config", e);
+        }
+    }
+    
+    /**
+     * 更新副手限制配置
+     */
+    public void updateOffHandRestrictionConfig(OffHandRestrictionConfig config) {
+        ensureInitialized();
+        try {
+            saver.saveOffHandRestrictionConfig(config);
+            LOGGER.info("副手限制配置更新成功");
+        } catch (Exception e) {
+            LOGGER.error("更新副手限制配置失败: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to update offhand restriction config", e);
+        }
     }
 }

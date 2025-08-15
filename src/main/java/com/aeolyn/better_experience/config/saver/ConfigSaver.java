@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.config.saver;
 
 import com.aeolyn.better_experience.config.ItemsConfig;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.config.exception.ConfigSaveException;
 
 /**
@@ -28,4 +29,9 @@ public interface ConfigSaver {
      * 检查是否支持保存操作
      */
     boolean isWritable();
+    
+    /**
+     * 保存副手限制配置
+     */
+    void saveOffHandRestrictionConfig(OffHandRestrictionConfig config) throws ConfigSaveException;
 }

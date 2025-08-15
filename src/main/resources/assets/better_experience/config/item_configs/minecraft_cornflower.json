@@ -1,0 +1,25 @@
+{
+  "item_id": "minecraft:cornflower",
+  "enabled": true,
+  "render_as_block": true,
+  "render_as_entity": false,
+  "block_id": "minecraft:cornflower",
+  "first_person": {
+    "scale": 1.0,
+    "rotation_x": 0.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.0,
+    "translate_z": 0.0
+  },
+  "third_person": {
+    "scale": 1.0,
+    "rotation_x": 0.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.0,
+    "translate_z": 0.0
+  }
+}

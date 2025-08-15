@@ -26,7 +26,7 @@ public class BetterExperienceMod implements ModInitializer {
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
 
-        LOGGER.info("Better Experience mod 初始化完成! 通用3D渲染系统已启用!");
+        LOGGER.info("Better Experience mod 初始化完成! 通用3D渲染系统和副手限制系统已启用!");
         
         // 注册服务器启动事件，在游戏完全加载后显示消息
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -39,7 +39,7 @@ public class BetterExperienceMod implements ModInitializer {
                     // 向所有在线玩家发送消息
                     if (server.getPlayerManager().getPlayerList().size() > 0) {
                         server.getPlayerManager().getPlayerList().get(0).sendMessage(
-                            Text.literal("[Better Experience] 通用3D渲染mod已成功加载!"), false
+                            Text.literal("[Better Experience] 通用3D渲染和副手限制mod已成功加载!"), false
                         );
                     }
                 } catch (InterruptedException e) {
