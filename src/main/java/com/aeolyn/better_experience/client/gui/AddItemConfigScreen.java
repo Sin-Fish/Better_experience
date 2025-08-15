@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.config.manager.ConfigManager;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -86,17 +87,24 @@ public class AddItemConfigScreen extends Screen {
             button -> createItemConfig()
         ).dimensions(centerX - fieldWidth/2, startY + spacing * 3, fieldWidth, fieldHeight).build();
         
+        // 导入导出按钮
+        ButtonWidget importExportButton = ButtonWidget.builder(
+            Text.literal("导入导出配置"),
+            button -> this.client.setScreen(new ConfigImportExportScreen(parentScreen, configManager))
+        ).dimensions(centerX - fieldWidth/2, startY + spacing * 4, fieldWidth, fieldHeight).build();
+        
         // 返回按钮
         ButtonWidget backButton = ButtonWidget.builder(
             Text.literal("返回"),
             button -> this.close()
-        ).dimensions(centerX - fieldWidth/2, startY + spacing * 4, fieldWidth, fieldHeight).build();
+        ).dimensions(centerX - fieldWidth/2, startY + spacing * 5, fieldWidth, fieldHeight).build();
         
         // 添加所有控件
         this.addDrawableChild(itemIdField);
         this.addDrawableChild(renderIdField);
         this.addDrawableChild(renderTypeButton);
         this.addDrawableChild(createButton);
+        this.addDrawableChild(importExportButton);
         this.addDrawableChild(backButton);
         
         // 初始化渲染ID提示

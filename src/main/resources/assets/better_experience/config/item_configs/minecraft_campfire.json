@@ -2,6 +2,7 @@
   "item_id": "minecraft:campfire",
   "enabled": true,
   "render_as_block": true,
+  "render_as_entity": false,
   "block_id": "minecraft:campfire",
   "first_person": {
     "scale": 0.8,

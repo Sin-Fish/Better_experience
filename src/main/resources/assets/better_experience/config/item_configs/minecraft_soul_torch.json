@@ -2,6 +2,7 @@
   "item_id": "minecraft:soul_torch",
   "enabled": true,
   "render_as_block": true,
+  "render_as_entity": false,
   "block_id": "minecraft:soul_torch",
   "first_person": {
     "scale": 1.2,

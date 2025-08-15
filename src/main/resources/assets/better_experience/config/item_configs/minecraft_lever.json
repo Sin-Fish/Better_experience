@@ -1,0 +1,25 @@
+{
+  "item_id": "minecraft:lever",
+  "enabled": true,
+  "render_as_block": true,
+  "render_as_entity": false,
+  "block_id": "minecraft:lever",
+  "first_person": {
+    "scale": 1.0,
+    "rotation_x": 45.0,
+    "rotation_y": 0.0,
+    "rotation_z": 0.0,
+    "translate_x": 0.0,
+    "translate_y": 0.5,
+    "translate_z": -0.5
+  },
+  "third_person": {
+    "scale": 1.0,
+    "rotation_x": 0.0,
+    "rotation_y": 180.0,
+    "rotation_z": 0.0,
+    "translate_x": 1.0,
+    "translate_y": -0.3,
+    "translate_z": 1.5
+  }
+}

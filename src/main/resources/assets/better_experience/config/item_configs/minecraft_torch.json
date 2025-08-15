@@ -2,8 +2,9 @@
   "item_id": "minecraft:torch",
   "enabled": true,
   "render_as_block": true,
+  "render_as_entity": false,
   "block_id": "minecraft:torch",
-    "first_person": {
+  "first_person": {
     "scale": 1.2,
     "rotation_x": 0.0,
     "rotation_y": 0.0,

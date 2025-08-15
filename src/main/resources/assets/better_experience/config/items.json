@@ -8,7 +8,30 @@
     "minecraft:campfire",
     "minecraft:arrow",
     "minecraft:spectral_arrow",
-    "minecraft:tipped_arrow"
+    "minecraft:tipped_arrow",
+    "minecraft:minecart",
+    "minecraft:bamboo",
+    "minecraft:firework_rocket",
+    "minecraft:oak_sapling",
+    "minecraft:jungle_sapling",
+    "minecraft:spruce_sapling",
+    "minecraft:dark_oak_sapling",
+    "minecraft:birch_sapling",
+    "minecraft:cherry_sapling",
+    "minecraft:mangrove_propagule",
+    "minecraft:poppy",
+    "minecraft:dandelion",
+    "minecraft:chain",
+    "minecraft:wildflowers",
+    "minecraft:wind_charge",
+    "minecraft:flower_pot",
+    "minecraft:item_frame",
+    "minecraft:oak_sign",
+    "minecraft:lever",
+    "minecraft:repeater",
+    "minecraft:comparator",
+    "minecraft:turtle_egg",
+    "minecraft:sniffer_egg"
   ],
   "settings": {
     "enable_debug_logs": true,
@@ -19,13 +42,5 @@
     "default_translate_x": 0.0,
     "default_translate_y": 0.0,
     "default_translate_z": 0.0
-  },
-  "log_config": {
-    "enable_debug_logs": true,
-    "enable_render_logs": false,
-    "enable_config_logs": true,
-    "enable_gui_logs": false,
-    "enable_mixin_logs": false,
-    "enable_performance_logs": false
   }
 }

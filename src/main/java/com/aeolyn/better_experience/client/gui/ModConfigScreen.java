@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.config.manager.ConfigManager;
 import com.aeolyn.better_experience.config.ItemConfig;
+import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -77,6 +78,11 @@ public class ModConfigScreen extends Screen {
         this.addDrawableChild(ButtonWidget.builder(Text.literal("+ 新建物品"), button -> {
             this.client.setScreen(new AddItemConfigScreen(this, configManager));
         }).dimensions(this.width / 2 - 100, LIST_END_Y + 10, 200, 20).build());
+        
+        // 添加导入导出按钮
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("导入导出配置"), button -> {
+            this.client.setScreen(new ConfigImportExportScreen(this, configManager));
+        }).dimensions(this.width / 2 - 100, LIST_END_Y + 40, 200, 20).build());
         
         // 添加滚动按钮
         this.addDrawableChild(ButtonWidget.builder(Text.literal("↑"), button -> {

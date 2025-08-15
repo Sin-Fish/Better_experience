@@ -108,6 +108,13 @@ public class ConfigManager {
     }
     
     /**
+     * 更新主配置
+     */
+    public void updateItemsConfig(ItemsConfig itemsConfig) {
+        impl.updateItemsConfig(itemsConfig);
+    }
+    
+    /**
      * 删除物品配置
      */
     public void removeItemConfig(String itemId) {

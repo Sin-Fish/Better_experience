@@ -1,25 +1,25 @@
 {
-  "item_id": "minecraft:lantern",
+  "item_id": "minecraft:dark_oak_sapling",
   "enabled": true,
   "render_as_block": true,
   "render_as_entity": false,
-  "block_id": "minecraft:lantern",
+  "block_id": "minecraft:dark_oak_sapling",
   "first_person": {
-    "scale": 1.2,
+    "scale": 1.0,
     "rotation_x": 0.0,
     "rotation_y": 0.0,
     "rotation_z": 0.0,
     "translate_x": 0.0,
-    "translate_y": -0.2,
+    "translate_y": 0.0,
     "translate_z": 0.0
   },
   "third_person": {
     "scale": 1.0,
-    "rotation_x": 80.0,
+    "rotation_x": 0.0,
     "rotation_y": 0.0,
     "rotation_z": 0.0,
     "translate_x": 0.0,
-    "translate_y": 0.3,
-    "translate_z": -0.4
+    "translate_y": 0.15,
+    "translate_z": 0.0
   }
 }

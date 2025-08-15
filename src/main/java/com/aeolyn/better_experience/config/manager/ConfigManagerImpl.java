@@ -168,6 +168,34 @@ public class ConfigManagerImpl {
     }
     
     /**
+     * 更新主配置
+     */
+    public void updateItemsConfig(ItemsConfig itemsConfig) {
+        ensureInitialized();
+        
+        try {
+            // 验证主配置
+            ValidationResult validation = validator.validate(itemsConfig);
+            if (!validation.isValid()) {
+                LOGGER.error("主配置验证失败: {}", validation.getErrors());
+                throw new IllegalArgumentException("Invalid main config: " + validation.getErrors());
+            }
+            
+            // 保存主配置
+            saver.saveItemsConfig(itemsConfig);
+            
+            // 重新初始化缓存
+            initializeCache(itemsConfig);
+            
+            LOGGER.info("主配置更新成功");
+            
+        } catch (Exception e) {
+            LOGGER.error("更新主配置失败: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to update main config", e);
+        }
+    }
+    
+    /**
      * 更新物品配置
      */
     public void updateItemConfig(String itemId, ItemConfig config) {
