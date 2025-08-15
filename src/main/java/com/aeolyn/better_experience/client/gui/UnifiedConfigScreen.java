@@ -29,12 +29,12 @@ public class UnifiedConfigScreen extends Screen {
         int spacing = 30;
         
         // 3D渲染配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.translatable("better_experience.config.3d_rendering"), 
-            button -> {
-                this.client.setScreen(new ModConfigScreen(configManager));
-            }
-        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
+                       this.addDrawableChild(ButtonWidget.builder(
+                   Text.translatable("better_experience.config.3d_rendering"),
+                   button -> {
+                       this.client.setScreen(new ModConfigScreen(this, configManager));
+                   }
+               ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
         
         // 副手限制配置按钮
         this.addDrawableChild(ButtonWidget.builder(
