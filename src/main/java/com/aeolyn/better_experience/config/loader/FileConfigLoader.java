@@ -208,6 +208,10 @@ public class FileConfigLoader implements ConfigLoader {
                 if (config == null) {
                     config = new OffHandRestrictionConfig();
                 }
+                
+                // 执行配置迁移（从旧格式到新格式）
+                config.migrateFromLegacyFormat();
+                
                 LOGGER.info("副手限制配置文件加载成功: {}", configPath);
                 return config;
             }

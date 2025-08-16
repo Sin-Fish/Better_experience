@@ -27,6 +27,8 @@
   "better_experience.config.offhand_restrictions.block_placement.disabled": "方块放置限制: 已禁用",
   "better_experience.config.offhand_restrictions.item_usage.enabled": "道具使用限制: 已启用",
   "better_experience.config.offhand_restrictions.item_usage.disabled": "道具使用限制: 已禁用",
+  "better_experience.config.offhand_restrictions.offhand_restriction.enabled": "副手限制: 已启用",
+  "better_experience.config.offhand_restrictions.offhand_restriction.disabled": "副手限制: 已禁用",
   "better_experience.config.offhand_restrictions.block_whitelist": "方块放置白名单配置",
   "better_experience.config.offhand_restrictions.item_whitelist": "道具使用白名单配置",
   "better_experience.config.offhand_restrictions.description": "配置副手限制功能",
@@ -36,7 +38,6 @@
   "better_experience.config.render_type.entity": "实体",
   "better_experience.config.render_type.block": "方块",
   "better_experience.config.create": "创建配置",
-  "better_experience.config.back": "返回",
   "better_experience.config.delete": "删除",
   "better_experience.config.edit": "编辑",
   "better_experience.config.scale": "缩放",
@@ -49,7 +50,6 @@
   "better_experience.config.confirm_delete.message": "确定要删除物品配置吗？",
   "better_experience.config.confirm_delete.confirm": "确认删除",
   "better_experience.config.confirm_delete.cancel": "取消",
-  "better_experience.config.close": "关闭",
   "key.better_experience.open_config": "打开配置界面",
   "category.better_experience.general": "Better Experience"
 }

@@ -1,6 +1,6 @@
 # Better Experience Mod
 
-一个为Minecraft 1.21.6设计的Fabric mod，提供多种游戏体验优化功能，包括3D手持物品渲染等。
+一个为Minecraft 1.21.x设计的Fabric mod，提供多种游戏体验优化功能，包括3D手持物品渲染等。
 
 ## 🎯 当前状态
 
@@ -16,7 +16,7 @@
 - **日志系统** - 详细的调试日志输出
 
 ### 🔧 技术实现
-- **Minecraft版本**: 1.21.6
+- **Minecraft版本**: 1.21.x
 - **Fabric Loader**: 0.16.13
 - **Fabric API**: 0.128.1+1.21.6
 - **Java版本**: 17+

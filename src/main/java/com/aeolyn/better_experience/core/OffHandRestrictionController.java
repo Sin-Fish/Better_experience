@@ -42,12 +42,12 @@ public class OffHandRestrictionController {
             ConfigManager configManager = ConfigManager.getInstance();
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
-            if (config == null || !config.getBlockPlacement().isEnabled()) {
+            if (config == null || !config.isEnabled()) {
                 return true; // 未启用限制，允许使用
             }
             
             String itemId = Registries.ITEM.getId(item).toString();
-            boolean isAllowed = config.getBlockPlacement().isItemAllowed(itemId);
+            boolean isAllowed = config.isItemAllowed(itemId);
             
             if (!isAllowed) {
                 LOGGER.debug("副手方块放置被阻止: {}", itemId);
@@ -70,12 +70,12 @@ public class OffHandRestrictionController {
             ConfigManager configManager = ConfigManager.getInstance();
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
-            if (config == null || !config.getItemUsage().isEnabled()) {
+            if (config == null || !config.isEnabled()) {
                 return true; // 未启用限制，允许使用
             }
             
             String itemId = Registries.ITEM.getId(item).toString();
-            boolean isAllowed = config.getItemUsage().isItemAllowed(itemId);
+            boolean isAllowed = config.isItemAllowed(itemId);
             
             if (!isAllowed) {
                 LOGGER.debug("副手道具使用被阻止: {}", itemId);
@@ -89,78 +89,77 @@ public class OffHandRestrictionController {
     }
     
     /**
-     * 添加允许的方块放置物品
+     * 添加允许的副手物品
      * @param itemId 物品ID
      */
+    public void addAllowedItem(String itemId) {
+        try {
+            ConfigManager configManager = ConfigManager.getInstance();
+            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
+            
+            if (config != null) {
+                config.addAllowedItem(itemId);
+                configManager.saveOffHandRestrictionConfig();
+                LOGGER.info("已添加允许的副手物品: {}", itemId);
+            }
+        } catch (Exception e) {
+            LOGGER.error("添加允许的副手物品时发生错误: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 移除允许的副手物品
+     * @param itemId 物品ID
+     */
+    public void removeAllowedItem(String itemId) {
+        try {
+            ConfigManager configManager = ConfigManager.getInstance();
+            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
+            
+            if (config != null) {
+                config.removeAllowedItem(itemId);
+                configManager.saveOffHandRestrictionConfig();
+                LOGGER.info("已移除允许的副手物品: {}", itemId);
+            }
+        } catch (Exception e) {
+            LOGGER.error("移除允许的副手物品时发生错误: " + e.getMessage(), e);
+        }
+    }
+    
+    // 向后兼容方法 - 保持API兼容性
+    /**
+     * 添加允许的方块放置物品（向后兼容）
+     * @deprecated 使用 addAllowedItem(String itemId)
+     */
+    @Deprecated
     public void addAllowedBlockPlacementItem(String itemId) {
-        try {
-            ConfigManager configManager = ConfigManager.getInstance();
-            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
-            
-            if (config != null) {
-                config.getBlockPlacement().addAllowedItem(itemId);
-                configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已添加允许的副手方块放置物品: {}", itemId);
-            }
-        } catch (Exception e) {
-            LOGGER.error("添加允许的副手方块放置物品时发生错误: " + e.getMessage(), e);
-        }
+        addAllowedItem(itemId);
     }
     
     /**
-     * 添加允许的道具使用物品
-     * @param itemId 物品ID
+     * 添加允许的道具使用物品（向后兼容）
+     * @deprecated 使用 addAllowedItem(String itemId)
      */
+    @Deprecated
     public void addAllowedItemUsageItem(String itemId) {
-        try {
-            ConfigManager configManager = ConfigManager.getInstance();
-            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
-            
-            if (config != null) {
-                config.getItemUsage().addAllowedItem(itemId);
-                configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已添加允许的副手道具使用物品: {}", itemId);
-            }
-        } catch (Exception e) {
-            LOGGER.error("添加允许的副手道具使用物品时发生错误: " + e.getMessage(), e);
-        }
+        addAllowedItem(itemId);
     }
     
     /**
-     * 移除允许的方块放置物品
-     * @param itemId 物品ID
+     * 移除允许的方块放置物品（向后兼容）
+     * @deprecated 使用 removeAllowedItem(String itemId)
      */
+    @Deprecated
     public void removeAllowedBlockPlacementItem(String itemId) {
-        try {
-            ConfigManager configManager = ConfigManager.getInstance();
-            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
-            
-            if (config != null) {
-                config.getBlockPlacement().removeAllowedItem(itemId);
-                configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已移除允许的副手方块放置物品: {}", itemId);
-            }
-        } catch (Exception e) {
-            LOGGER.error("移除允许的副手方块放置物品时发生错误: " + e.getMessage(), e);
-        }
+        removeAllowedItem(itemId);
     }
     
     /**
-     * 移除允许的道具使用物品
-     * @param itemId 物品ID
+     * 移除允许的道具使用物品（向后兼容）
+     * @deprecated 使用 removeAllowedItem(String itemId)
      */
+    @Deprecated
     public void removeAllowedItemUsageItem(String itemId) {
-        try {
-            ConfigManager configManager = ConfigManager.getInstance();
-            OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
-            
-            if (config != null) {
-                config.getItemUsage().removeAllowedItem(itemId);
-                configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已移除允许的副手道具使用物品: {}", itemId);
-            }
-        } catch (Exception e) {
-            LOGGER.error("移除允许的副手道具使用物品时发生错误: " + e.getMessage(), e);
-        }
+        removeAllowedItem(itemId);
     }
 }
