@@ -1,6 +1,7 @@
 package com.aeolyn.better_experience.client.gui;
 
-import com.aeolyn.better_experience.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;

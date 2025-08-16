@@ -1,7 +1,7 @@
 package com.aeolyn.better_experience.client.command;
 
 import com.aeolyn.better_experience.client.gui.UnifiedConfigScreen;
-import com.aeolyn.better_experience.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
