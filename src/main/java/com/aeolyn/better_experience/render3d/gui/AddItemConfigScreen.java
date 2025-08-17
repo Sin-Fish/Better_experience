@@ -4,6 +4,7 @@ import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
 import com.aeolyn.better_experience.client.gui.ModConfigScreen;
+import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -28,7 +29,7 @@ import net.minecraft.entity.projectile.ArrowEntity;
 public class AddItemConfigScreen extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-AddItemScreen");
     
-    private final ModConfigScreen parentScreen;
+    private final Screen parentScreen;
     private final ConfigManager configManager;
     
     private TextFieldWidget itemIdField;
@@ -38,7 +39,7 @@ public class AddItemConfigScreen extends Screen {
     private String errorMessage = "";
     private int errorMessageTicks = 0;
     
-    public AddItemConfigScreen(ModConfigScreen parentScreen, ConfigManager configManager) {
+    public AddItemConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.literal("新建物品配置"));
         this.parentScreen = parentScreen;
         this.configManager = configManager;
@@ -259,7 +260,11 @@ public class AddItemConfigScreen extends Screen {
             LOGGER.info("成功创建物品配置: {}", itemId);
             // 返回主界面并刷新列表
             this.close();
-            parentScreen.refreshItemList();
+            if (parentScreen instanceof Render3DConfigScreen) {
+                ((Render3DConfigScreen) parentScreen).refreshItemList();
+            } else if (parentScreen instanceof ModConfigScreen) {
+                ((ModConfigScreen) parentScreen).refreshItemList();
+            }
         } else {
             showError("创建配置失败，请检查输入是否正确");
         }

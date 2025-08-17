@@ -15,7 +15,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class ItemDetailConfigScreen extends Screen {
-    private final ModConfigScreen parentScreen;
+    private final Screen parentScreen;
     private final ConfigManager configManager;
     private final ItemConfig config;
     
@@ -36,7 +36,7 @@ public class ItemDetailConfigScreen extends Screen {
     private boolean isFirstPersonView = true;
     private ButtonWidget viewToggleButton;
     
-    public ItemDetailConfigScreen(ModConfigScreen parentScreen, ConfigManager configManager, ItemConfig config) {
+    public ItemDetailConfigScreen(Screen parentScreen, ConfigManager configManager, ItemConfig config) {
         super(Text.literal("配置: " + config.getItemId()));
         this.parentScreen = parentScreen;
         this.configManager = configManager;

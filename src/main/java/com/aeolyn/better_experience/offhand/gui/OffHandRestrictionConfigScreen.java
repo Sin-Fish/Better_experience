@@ -8,6 +8,7 @@ import com.aeolyn.better_experience.client.gui.BaseConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -25,13 +26,20 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     
     private OffHandRestrictionConfig config;
     
+    // 滚动相关
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+    private static final int ITEM_HEIGHT = 25;
+    private static final int LIST_START_Y = 80;
+    private static final int LIST_END_Y = 200;
+    
     // 当前显示模式
     public enum DisplayMode {
         MAIN_MENU,
         WHITELIST
     }
     private DisplayMode currentMode = DisplayMode.MAIN_MENU;
-    private List<ButtonWidget> listWidgets;
+    private List<ClickableWidget> listWidgets;
     
     public OffHandRestrictionConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.translatable("better_experience.config.offhand_restrictions.title"), parentScreen, configManager);
@@ -107,14 +115,15 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
                 config.setEnabled(!config.isEnabled());
                 button.setMessage(getToggleText(config.isEnabled(), "offhand_restriction"));
                 // 立即保存配置
-                saveData();
-                LogUtil.info(LogUtil.MODULE_OFFHAND, "副手限制已{}", config.isEnabled() ? "启用" : "禁用");
+                configManager.updateOffHandRestrictionConfig(config);
+                configManager.saveOffHandRestrictionConfig();
+                LogUtil.info(LogUtil.MODULE_OFFHAND, "副手限制{}", config.isEnabled() ? "启用" : "禁用");
             }
         ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
         
         // 白名单配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("白名单 ⚙"),
+            Text.literal("白名单配置"),
             button -> {
                 currentMode = DisplayMode.WHITELIST;
                 refreshScreen();
@@ -122,24 +131,7 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
     }
     
-    private void renderMainMenu(DrawContext context) {
-        // 绘制说明文字
-        Text description = Text.translatable("better_experience.config.offhand_restrictions.description");
-        renderCenteredText(context, description.getString(), 40, 0xAAAAAA);
-    }
-    
-    // ==================== 白名单模式 ====================
-    
     private void addWhitelistButtons() {
-        // 添加返回按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.translatable("better_experience.config.back"),
-            button -> {
-                currentMode = DisplayMode.MAIN_MENU;
-                refreshScreen();
-            }
-        ).dimensions(getCenterX() - 100, this.height - 30, 200, 20).build());
-        
         // 添加新建物品按钮
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("+ 添加物品"),
@@ -153,83 +145,60 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     }
     
     private void setupWhitelistScroll() {
+        // 计算最大滚动偏移量
         List<String> currentItems = getCurrentItems();
-        setupScrollableList(currentItems);
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        maxScrollOffset = Math.max(0, currentItems.size() - visibleItems);
+        
         updateListWidgets();
-    }
-    
-    private void renderWhitelistMode(DrawContext context) {
-        // 绘制列表标题
-        renderCenteredText(context, "副手白名单", 50, 0xFFFFFF);
-        
-        // 渲染物品列表
-        renderItemList(context);
-    }
-    
-    private void renderItemList(DrawContext context) {
-        List<String> currentItems = getCurrentItems();
-        renderScrollableList(context, currentItems, LIST_START_Y, LIST_END_Y);
-    }
-    
-    @Override
-    protected void renderListItem(DrawContext context, Object item, int y) {
-        if (item instanceof String) {
-            renderItemEntry(context, (String) item, y);
-        }
-    }
-    
-    private void renderItemEntry(DrawContext context, String itemId, int y) {
-        // 渲染物品图标
-        renderItemIcon(context, itemId, y);
-        
-        // 渲染物品名称
-        renderItemName(context, itemId, y);
-    }
-    
-    private void renderItemIcon(DrawContext context, String itemId, int y) {
-        Item item = Registries.ITEM.get(Identifier.of(itemId));
-        if (item != null) {
-            ItemStack stack = new ItemStack(item);
-            // 正常显示
-            context.drawItem(stack, getCenterX() - 100, y + 2);
-        }
-    }
-    
-    private void renderItemName(DrawContext context, String itemId, int y) {
-        Item item = Registries.ITEM.get(Identifier.of(itemId));
-        String displayName = item != null ? item.getName().getString() : itemId;
-        context.drawTextWithShadow(this.textRenderer, Text.literal(displayName), 
-            getCenterX() - 70, y + 5, 0xFFFFFF);
     }
     
     private void addScrollButtons() {
         // 向上滚动按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("↑"), button -> {
-            if (scrollOffset > 0) {
-                scrollOffset--;
-                updateListWidgets();
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↑"),
+            button -> {
+                if (scrollOffset > 0) {
+                    scrollOffset--;
+                    updateListWidgets();
+                }
             }
-        }).dimensions(getCenterX() + 160, LIST_START_Y, 20, 20).build());
+        ).dimensions(getCenterX() + 160, LIST_START_Y, 20, 20).build());
         
         // 向下滚动按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("↓"), button -> {
-            if (scrollOffset < maxScrollOffset) {
-                scrollOffset++;
-                updateListWidgets();
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↓"),
+            button -> {
+                if (scrollOffset < maxScrollOffset) {
+                    scrollOffset++;
+                    updateListWidgets();
+                }
             }
-        }).dimensions(getCenterX() + 160, LIST_END_Y - 20, 20, 20).build());
+        ).dimensions(getCenterX() + 160, LIST_END_Y - 20, 20, 20).build());
+    }
+    
+    private void refreshScreen() {
+        // 清除所有控件并重新初始化
+        this.clearAndInit();
+    }
+    
+    private List<String> getCurrentItems() {
+        // 使用统一的白名单
+        List<String> items = config.getAllowedItems();
+        LogUtil.debug(LogUtil.MODULE_OFFHAND, "当前白名单物品数量: {}, 物品: {}", items.size(), items);
+        return items;
     }
     
     private void updateListWidgets() {
         // 清除现有的列表控件
-        for (ButtonWidget widget : listWidgets) {
+        for (ClickableWidget widget : listWidgets) {
             this.remove(widget);
         }
         listWidgets.clear();
         
         // 添加可见的物品控件
         List<String> currentItems = getCurrentItems();
-        int visibleItems = getVisibleItemCount();
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         
         // 计算最大滚动偏移量
         maxScrollOffset = Math.max(0, currentItems.size() - visibleItems);
@@ -247,6 +216,27 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     }
     
     private void addListItem(String itemId, int y) {
+        // 物品图标按钮
+        ItemIconButton iconButton = new ItemIconButton(
+            getCenterX() - 100, y, 20, 20,
+            itemId, true, // 白名单中的物品都是启用的
+            button -> {
+                // 可以在这里添加点击物品的详细配置
+            }
+        );
+        
+        // 获取物品的实际显示名称
+        Item item = Registries.ITEM.get(Identifier.of(itemId));
+        String displayName = item != null ? item.getName().getString() : itemId;
+        
+        // 物品名称按钮
+        ButtonWidget nameButton = ButtonWidget.builder(
+            Text.literal(displayName),
+            button -> {
+                // 可以在这里添加点击物品的详细配置
+            }
+        ).dimensions(getCenterX() - 70, y, 120, 20).build();
+        
         // 删除按钮
         ButtonWidget deleteButton = ButtonWidget.builder(
             Text.literal("×"),
@@ -255,7 +245,11 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
             }
         ).dimensions(getCenterX() + 60, y, 20, 20).build();
         
+        this.addDrawableChild(iconButton);
+        this.addDrawableChild(nameButton);
         this.addDrawableChild(deleteButton);
+        listWidgets.add(iconButton);
+        listWidgets.add(nameButton);
         listWidgets.add(deleteButton);
     }
     
@@ -275,40 +269,108 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         }
     }
     
+    // ==================== 渲染方法 ====================
+    
+    private void renderMainMenu(DrawContext context) {
+        renderCenteredText(context, "副手限制配置", 40, 0xFFFFFF);
+        renderCenteredText(context, "管理副手物品使用限制", 60, 0xCCCCCC);
+    }
+    
+    private void renderWhitelistMode(DrawContext context) {
+        // 渲染列表背景
+        context.fill(getCenterX() - 160, LIST_START_Y - 5, getCenterX() + 180, LIST_END_Y + 5, 0x44000000);
+        
+        // 渲染滚动信息
+        if (maxScrollOffset > 0) {
+            String scrollInfo = String.format("滚动: %d/%d", scrollOffset + 1, maxScrollOffset + 1);
+            context.drawTextWithShadow(this.textRenderer, Text.literal(scrollInfo),
+                getCenterX() + 160, LIST_START_Y + 10, 0xFFFFFF);
+        }
+        
+        renderCenteredText(context, "白名单配置", 40, 0xFFFFFF);
+        renderCenteredText(context, "管理允许在副手使用的物品", 60, 0xCCCCCC);
+    }
+    
+    // ==================== 鼠标滚动处理 ====================
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (currentMode == DisplayMode.WHITELIST &&
+            mouseX >= getCenterX() - 160 && mouseX <= getCenterX() + 180 &&
+            mouseY >= LIST_START_Y && mouseY <= LIST_END_Y) {
+            if (verticalAmount > 0 && scrollOffset > 0) {
+                scrollOffset--;
+                updateListWidgets();
+                return true;
+            } else if (verticalAmount < 0 && scrollOffset < maxScrollOffset) {
+                scrollOffset++;
+                updateListWidgets();
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+    
     // ==================== 辅助方法 ====================
     
-    private void refreshScreen() {
-        // 清除所有控件并重新初始化
-        this.clearAndInit();
-    }
-    
-    private List<String> getCurrentItems() {
-        // 使用统一的白名单
-        List<String> items = config.getAllowedItems();
-        LogUtil.debug(LogUtil.MODULE_OFFHAND, "当前白名单物品数量: {}, 物品: {}", items.size(), items);
-        return items;
-    }
-    
-    private Text getToggleText(boolean enabled, String type) {
-        String key = enabled ? "enabled" : "disabled";
-        return Text.translatable("better_experience.config.offhand_restrictions." + type + "." + key);
-    }
-    
-    // ==================== 公共方法 ====================
-    
-    /**
-     * 获取当前模式，供添加物品界面使用
-     */
-    public DisplayMode getCurrentMode() {
-        return currentMode;
+    private Text getToggleText(boolean enabled, String key) {
+        return Text.literal(enabled ? "✓ " + key : "✗ " + key);
     }
     
     /**
-     * 刷新物品列表，供添加物品界面使用
+     * 获取界面名称
      */
-    public void refreshItemList() {
-        if (currentMode == DisplayMode.WHITELIST) {
-            updateListWidgets();
+    @Override
+    protected String getScreenName() {
+        return "OffHandRestrictionConfigScreen";
+    }
+    
+    // ==================== 自定义物品图标按钮类 ====================
+    
+    private static class ItemIconButton extends ButtonWidget {
+        private final String itemId;
+        private boolean enabled;
+        
+        public ItemIconButton(int x, int y, int width, int height, String itemId, boolean enabled, PressAction onPress) {
+            super(x, y, width, height, Text.literal(""), onPress, DEFAULT_NARRATION_SUPPLIER);
+            this.itemId = itemId;
+            this.enabled = enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+        
+        @Override
+        public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+            // 绘制按钮背景
+            context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44000000);
+            
+            // 绘制物品图标
+            Item item = Registries.ITEM.get(Identifier.of(itemId));
+            if (item != null) {
+                ItemStack stack = new ItemStack(item);
+                // 根据启用状态设置不同的渲染参数
+                if (enabled) {
+                    // 正常显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2);
+                } else {
+                    // 变暗显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2, 0x88888888);
+                }
+            }
+            
+            // 绘制边框
+            if (this.isHovered()) {
+                context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44FFFFFF);
+            }
+            
+            // 绘制状态指示器（小圆点）
+            if (enabled) {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFF00FF00); // 绿色
+            } else {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFFFF0000); // 红色
+            }
         }
     }
 }

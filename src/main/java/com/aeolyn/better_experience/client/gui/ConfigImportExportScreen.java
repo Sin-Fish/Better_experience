@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.config.manager.ConfigImportExportManager;
+import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -19,7 +20,7 @@ import java.util.List;
 public class ConfigImportExportScreen extends Screen {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-ImportExportScreen");
     
-    private final ModConfigScreen parentScreen;
+    private final Screen parentScreen;
     private final ConfigManager configManager;
     
     private TextFieldWidget exportPathField;
@@ -36,7 +37,7 @@ public class ConfigImportExportScreen extends Screen {
     private ConfigImportExportManager.ValidationResult validationResult = null;
     private boolean showValidationDetails = false;
     
-    public ConfigImportExportScreen(ModConfigScreen parentScreen, ConfigManager configManager) {
+    public ConfigImportExportScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.literal("配置导入导出"));
         this.parentScreen = parentScreen;
         this.configManager = configManager;
@@ -162,7 +163,11 @@ public class ConfigImportExportScreen extends Screen {
                 
                 // 刷新父界面的物品列表
                 if (parentScreen != null) {
-                    parentScreen.refreshItemList();
+                    if (parentScreen instanceof Render3DConfigScreen) {
+                        ((Render3DConfigScreen) parentScreen).refreshItemList();
+                    } else if (parentScreen instanceof ModConfigScreen) {
+                        ((ModConfigScreen) parentScreen).refreshItemList();
+                    }
                 }
                 
                 LOGGER.info("配置导入完成，成功: {}, 失败: {}", result.getTotalImported(), result.getTotalFailed());

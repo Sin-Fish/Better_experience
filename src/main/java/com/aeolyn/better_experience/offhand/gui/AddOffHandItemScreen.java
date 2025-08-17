@@ -142,7 +142,7 @@ public class AddOffHandItemScreen extends Screen {
             // 返回父界面并刷新列表
             this.client.setScreen(parentScreen);
             if (parentScreen instanceof OffHandRestrictionConfigScreen) {
-                ((OffHandRestrictionConfigScreen) parentScreen).refreshItemList();
+                // 父界面会自动重新初始化
             }
         } catch (Exception e) {
             LOGGER.error("保存副手限制配置失败: " + e.getMessage(), e);

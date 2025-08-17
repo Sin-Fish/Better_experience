@@ -9,6 +9,7 @@ import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -26,7 +27,14 @@ import java.util.Map;
 public class Render3DConfigScreen extends BaseConfigScreen {
     
     private final List<ItemConfig> itemConfigs;
-    private final List<ButtonWidget> itemWidgets;
+    private final List<ClickableWidget> itemWidgets;
+    
+    // 滚动相关
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+    private static final int ITEM_HEIGHT = 30;
+    private static final int LIST_START_Y = 50;
+    private static final int LIST_END_Y = 200;
     
     public Render3DConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.translatable("better_experience.config.render3d.title"), parentScreen, configManager);
@@ -58,17 +66,20 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void renderCustomContent(DrawContext context) {
-        // 渲染物品列表
-        renderItemConfigs(context);
+        // 渲染列表背景
+        context.fill(getCenterX() - 160, LIST_START_Y - 5, getCenterX() + 180, LIST_END_Y + 5, 0x44000000);
         
-        // 渲染说明文字
-        renderDescription(context);
+        // 渲染滚动信息
+        if (maxScrollOffset > 0) {
+            String scrollInfo = String.format("滚动: %d/%d", scrollOffset + 1, maxScrollOffset + 1);
+            context.drawTextWithShadow(this.textRenderer, Text.literal(scrollInfo),
+                getCenterX() + 160, LIST_START_Y + 10, 0xFFFFFF);
+        }
     }
     
     @Override
     protected void onAddClicked() {
-        // 暂时使用原来的ModConfigScreen作为父界面
-        this.client.setScreen(new AddItemConfigScreen((ModConfigScreen) this.parentScreen, configManager));
+        this.client.setScreen(new AddItemConfigScreen(this, configManager));
     }
     
     @Override
@@ -90,7 +101,7 @@ public class Render3DConfigScreen extends BaseConfigScreen {
         // 添加导入导出按钮
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("导入导出配置"), 
-            button -> this.client.setScreen(new ConfigImportExportScreen((ModConfigScreen) this.parentScreen, configManager))
+            button -> this.client.setScreen(new ConfigImportExportScreen(this, configManager))
         ).dimensions(getCenterX() - 100, LIST_END_Y + 40, 200, 20).build());
         
         // 添加滚动按钮
@@ -99,74 +110,11 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void setupScrollableList() {
-        setupScrollableList(itemConfigs);
+        // 计算最大滚动偏移量
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        maxScrollOffset = Math.max(0, itemConfigs.size() - visibleItems);
+        
         updateItemWidgets();
-    }
-    
-    // ==================== 渲染方法 ====================
-    
-    private void renderItemConfigs(DrawContext context) {
-        renderScrollableList(context, itemConfigs, LIST_START_Y, LIST_END_Y);
-    }
-    
-    @Override
-    protected void renderListItem(DrawContext context, Object item, int y) {
-        if (item instanceof ItemConfig) {
-            renderItemConfigEntry(context, (ItemConfig) item, y);
-        }
-    }
-    
-    private void renderItemConfigEntry(DrawContext context, ItemConfig config, int y) {
-        // 渲染物品图标
-        renderItemIcon(context, config, y);
-        
-        // 渲染物品名称
-        renderItemName(context, config, y);
-        
-        // 渲染启用状态
-        renderEnabledStatus(context, config, y);
-    }
-    
-    private void renderItemIcon(DrawContext context, ItemConfig config, int y) {
-        // 绘制物品图标
-        Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
-        if (item != null) {
-            ItemStack stack = new ItemStack(item);
-            // 根据启用状态设置不同的渲染参数
-            if (config.isEnabled()) {
-                // 正常显示
-                context.drawItem(stack, getCenterX() - 100, y + 2);
-            } else {
-                // 变暗显示
-                context.drawItem(stack, getCenterX() - 100, y + 2, 0x88888888);
-            }
-        }
-        
-        // 绘制状态指示器（小圆点）
-        if (config.isEnabled()) {
-            context.fill(getCenterX() - 80, y + 2, getCenterX() - 78, y + 4, 0xFF00FF00); // 绿色
-        } else {
-            context.fill(getCenterX() - 80, y + 2, getCenterX() - 78, y + 4, 0xFFFF0000); // 红色
-        }
-    }
-    
-    private void renderItemName(DrawContext context, ItemConfig config, int y) {
-        Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
-        String displayName = item != null ? item.getName().getString() : config.getItemId();
-        context.drawTextWithShadow(this.textRenderer, Text.literal(displayName), 
-            getCenterX() - 70, y + 5, 0xFFFFFF);
-    }
-    
-    private void renderEnabledStatus(DrawContext context, ItemConfig config, int y) {
-        String status = config.isEnabled() ? "启用" : "禁用";
-        int color = config.isEnabled() ? 0xFF00FF00 : 0xFFFF0000;
-        context.drawTextWithShadow(this.textRenderer, Text.literal(status), 
-            getCenterX() + 50, y + 5, color);
-    }
-    
-    private void renderDescription(DrawContext context) {
-        renderCenteredText(context, "3D渲染配置 - 管理物品的3D渲染设置", 250, 0xFFFFFF);
-        renderCenteredText(context, "点击物品名称进入详细配置", 270, 0xCCCCCC);
     }
     
     // ==================== 滚动按钮 ====================
@@ -197,13 +145,13 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     
     private void updateItemWidgets() {
         // 清除现有的物品控件
-        for (ButtonWidget widget : itemWidgets) {
+        for (ClickableWidget widget : itemWidgets) {
             this.remove(widget);
         }
         itemWidgets.clear();
         
         // 添加可见的物品控件
-        int visibleItems = getVisibleItemCount();
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
         for (int i = 0; i < visibleItems && i + scrollOffset < itemConfigs.size(); i++) {
             ItemConfig config = itemConfigs.get(i + scrollOffset);
             int y = LIST_START_Y + i * ITEM_HEIGHT;
@@ -212,40 +160,43 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     }
     
     private void addConfigEntry(ItemConfig config, int y) {
-        // 创建物品名称按钮
-        ButtonWidget nameButton = ButtonWidget.builder(
-            Text.literal("配置"),
-            button -> {
-                this.client.setScreen(new ItemDetailConfigScreen((ModConfigScreen) this.parentScreen, configManager, config));
-            }
-        ).dimensions(getCenterX() + 70, y, 80, 20).build();
-        
-        this.addDrawableChild(nameButton);
-        itemWidgets.add(nameButton);
-        
-        // 创建启用/禁用切换按钮
-        ButtonWidget toggleButton = ButtonWidget.builder(
-            Text.literal(config.isEnabled() ? "禁用" : "启用"),
+        // 创建自定义物品图标按钮（正方形）
+        ItemIconButton iconButton = new ItemIconButton(
+            getCenterX() - 100, y, 20, 20, // 居中显示
+            config.getItemId(), config.isEnabled(),
             button -> {
                 config.setEnabled(!config.isEnabled());
-                button.setMessage(Text.literal(config.isEnabled() ? "禁用" : "启用"));
+                // 更新按钮外观
+                ((ItemIconButton) button).setEnabled(config.isEnabled());
                 LogUtil.logGuiAction("toggle_3d_item", getScreenName(), 
                     Map.of("itemId", config.getItemId(), "enabled", config.isEnabled()));
             }
-        ).dimensions(getCenterX() + 160, y, 60, 20).build();
+        );
         
-        this.addDrawableChild(toggleButton);
-        itemWidgets.add(toggleButton);
+        // 物品名称按钮
+        Item item = Registries.ITEM.get(Identifier.of(config.getItemId()));
+        String displayName = item != null ? item.getName().getString() : config.getItemId();
+        ButtonWidget nameButton = ButtonWidget.builder(
+            Text.literal(displayName),
+            button -> {
+                // 打开详细配置界面
+                this.client.setScreen(new ItemDetailConfigScreen(this, configManager, config));
+            }
+        ).dimensions(getCenterX() - 70, y, 120, 20).build(); // 居中显示
         
-        // 创建删除按钮
+        // 删除按钮
         ButtonWidget deleteButton = ButtonWidget.builder(
             Text.literal("×"),
             button -> {
                 showDeleteConfirmation(config.getItemId());
             }
-        ).dimensions(getCenterX() + 230, y, 20, 20).build();
+        ).dimensions(getCenterX() + 60, y, 20, 20).build();
         
+        this.addDrawableChild(iconButton);
+        this.addDrawableChild(nameButton);
         this.addDrawableChild(deleteButton);
+        itemWidgets.add(iconButton);
+        itemWidgets.add(nameButton);
         itemWidgets.add(deleteButton);
     }
     
@@ -256,6 +207,25 @@ public class Render3DConfigScreen extends BaseConfigScreen {
             updateItemWidgets();
             setInfo("3D渲染配置已删除");
         });
+    }
+    
+    // ==================== 鼠标滚动处理 ====================
+    
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (mouseX >= getCenterX() - 160 && mouseX <= getCenterX() + 180 &&
+            mouseY >= LIST_START_Y && mouseY <= LIST_END_Y) {
+            if (verticalAmount > 0 && scrollOffset > 0) {
+                scrollOffset--;
+                updateItemWidgets();
+                return true;
+            } else if (verticalAmount < 0 && scrollOffset < maxScrollOffset) {
+                scrollOffset++;
+                updateItemWidgets();
+                return true;
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
     
     // ==================== 公共方法 ====================
@@ -274,5 +244,54 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     @Override
     protected String getScreenName() {
         return "Render3DConfigScreen";
+    }
+    
+    // ==================== 自定义物品图标按钮类 ====================
+    
+    private static class ItemIconButton extends ButtonWidget {
+        private final String itemId;
+        private boolean enabled;
+        
+        public ItemIconButton(int x, int y, int width, int height, String itemId, boolean enabled, PressAction onPress) {
+            super(x, y, width, height, Text.literal(""), onPress, DEFAULT_NARRATION_SUPPLIER);
+            this.itemId = itemId;
+            this.enabled = enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+        
+        @Override
+        public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+            // 绘制按钮背景
+            context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44000000);
+            
+            // 绘制物品图标
+            Item item = Registries.ITEM.get(Identifier.of(itemId));
+            if (item != null) {
+                ItemStack stack = new ItemStack(item);
+                // 根据启用状态设置不同的渲染参数
+                if (enabled) {
+                    // 正常显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2);
+                } else {
+                    // 变暗显示
+                    context.drawItem(stack, this.getX() + 2, this.getY() + 2, 0x88888888);
+                }
+            }
+            
+            // 绘制边框
+            if (this.isHovered()) {
+                context.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x44FFFFFF);
+            }
+            
+            // 绘制状态指示器（小圆点）
+            if (enabled) {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFF00FF00); // 绿色
+            } else {
+                context.fill(this.getX() + this.width - 4, this.getY() + 2, this.getX() + this.width - 2, this.getY() + 4, 0xFFFF0000); // 红色
+            }
+        }
     }
 }

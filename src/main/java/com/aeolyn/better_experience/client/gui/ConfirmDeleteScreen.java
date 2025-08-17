@@ -1,17 +1,18 @@
 package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 public class ConfirmDeleteScreen extends Screen {
-    private final ModConfigScreen parentScreen;
+    private final Screen parentScreen;
     private final ConfigManager configManager;
     private final String itemId;
     
-    public ConfirmDeleteScreen(ModConfigScreen parentScreen, ConfigManager configManager, String itemId) {
+    public ConfirmDeleteScreen(Screen parentScreen, ConfigManager configManager, String itemId) {
         super(Text.literal("确认删除"));
         this.parentScreen = parentScreen;
         this.configManager = configManager;
@@ -30,7 +31,11 @@ public class ConfirmDeleteScreen extends Screen {
             Text.literal("确认删除"),
             button -> {
                 configManager.removeItemConfig(itemId);
-                parentScreen.refreshItemList();
+                if (parentScreen instanceof Render3DConfigScreen) {
+                    ((Render3DConfigScreen) parentScreen).refreshItemList();
+                } else if (parentScreen instanceof ModConfigScreen) {
+                    ((ModConfigScreen) parentScreen).refreshItemList();
+                }
                 this.close();
             }
         ).dimensions(centerX - 100, centerY + 20, 200, 20).build());
