@@ -16,8 +16,8 @@ import com.aeolyn.better_experience.common.config.saver.FileConfigSaver;
 import com.aeolyn.better_experience.common.config.validator.ConfigValidator;
 import com.aeolyn.better_experience.common.config.validator.ItemConfigValidator;
 import com.aeolyn.better_experience.common.config.validator.ValidationResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aeolyn.better_experience.common.util.LogUtil;
+import com.aeolyn.better_experience.common.util.ConfigValidationUtil;
 
 import java.util.Set;
 
@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public class ConfigManagerImpl {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Manager");
+    // 使用统一日志工具
     
     private final ConfigLoader loader;
     private final ConfigSaver saver;
@@ -60,35 +60,31 @@ public class ConfigManagerImpl {
      */
     public void initialize() {
         if (initialized) {
-            LOGGER.warn("配置管理器已经初始化");
+            LogUtil.warn(LogUtil.MODULE_CONFIG, "配置管理器已经初始化");
             return;
         }
         
         try {
-            LOGGER.info("开始初始化配置管理器...");
+            LogUtil.logInitialization(LogUtil.MODULE_CONFIG, "配置管理器");
             
             // 加载主配置
             ItemsConfig itemsConfig = loader.loadItemsConfig();
             
             // 验证主配置
-            ValidationResult mainValidation = validator.validate(itemsConfig);
+            ValidationResult mainValidation = ConfigValidationUtil.validate(itemsConfig);
+            ConfigValidationUtil.logValidationResult(LogUtil.MODULE_CONFIG, mainValidation);
             if (!mainValidation.isValid()) {
-                LOGGER.error("主配置验证失败: {}", mainValidation.getErrors());
-                throw new ConfigLoadException("Main config validation failed: " + mainValidation.getErrors());
-            }
-            
-            if (mainValidation.hasWarnings()) {
-                LOGGER.warn("主配置验证警告: {}", mainValidation.getWarnings());
+                throw new ConfigLoadException("Main config validation failed: " + ConfigValidationUtil.formatValidationErrors(mainValidation));
             }
             
             // 初始化缓存
             initializeCache(itemsConfig);
             
             initialized = true;
-            LOGGER.info("配置管理器初始化完成");
+            LogUtil.logCompletion(LogUtil.MODULE_CONFIG, "配置管理器");
             
         } catch (Exception e) {
-            LOGGER.error("配置管理器初始化失败: " + e.getMessage(), e);
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "配置管理器初始化", e);
             throw new RuntimeException("Failed to initialize config manager", e);
         }
     }
@@ -109,26 +105,22 @@ public class ConfigManagerImpl {
                     ItemConfig itemConfig = loader.loadItemConfig(itemId);
                     
                     // 验证物品配置
-                    ValidationResult itemValidation = validator.validate(itemConfig);
+                    ValidationResult itemValidation = ConfigValidationUtil.validate(itemConfig);
+                    ConfigValidationUtil.logValidationResult(itemId, itemValidation);
                     if (!itemValidation.isValid()) {
-                        LOGGER.error("物品配置验证失败 {}: {}", itemId, itemValidation.getErrors());
                         continue;
-                    }
-                    
-                    if (itemValidation.hasWarnings()) {
-                        LOGGER.warn("物品配置验证警告 {}: {}", itemId, itemValidation.getWarnings());
                     }
                     
                     cache.put(itemId, itemConfig);
                     
-                } catch (Exception e) {
-                    LOGGER.error("加载物品配置失败 {}: {}", itemId, e.getMessage());
-                }
+                                 } catch (Exception e) {
+                     LogUtil.error(LogUtil.MODULE_CONFIG, "加载物品配置失败 {}: {}", itemId, e.getMessage());
+                 }
             }
         }
         
-        ((MemoryConfigCache) cache).setValid(true);
-        LOGGER.info("缓存初始化完成: {}", cache.getStats());
+                 ((MemoryConfigCache) cache).setValid(true);
+         LogUtil.info(LogUtil.MODULE_CONFIG, "缓存初始化完成: {}", cache.getStats());
     }
     
     /**
@@ -162,10 +154,10 @@ public class ConfigManagerImpl {
         ensureInitialized();
         try {
             return loader.loadItemsConfig();
-        } catch (ConfigLoadException e) {
-            LOGGER.error("获取主配置失败: " + e.getMessage(), e);
-            return factory.createDefaultItemsConfig();
-        }
+                 } catch (ConfigLoadException e) {
+             LogUtil.error(LogUtil.MODULE_CONFIG, "获取主配置失败: {}", e.getMessage(), e);
+             return factory.createDefaultItemsConfig();
+         }
     }
     
     /**
@@ -175,25 +167,25 @@ public class ConfigManagerImpl {
         ensureInitialized();
         
         try {
-            // 验证主配置
-            ValidationResult validation = validator.validate(itemsConfig);
-            if (!validation.isValid()) {
-                LOGGER.error("主配置验证失败: {}", validation.getErrors());
-                throw new IllegalArgumentException("Invalid main config: " + validation.getErrors());
-            }
-            
-            // 保存主配置
-            saver.saveItemsConfig(itemsConfig);
-            
-            // 重新初始化缓存
-            initializeCache(itemsConfig);
-            
-            LOGGER.info("主配置更新成功");
-            
-        } catch (Exception e) {
-            LOGGER.error("更新主配置失败: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to update main config", e);
-        }
+                         // 验证主配置
+             ValidationResult validation = ConfigValidationUtil.validate(itemsConfig);
+             ConfigValidationUtil.logValidationResult(LogUtil.MODULE_CONFIG, validation);
+             if (!validation.isValid()) {
+                 throw new IllegalArgumentException("Invalid main config: " + ConfigValidationUtil.formatValidationErrors(validation));
+             }
+             
+             // 保存主配置
+             saver.saveItemsConfig(itemsConfig);
+             
+             // 重新初始化缓存
+             initializeCache(itemsConfig);
+             
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "主配置更新成功");
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新主配置", e);
+             throw new RuntimeException("Failed to update main config", e);
+         }
     }
     
     /**
@@ -203,26 +195,26 @@ public class ConfigManagerImpl {
         ensureInitialized();
         
         try {
-            // 验证配置
-            ValidationResult validation = validator.validate(config);
-            if (!validation.isValid()) {
-                LOGGER.error("配置验证失败: {}", validation.getErrors());
-                throw new IllegalArgumentException("Invalid config: " + validation.getErrors());
-            }
-            
-            // 保存配置
-            saver.saveItemConfig(itemId, config);
-            
-            // 更新缓存
-            cache.put(itemId, config);
-            cache.putEnabled(itemId, config.isEnabled());
-            
-            LOGGER.info("物品配置更新成功: {}", itemId);
-            
-        } catch (Exception e) {
-            LOGGER.error("更新物品配置失败 {}: {}", itemId, e.getMessage(), e);
-            throw new RuntimeException("Failed to update item config", e);
-        }
+                         // 验证配置
+             ValidationResult validation = ConfigValidationUtil.validate(config);
+             ConfigValidationUtil.logValidationResult(itemId, validation);
+             if (!validation.isValid()) {
+                 throw new IllegalArgumentException("Invalid config: " + ConfigValidationUtil.formatValidationErrors(validation));
+             }
+             
+             // 保存配置
+             saver.saveItemConfig(itemId, config);
+             
+             // 更新缓存
+             cache.put(itemId, config);
+             cache.putEnabled(itemId, config.isEnabled());
+             
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置更新成功");
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新物品配置: " + itemId, e);
+             throw new RuntimeException("Failed to update item config", e);
+         }
     }
     
     /**
@@ -232,34 +224,34 @@ public class ConfigManagerImpl {
         ensureInitialized();
         
         try {
-            // 验证配置
-            ValidationResult validation = validator.validate(config);
-            if (!validation.isValid()) {
-                LOGGER.error("配置验证失败: {}", validation.getErrors());
-                return false;
-            }
-            
-            // 保存配置
-            saver.saveItemConfig(itemId, config);
-            
-            // 更新主配置
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
-            if (!itemsConfig.getEnabledItems().contains(itemId)) {
-                itemsConfig.getEnabledItems().add(itemId);
-                saver.saveItemsConfig(itemsConfig);
-            }
-            
-            // 更新缓存
-            cache.put(itemId, config);
-            cache.putEnabled(itemId, config.isEnabled());
-            
-            LOGGER.info("物品配置添加成功: {}", itemId);
-            return true;
-            
-        } catch (Exception e) {
-            LOGGER.error("添加物品配置失败 {}: {}", itemId, e.getMessage(), e);
-            return false;
-        }
+                         // 验证配置
+             ValidationResult validation = ConfigValidationUtil.validate(config);
+             ConfigValidationUtil.logValidationResult(itemId, validation);
+             if (!validation.isValid()) {
+                 return false;
+             }
+             
+             // 保存配置
+             saver.saveItemConfig(itemId, config);
+             
+             // 更新主配置
+             ItemsConfig itemsConfig = loader.loadItemsConfig();
+             if (!itemsConfig.getEnabledItems().contains(itemId)) {
+                 itemsConfig.getEnabledItems().add(itemId);
+                 saver.saveItemsConfig(itemsConfig);
+             }
+             
+             // 更新缓存
+             cache.put(itemId, config);
+             cache.putEnabled(itemId, config.isEnabled());
+             
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置添加成功");
+             return true;
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "添加物品配置: " + itemId, e);
+             return false;
+         }
     }
     
     /**
@@ -269,44 +261,44 @@ public class ConfigManagerImpl {
         ensureInitialized();
         
         try {
-            // 删除配置文件
-            saver.deleteItemConfig(itemId);
-            
-            // 更新主配置
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
-            itemsConfig.getEnabledItems().remove(itemId);
-            saver.saveItemsConfig(itemsConfig);
-            
-            // 更新缓存
-            cache.remove(itemId);
-            
-            LOGGER.info("物品配置删除成功: {}", itemId);
-            
-        } catch (Exception e) {
-            LOGGER.error("删除物品配置失败 {}: {}", itemId, e.getMessage(), e);
-            throw new RuntimeException("Failed to remove item config", e);
-        }
+                         // 删除配置文件
+             saver.deleteItemConfig(itemId);
+             
+             // 更新主配置
+             ItemsConfig itemsConfig = loader.loadItemsConfig();
+             itemsConfig.getEnabledItems().remove(itemId);
+             saver.saveItemsConfig(itemsConfig);
+             
+             // 更新缓存
+             cache.remove(itemId);
+             
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置删除成功");
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "删除物品配置: " + itemId, e);
+             throw new RuntimeException("Failed to remove item config", e);
+         }
     }
     
     /**
      * 重新加载配置
      */
     public void reload() {
-        try {
-            LOGGER.info("开始重新加载配置...");
-            
-            // 重新加载主配置
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
-            
-            // 重新初始化缓存
-            initializeCache(itemsConfig);
-            
-            LOGGER.info("配置重新加载完成");
-            
-        } catch (Exception e) {
-            LOGGER.error("重新加载配置失败: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to reload config", e);
-        }
+                 try {
+             LogUtil.logInitialization(LogUtil.MODULE_CONFIG, "配置重新加载");
+             
+             // 重新加载主配置
+             ItemsConfig itemsConfig = loader.loadItemsConfig();
+             
+             // 重新初始化缓存
+             initializeCache(itemsConfig);
+             
+             LogUtil.logCompletion(LogUtil.MODULE_CONFIG, "配置重新加载");
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "重新加载配置", e);
+             throw new RuntimeException("Failed to reload config", e);
+         }
     }
     
     /**
@@ -324,10 +316,10 @@ public class ConfigManagerImpl {
         try {
             ItemsConfig itemsConfig = loader.loadItemsConfig();
             return itemsConfig.getSettings() != null && itemsConfig.getSettings().isEnableDebugLogs();
-        } catch (Exception e) {
-            LOGGER.error("检查调试模式失败: " + e.getMessage(), e);
-            return false;
-        }
+                 } catch (Exception e) {
+             LogUtil.error(LogUtil.MODULE_CONFIG, "检查调试模式失败: {}", e.getMessage(), e);
+             return false;
+         }
     }
     
     /**
@@ -338,10 +330,10 @@ public class ConfigManagerImpl {
         try {
             ItemsConfig itemsConfig = loader.loadItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableRenderLogs();
-        } catch (Exception e) {
-            LOGGER.error("检查渲染日志失败: " + e.getMessage(), e);
-            return false;
-        }
+                 } catch (Exception e) {
+             LogUtil.error(LogUtil.MODULE_CONFIG, "检查渲染日志失败: {}", e.getMessage(), e);
+             return false;
+         }
     }
     
     /**
@@ -352,10 +344,10 @@ public class ConfigManagerImpl {
         try {
             ItemsConfig itemsConfig = loader.loadItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableConfigLogs();
-        } catch (Exception e) {
-            LOGGER.error("检查配置日志失败: " + e.getMessage(), e);
-            return false;
-        }
+                 } catch (Exception e) {
+             LogUtil.error(LogUtil.MODULE_CONFIG, "检查配置日志失败: {}", e.getMessage(), e);
+             return false;
+         }
     }
     
     /**
@@ -381,10 +373,10 @@ public class ConfigManagerImpl {
         ensureInitialized();
         try {
             return loader.loadOffHandRestrictionConfig();
-        } catch (Exception e) {
-            LOGGER.error("加载副手限制配置失败: " + e.getMessage(), e);
-            return new OffHandRestrictionConfig(); // 返回默认配置
-        }
+                 } catch (Exception e) {
+             LogUtil.error(LogUtil.MODULE_CONFIG, "加载副手限制配置失败: {}", e.getMessage(), e);
+             return new OffHandRestrictionConfig(); // 返回默认配置
+         }
     }
     
     /**
@@ -394,12 +386,12 @@ public class ConfigManagerImpl {
         ensureInitialized();
         try {
             OffHandRestrictionConfig config = getOffHandRestrictionConfig();
-            saver.saveOffHandRestrictionConfig(config);
-            LOGGER.info("副手限制配置保存成功");
-        } catch (Exception e) {
-            LOGGER.error("保存副手限制配置失败: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to save offhand restriction config", e);
-        }
+                         saver.saveOffHandRestrictionConfig(config);
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "副手限制配置保存");
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "保存副手限制配置", e);
+             throw new RuntimeException("Failed to save offhand restriction config", e);
+         }
     }
     
     /**
@@ -408,11 +400,11 @@ public class ConfigManagerImpl {
     public void updateOffHandRestrictionConfig(OffHandRestrictionConfig config) {
         ensureInitialized();
         try {
-            saver.saveOffHandRestrictionConfig(config);
-            LOGGER.info("副手限制配置更新成功");
-        } catch (Exception e) {
-            LOGGER.error("更新副手限制配置失败: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to update offhand restriction config", e);
-        }
+                         saver.saveOffHandRestrictionConfig(config);
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "副手限制配置更新");
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新副手限制配置", e);
+             throw new RuntimeException("Failed to update offhand restriction config", e);
+         }
     }
 }

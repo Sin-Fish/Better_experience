@@ -4,8 +4,7 @@ import com.aeolyn.better_experience.render3d.config.ItemsConfig;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.common.config.cache.CacheStats;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.aeolyn.better_experience.common.util.LogUtil;
 
 import java.util.Set;
 
@@ -15,7 +14,7 @@ import java.util.Set;
  */
 public class ConfigManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Config");
+    // 使用统一日志工具
     private static volatile ConfigManager instance;
     private static volatile boolean initialized = false;
     
@@ -44,13 +43,13 @@ public class ConfigManager {
      */
     public static void initialize() {
         if (initialized) {
-            LOGGER.warn("配置管理器已经初始化");
+            LogUtil.warn(LogUtil.MODULE_CONFIG, "配置管理器已经初始化");
             return;
         }
         
         synchronized (ConfigManager.class) {
             if (initialized) {
-                LOGGER.warn("配置管理器已经初始化");
+                LogUtil.warn(LogUtil.MODULE_CONFIG, "配置管理器已经初始化");
                 return;
             }
             
@@ -58,9 +57,9 @@ public class ConfigManager {
                 ConfigManager manager = getInstance();
                 manager.impl.initialize();
                 initialized = true;
-                LOGGER.info("配置管理器初始化完成");
+                LogUtil.logCompletion(LogUtil.MODULE_CONFIG, "配置管理器");
             } catch (Exception e) {
-                LOGGER.error("配置管理器初始化失败: " + e.getMessage(), e);
+                LogUtil.logFailure(LogUtil.MODULE_CONFIG, "配置管理器初始化", e);
                 throw new RuntimeException("配置管理器初始化失败", e);
             }
         }
@@ -165,7 +164,7 @@ public class ConfigManager {
             ItemsConfig itemsConfig = impl.getItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableGuiLogs();
         } catch (Exception e) {
-            LOGGER.error("检查GUI日志失败: " + e.getMessage(), e);
+            LogUtil.error(LogUtil.MODULE_CONFIG, "检查GUI日志失败: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -178,7 +177,7 @@ public class ConfigManager {
             ItemsConfig itemsConfig = impl.getItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableMixinLogs();
         } catch (Exception e) {
-            LOGGER.error("检查Mixin日志失败: " + e.getMessage(), e);
+            LogUtil.error(LogUtil.MODULE_CONFIG, "检查Mixin日志失败: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -191,7 +190,7 @@ public class ConfigManager {
             ItemsConfig itemsConfig = impl.getItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnablePerformanceLogs();
         } catch (Exception e) {
-            LOGGER.error("检查性能日志失败: " + e.getMessage(), e);
+            LogUtil.error(LogUtil.MODULE_CONFIG, "检查性能日志失败: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -204,7 +203,7 @@ public class ConfigManager {
             ItemsConfig itemsConfig = impl.getItemsConfig();
             return itemsConfig != null ? itemsConfig.getSettings() : null;
         } catch (Exception e) {
-            LOGGER.error("获取默认设置失败: " + e.getMessage(), e);
+            LogUtil.error(LogUtil.MODULE_CONFIG, "获取默认设置失败: {}", e.getMessage(), e);
             return null;
         }
     }
@@ -224,12 +223,12 @@ public class ConfigManager {
             ItemConfig config = impl.getItemConfig(itemId);
             if (config != null) {
                 impl.updateItemConfig(itemId, config);
-                LOGGER.info("物品配置保存成功: {}", itemId);
+                LogUtil.logConfigSave(itemId);
             } else {
-                LOGGER.warn("物品配置不存在，无法保存: {}", itemId);
+                LogUtil.warn(LogUtil.MODULE_CONFIG, "物品配置不存在，无法保存: {}", itemId);
             }
         } catch (Exception e) {
-            LOGGER.error("保存物品配置失败 " + itemId + ": " + e.getMessage(), e);
+            LogUtil.error(LogUtil.MODULE_CONFIG, "保存物品配置失败 {}: {}", itemId, e.getMessage(), e);
         }
     }
     
@@ -242,9 +241,9 @@ public class ConfigManager {
             ItemsConfig itemsConfig = impl.getItemsConfig();
             // 这里需要访问内部的saver，暂时通过重新加载来实现
             impl.reload();
-            LOGGER.info("所有配置保存完成");
+            LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "所有配置保存");
         } catch (Exception e) {
-            LOGGER.error("保存所有配置失败: " + e.getMessage(), e);
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "保存所有配置", e);
         }
     }
     
@@ -252,7 +251,7 @@ public class ConfigManager {
      * 测试配置持久化功能
      */
     public void testConfigPersistence() {
-        LOGGER.info("开始测试配置持久化功能...");
+        LogUtil.info(LogUtil.MODULE_CONFIG, "开始测试配置持久化功能...");
         
         try {
             // 创建一个测试配置
@@ -275,16 +274,16 @@ public class ConfigManager {
             if (loadedConfig != null && 
                 loadedConfig.getFirstPerson().getScale() == 2.5f &&
                 loadedConfig.getFirstPerson().getRotationX() == 45.0f) {
-                LOGGER.info("配置持久化测试成功！");
+                LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "配置持久化测试");
             } else {
-                LOGGER.error("配置持久化测试失败！");
+                LogUtil.error(LogUtil.MODULE_CONFIG, "配置持久化测试失败！");
             }
             
             // 清理测试配置
             impl.removeItemConfig("minecraft:test_item");
             
         } catch (Exception e) {
-            LOGGER.error("配置持久化测试失败: " + e.getMessage(), e);
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "配置持久化测试", e);
         }
     }
     
