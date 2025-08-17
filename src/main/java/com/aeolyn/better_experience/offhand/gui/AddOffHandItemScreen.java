@@ -129,7 +129,7 @@ public class AddOffHandItemScreen extends Screen {
             return;
         }
         
-        // 使用配置类中的方法添加物品
+        // 使用配置类中的方法添加物品到统一白名单
         config.addAllowedItem(itemId);
         
         LOGGER.info("成功添加副手白名单物品: {}", itemId);
@@ -195,8 +195,6 @@ public class AddOffHandItemScreen extends Screen {
             context.drawTextWithShadow(this.textRenderer, Text.literal("当前输入: " + currentText), 10, 10, 0xFFFFFF);
         }
     }
-    
-
     
     @Override
     public boolean shouldPause() {

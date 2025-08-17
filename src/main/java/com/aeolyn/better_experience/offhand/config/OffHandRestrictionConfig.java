@@ -7,16 +7,18 @@ import java.util.ArrayList;
 /**
  * 副手限制配置类
  * 定义副手使用限制的配置结构
+ * 使用统一的白名单，支持分离的开关控制
  */
 public class OffHandRestrictionConfig {
     
     @SerializedName("enabled")
     private boolean enabled = false;
     
+    // 统一白名单 - 所有允许的物品都在这里
     @SerializedName("allowed_items")
     private List<String> allowedItems = new ArrayList<>();
     
-    // 向后兼容字段 - 保留但不使用
+    // 分离的开关控制
     @SerializedName("disable_block_placement")
     private BlockPlacementRestriction blockPlacement;
     
@@ -27,47 +29,33 @@ public class OffHandRestrictionConfig {
         // 默认配置从JSON文件中加载，这里只初始化空列表
         this.allowedItems = new ArrayList<>();
         
-        // 初始化向后兼容字段
+        // 初始化分离配置（只用于开关控制）
         this.blockPlacement = new BlockPlacementRestriction();
         this.itemUsage = new ItemUsageRestriction();
     }
     
     /**
      * 迁移旧配置到新格式
-     * 如果新的统一列表为空，但旧的分离列表有数据，则进行迁移
+     * 如果新的分离配置为空，但旧的统一列表有数据，则进行迁移
      */
     public void migrateFromLegacyFormat() {
-        // 如果新的统一列表为空，但旧的分离列表有数据，进行迁移
-        if (allowedItems.isEmpty() && (blockPlacement != null || itemUsage != null)) {
-            // 合并两个旧列表的数据
-            if (blockPlacement != null && blockPlacement.getAllowedItems() != null) {
-                for (String itemId : blockPlacement.getAllowedItems()) {
-                    if (!allowedItems.contains(itemId)) {
-                        allowedItems.add(itemId);
-                    }
-                }
-            }
+        // 如果分离配置都为空，但统一列表有数据，进行迁移
+        if (blockPlacement.getAllowedItems().isEmpty() && 
+            itemUsage.getAllowedItems().isEmpty() && 
+            !allowedItems.isEmpty()) {
             
-            if (itemUsage != null && itemUsage.getAllowedItems() != null) {
-                for (String itemId : itemUsage.getAllowedItems()) {
-                    if (!allowedItems.contains(itemId)) {
-                        allowedItems.add(itemId);
-                    }
-                }
-            }
+            // 将统一列表的数据复制到两个分离配置中（保持向后兼容）
+            blockPlacement.setAllowedItems(new ArrayList<>(allowedItems));
+            itemUsage.setAllowedItems(new ArrayList<>(allowedItems));
             
-            // 设置启用状态（如果任一旧配置启用，则新配置也启用）
-            if (blockPlacement != null && blockPlacement.isEnabled()) {
-                this.enabled = true;
-            }
-            if (itemUsage != null && itemUsage.isEnabled()) {
-                this.enabled = true;
-            }
+            // 设置启用状态
+            blockPlacement.setEnabled(enabled);
+            itemUsage.setEnabled(enabled);
         }
     }
     
     /**
-     * 检查物品是否被允许在副手中使用
+     * 检查物品是否被允许在副手中使用（统一白名单检查）
      * @param itemId 物品ID
      * @return true表示允许，false表示被阻止
      */
@@ -76,7 +64,31 @@ public class OffHandRestrictionConfig {
     }
     
     /**
-     * 添加允许的物品
+     * 检查物品是否被允许在副手中放置方块
+     * @param itemId 物品ID
+     * @return true表示允许，false表示被阻止
+     */
+    public boolean isBlockPlacementAllowed(String itemId) {
+        if (!blockPlacement.isEnabled()) {
+            return true; // 如果方块放置限制未启用，则允许所有物品
+        }
+        return allowedItems.contains(itemId); // 使用统一白名单
+    }
+    
+    /**
+     * 检查物品是否被允许在副手中使用
+     * @param itemId 物品ID
+     * @return true表示允许，false表示被阻止
+     */
+    public boolean isItemUsageAllowed(String itemId) {
+        if (!itemUsage.isEnabled()) {
+            return true; // 如果道具使用限制未启用，则允许所有物品
+        }
+        return allowedItems.contains(itemId); // 使用统一白名单
+    }
+    
+    /**
+     * 添加允许的物品到统一白名单
      * @param itemId 物品ID
      */
     public void addAllowedItem(String itemId) {
@@ -86,7 +98,7 @@ public class OffHandRestrictionConfig {
     }
     
     /**
-     * 移除允许的物品
+     * 移除允许的物品从统一白名单
      * @param itemId 物品ID
      */
     public void removeAllowedItem(String itemId) {
@@ -94,7 +106,7 @@ public class OffHandRestrictionConfig {
     }
     
     /**
-     * 获取所有允许的物品列表
+     * 获取所有允许的物品列表（统一白名单）
      * @return 允许的物品列表
      */
     public List<String> getAllowedItems() {
@@ -102,7 +114,7 @@ public class OffHandRestrictionConfig {
     }
     
     /**
-     * 设置允许的物品列表
+     * 设置允许的物品列表（统一白名单）
      * @param allowedItems 新的物品列表
      */
     public void setAllowedItems(List<String> allowedItems) {
@@ -113,7 +125,6 @@ public class OffHandRestrictionConfig {
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     
-    // 向后兼容方法 - 保持API兼容性
     public BlockPlacementRestriction getBlockPlacement() { 
         if (blockPlacement == null) {
             blockPlacement = new BlockPlacementRestriction();
@@ -132,30 +143,39 @@ public class OffHandRestrictionConfig {
     public void setItemUsage(ItemUsageRestriction itemUsage) { this.itemUsage = itemUsage; }
     
     /**
-     * 方块放置限制配置（向后兼容）
-     * @deprecated 使用统一的白名单配置
+     * 方块放置限制配置（只用于开关控制）
      */
-    @Deprecated
     public static class BlockPlacementRestriction {
         @SerializedName("enabled")
         private boolean enabled = false;
         
+        // 向后兼容字段，但不实际使用
         @SerializedName("allowed_items")
         private List<String> allowedItems = new ArrayList<>();
         
         public BlockPlacementRestriction() {
-            // 默认允许一些常用物品
+            // 默认允许一些常用方块
             allowedItems.add("minecraft:torch");
             allowedItems.add("minecraft:soul_torch");
             allowedItems.add("minecraft:lantern");
             allowedItems.add("minecraft:soul_lantern");
+            allowedItems.add("minecraft:campfire");
+            allowedItems.add("minecraft:oak_sign");
+            allowedItems.add("minecraft:lever");
+            allowedItems.add("minecraft:repeater");
+            allowedItems.add("minecraft:comparator");
+            allowedItems.add("minecraft:redstone_torch");
+            allowedItems.add("minecraft:chain");
+            allowedItems.add("minecraft:flower_pot");
+            allowedItems.add("minecraft:item_frame");
         }
         
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
         
-        public List<String> getAllowedItems() { return allowedItems; }
-        public void setAllowedItems(List<String> allowedItems) { this.allowedItems = allowedItems; }
+        // 向后兼容方法，但不实际使用
+        public List<String> getAllowedItems() { return new ArrayList<>(allowedItems); }
+        public void setAllowedItems(List<String> allowedItems) { this.allowedItems = new ArrayList<>(allowedItems); }
         
         public void addAllowedItem(String itemId) {
             if (!allowedItems.contains(itemId)) {
@@ -173,30 +193,35 @@ public class OffHandRestrictionConfig {
     }
     
     /**
-     * 道具使用限制配置（向后兼容）
-     * @deprecated 使用统一的白名单配置
+     * 道具使用限制配置（只用于开关控制）
      */
-    @Deprecated
     public static class ItemUsageRestriction {
         @SerializedName("enabled")
         private boolean enabled = false;
         
+        // 向后兼容字段，但不实际使用
         @SerializedName("allowed_items")
         private List<String> allowedItems = new ArrayList<>();
         
         public ItemUsageRestriction() {
-            // 默认允许一些常用物品
+            // 默认允许一些常用道具
             allowedItems.add("minecraft:shield");
             allowedItems.add("minecraft:totem_of_undying");
-            allowedItems.add("minecraft:torch");
-            allowedItems.add("minecraft:soul_torch");
+            allowedItems.add("minecraft:arrow");
+            allowedItems.add("minecraft:spectral_arrow");
+            allowedItems.add("minecraft:tipped_arrow");
+            allowedItems.add("minecraft:firework_rocket");
+            allowedItems.add("minecraft:wind_charge");
+            allowedItems.add("minecraft:bamboo");
+            allowedItems.add("minecraft:minecart");
         }
         
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
         
-        public List<String> getAllowedItems() { return allowedItems; }
-        public void setAllowedItems(List<String> allowedItems) { this.allowedItems = allowedItems; }
+        // 向后兼容方法，但不实际使用
+        public List<String> getAllowedItems() { return new ArrayList<>(allowedItems); }
+        public void setAllowedItems(List<String> allowedItems) { this.allowedItems = new ArrayList<>(allowedItems); }
         
         public void addAllowedItem(String itemId) {
             if (!allowedItems.contains(itemId)) {

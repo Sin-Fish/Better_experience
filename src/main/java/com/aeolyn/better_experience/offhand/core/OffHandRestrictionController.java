@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 副手限制控制器
  * 负责检查副手物品使用是否被允许
+ * 使用统一的白名单，支持分离的开关控制
  */
 public class OffHandRestrictionController {
     
@@ -53,12 +54,17 @@ public class OffHandRestrictionController {
             ConfigManager configManager = ConfigManager.getInstance();
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
-            if (config == null || !config.isEnabled()) {
-                return true; // 未启用限制，允许使用
+            if (config == null) {
+                return true; // 配置为空，允许使用
+            }
+            
+            // 检查方块放置限制是否启用
+            if (!config.getBlockPlacement().isEnabled()) {
+                return true; // 方块放置限制未启用，允许使用
             }
             
             String itemId = Registries.ITEM.getId(item).toString();
-            boolean isAllowed = config.isItemAllowed(itemId);
+            boolean isAllowed = config.isBlockPlacementAllowed(itemId);
             
             if (!isAllowed) {
                 LOGGER.debug("副手方块放置被阻止: {}", itemId);
@@ -81,12 +87,17 @@ public class OffHandRestrictionController {
             ConfigManager configManager = ConfigManager.getInstance();
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
-            if (config == null || !config.isEnabled()) {
-                return true; // 未启用限制，允许使用
+            if (config == null) {
+                return true; // 配置为空，允许使用
+            }
+            
+            // 检查道具使用限制是否启用
+            if (!config.getItemUsage().isEnabled()) {
+                return true; // 道具使用限制未启用，允许使用
             }
             
             String itemId = Registries.ITEM.getId(item).toString();
-            boolean isAllowed = config.isItemAllowed(itemId);
+            boolean isAllowed = config.isItemUsageAllowed(itemId);
             
             if (!isAllowed) {
                 LOGGER.debug("副手道具使用被阻止: {}", itemId);
@@ -100,7 +111,7 @@ public class OffHandRestrictionController {
     }
     
     /**
-     * 添加允许的副手物品
+     * 添加允许的副手物品到统一白名单
      * @param itemId 物品ID
      */
     public void addAllowedItem(String itemId) {
@@ -119,7 +130,7 @@ public class OffHandRestrictionController {
     }
     
     /**
-     * 移除允许的副手物品
+     * 移除允许的副手物品从统一白名单
      * @param itemId 物品ID
      */
     public void removeAllowedItem(String itemId) {
