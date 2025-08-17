@@ -59,13 +59,6 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     }
     
     @Override
-    protected void saveData() {
-        configManager.updateOffHandRestrictionConfig(config);
-        configManager.saveOffHandRestrictionConfig();
-        setInfo("副手限制配置已保存");
-    }
-    
-    @Override
     protected void renderCustomContent(DrawContext context) {
         if (currentMode == DisplayMode.MAIN_MENU) {
             renderMainMenu(context);
@@ -77,12 +70,6 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     @Override
     protected void onAddClicked() {
         this.client.setScreen(new AddOffHandItemScreen(this, configManager));
-    }
-    
-    @Override
-    protected void onSaveClicked() {
-        saveData();
-        showInfoDialog("成功", "副手限制配置已保存");
     }
     
     // ==================== 自定义按钮 ====================
@@ -107,8 +94,30 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addStandardButtons() {
-        // 使用BaseConfigScreen的默认实现，包含保存、返回和关闭按钮
-        super.addStandardButtons();
+        // 子界面只显示返回和关闭按钮，不显示保存按钮（由主界面统一管理）
+        int centerX = getCenterX();
+        int buttonWidth = getButtonWidth();
+        int buttonHeight = getButtonHeight();
+        
+        // 返回按钮
+        backButton = ButtonWidget.builder(
+            Text.translatable("better_experience.config.back"),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "back");
+                this.client.setScreen(parentScreen);
+            }
+        ).dimensions(centerX - buttonWidth / 2, this.height - 60, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(backButton);
+        
+        // 关闭按钮
+        closeButton = ButtonWidget.builder(
+            Text.translatable("better_experience.config.close"),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "close");
+                this.close();
+            }
+        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(closeButton);
     }
     
     // ==================== 主菜单模式 ====================
@@ -124,12 +133,10 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         this.addDrawableChild(ButtonWidget.builder(
             getToggleText(config.getBlockPlacement().isEnabled(), "方块放置限制"),
             button -> {
-                config.getBlockPlacement().setEnabled(!config.getBlockPlacement().isEnabled());
-                button.setMessage(getToggleText(config.getBlockPlacement().isEnabled(), "方块放置限制"));
-                // 立即保存配置
-                configManager.updateOffHandRestrictionConfig(config);
-                configManager.saveOffHandRestrictionConfig();
-                LogUtil.info(LogUtil.MODULE_OFFHAND, "方块放置限制{}", config.getBlockPlacement().isEnabled() ? "启用" : "禁用");
+                                 config.getBlockPlacement().setEnabled(!config.getBlockPlacement().isEnabled());
+                 button.setMessage(getToggleText(config.getBlockPlacement().isEnabled(), "方块放置限制"));
+                 // 配置文件自动保存
+                 LogUtil.info(LogUtil.MODULE_OFFHAND, "方块放置限制{}", config.getBlockPlacement().isEnabled() ? "启用" : "禁用");
             }
         ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
         
@@ -137,12 +144,10 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         this.addDrawableChild(ButtonWidget.builder(
             getToggleText(config.getItemUsage().isEnabled(), "道具使用限制"),
             button -> {
-                config.getItemUsage().setEnabled(!config.getItemUsage().isEnabled());
-                button.setMessage(getToggleText(config.getItemUsage().isEnabled(), "道具使用限制"));
-                // 立即保存配置
-                configManager.updateOffHandRestrictionConfig(config);
-                configManager.saveOffHandRestrictionConfig();
-                LogUtil.info(LogUtil.MODULE_OFFHAND, "道具使用限制{}", config.getItemUsage().isEnabled() ? "启用" : "禁用");
+                                 config.getItemUsage().setEnabled(!config.getItemUsage().isEnabled());
+                 button.setMessage(getToggleText(config.getItemUsage().isEnabled(), "道具使用限制"));
+                 // 配置文件自动保存
+                 LogUtil.info(LogUtil.MODULE_OFFHAND, "道具使用限制{}", config.getItemUsage().isEnabled() ? "启用" : "禁用");
             }
         ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
         
@@ -287,16 +292,11 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         // 从统一白名单移除物品
         config.removeAllowedItem(itemId);
         
-        // 保存配置
-        try {
-            saveData();
-            LogUtil.info(LogUtil.MODULE_OFFHAND, "移除物品: {}", itemId);
-            
-            // 更新界面
-            updateListWidgets();
-        } catch (Exception e) {
-            LogUtil.error(LogUtil.MODULE_OFFHAND, "保存副手限制配置失败: {}", e.getMessage(), e);
-        }
+                 // 配置文件自动保存
+         LogUtil.info(LogUtil.MODULE_OFFHAND, "移除物品: {}", itemId);
+         
+         // 更新界面
+         updateListWidgets();
     }
     
     // ==================== 渲染方法 ====================
@@ -359,6 +359,8 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     protected String getScreenName() {
         return "OffHandRestrictionConfigScreen";
     }
+    
+
     
     // ==================== 自定义物品图标按钮类 ====================
     

@@ -55,8 +55,8 @@ public class ConfigImportExportScreen extends Screen {
         
         // 导出路径输入框
         exportPathField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth/2, startY, fieldWidth, fieldHeight, Text.literal("导出路径"));
-        exportPathField.setPlaceholder(Text.literal("例如: ./config_export"));
-        exportPathField.setText("./config_export");
+        exportPathField.setPlaceholder(Text.literal("例如: C:\\BetterExperience_Config"));
+        exportPathField.setText("C:\\BetterExperience_Config");
         
         // 导出按钮
         exportButton = ButtonWidget.builder(
@@ -69,7 +69,7 @@ public class ConfigImportExportScreen extends Screen {
         
         // 导入路径输入框
         importPathField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth/2, separatorY, fieldWidth, fieldHeight, Text.literal("导入路径"));
-        importPathField.setPlaceholder(Text.literal("例如: ./config_import"));
+        importPathField.setPlaceholder(Text.literal("例如: C:\\BetterExperience_Config"));
         
         // 验证按钮
         validateButton = ButtonWidget.builder(

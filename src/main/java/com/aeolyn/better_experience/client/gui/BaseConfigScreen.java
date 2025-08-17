@@ -29,7 +29,7 @@ public abstract class BaseConfigScreen extends Screen {
     protected static final int LIST_WIDTH = 300;
     
     // 通用按钮
-    protected ButtonWidget saveButton;
+   
     protected ButtonWidget backButton;
     protected ButtonWidget closeButton;
     protected ButtonWidget addButton;
@@ -59,11 +59,6 @@ public abstract class BaseConfigScreen extends Screen {
     protected abstract void loadData();
     
     /**
-     * 保存数据
-     */
-    protected abstract void saveData();
-    
-    /**
      * 渲染自定义内容
      */
     protected abstract void renderCustomContent(DrawContext context);
@@ -72,12 +67,7 @@ public abstract class BaseConfigScreen extends Screen {
      * 添加按钮点击处理
      */
     protected abstract void onAddClicked();
-    
-    /**
-     * 保存按钮点击处理
-     */
-    protected abstract void onSaveClicked();
-    
+        
     // ==================== 初始化方法 ====================
     
     @Override
@@ -109,15 +99,6 @@ public abstract class BaseConfigScreen extends Screen {
         int buttonHeight = getButtonHeight();
         int spacing = getStandardSpacing();
         
-        // 保存按钮
-        saveButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.save"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "save");
-                onSaveClicked();
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 90, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(saveButton);
         
         // 返回按钮
         backButton = ButtonWidget.builder(

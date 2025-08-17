@@ -4,7 +4,6 @@ import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.render3d.gui.AddItemConfigScreen;
 import com.aeolyn.better_experience.render3d.gui.ItemDetailConfigScreen;
-import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -59,12 +58,6 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     }
     
     @Override
-    protected void saveData() {
-        configManager.saveAllConfigs();
-        setInfo("3D渲染配置已保存");
-    }
-    
-    @Override
     protected void renderCustomContent(DrawContext context) {
         // 渲染列表背景
         context.fill(getCenterX() - 160, LIST_START_Y - 5, getCenterX() + 180, LIST_END_Y + 5, 0x44000000);
@@ -82,12 +75,6 @@ public class Render3DConfigScreen extends BaseConfigScreen {
         this.client.setScreen(new AddItemConfigScreen(this, configManager));
     }
     
-    @Override
-    protected void onSaveClicked() {
-        saveData();
-        showInfoDialog("成功", "3D渲染配置已保存");
-    }
-    
     // ==================== 自定义按钮 ====================
     
     @Override
@@ -97,12 +84,6 @@ public class Render3DConfigScreen extends BaseConfigScreen {
             Text.literal("+ 新建物品"), 
             button -> onAddClicked()
         ).dimensions(getCenterX() - 100, LIST_END_Y + 10, 200, 20).build());
-        
-        // 添加导入导出按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("导入导出配置"), 
-            button -> this.client.setScreen(new ConfigImportExportScreen(this, configManager))
-        ).dimensions(getCenterX() - 100, LIST_END_Y + 40, 200, 20).build());
         
         // 添加滚动按钮
         addScrollButtons();
@@ -121,8 +102,30 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addStandardButtons() {
-        // 使用BaseConfigScreen的默认实现，包含保存、返回和关闭按钮
-        super.addStandardButtons();
+        // 子界面只显示返回和关闭按钮，不显示保存按钮（由主界面统一管理）
+        int centerX = getCenterX();
+        int buttonWidth = getButtonWidth();
+        int buttonHeight = getButtonHeight();
+        
+        // 返回按钮
+        backButton = ButtonWidget.builder(
+            Text.translatable("better_experience.config.back"),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "back");
+                this.client.setScreen(parentScreen);
+            }
+        ).dimensions(centerX - buttonWidth / 2, this.height - 60, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(backButton);
+        
+        // 关闭按钮
+        closeButton = ButtonWidget.builder(
+            Text.translatable("better_experience.config.close"),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "close");
+                this.close();
+            }
+        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(closeButton);
     }
     
     // ==================== 滚动按钮 ====================
@@ -209,12 +212,11 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     }
     
     private void showDeleteConfirmation(String itemId) {
-        showConfirmDialog("确认删除", "确定要删除3D渲染配置 " + itemId + " 吗？", () -> {
-            configManager.removeItemConfig(itemId);
-            loadData();
-            updateItemWidgets();
-            setInfo("3D渲染配置已删除");
-        });
+        // 直接删除，不显示确认弹窗
+        configManager.removeItemConfig(itemId);
+        loadData();
+        updateItemWidgets();
+        setInfo("3D渲染配置已删除");
     }
     
     // ==================== 鼠标滚动处理 ====================
@@ -253,6 +255,8 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     protected String getScreenName() {
         return "Render3DConfigScreen";
     }
+    
+
     
     // ==================== 自定义物品图标按钮类 ====================
     

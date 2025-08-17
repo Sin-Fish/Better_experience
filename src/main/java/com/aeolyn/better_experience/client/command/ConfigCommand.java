@@ -1,6 +1,6 @@
 package com.aeolyn.better_experience.client.command;
 
-import com.aeolyn.better_experience.client.gui.UnifiedConfigScreen;
+import com.aeolyn.better_experience.client.gui.ModConfigScreen;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -18,7 +18,7 @@ public class ConfigCommand {
                     MinecraftClient client = MinecraftClient.getInstance();
                     if (client != null) {
                         client.execute(() -> {
-                            client.setScreen(new UnifiedConfigScreen(ConfigManager.getInstance()));
+                            client.setScreen(new ModConfigScreen(null, ConfigManager.getInstance()));
                         });
                     }
                     context.getSource().sendFeedback(Text.literal("打开Better Experience配置界面"));

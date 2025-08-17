@@ -10,8 +10,7 @@
   "better_experience.config.add_item.title": "新建物品配置",
   "better_experience.config.item_id": "物品ID",
   "better_experience.config.render_id": "渲染ID",
-  "better_experience.config.unified.title": "Better Experience 统一配置",
-  "better_experience.config.unified.description": "选择要配置的功能模块",
+
   "better_experience.config.3d_rendering": "3D物品渲染配置",
   "better_experience.config.offhand_restrictions": "副手限制配置",
   "better_experience.config.close": "关闭",
@@ -46,10 +45,7 @@
   "better_experience.config.first_person": "第一人称",
   "better_experience.config.third_person": "第三人称",
   "better_experience.config.scroll": "滚动",
-  "better_experience.config.confirm_delete": "确认删除",
-  "better_experience.config.confirm_delete.message": "确定要删除物品配置吗？",
-  "better_experience.config.confirm_delete.confirm": "确认删除",
-  "better_experience.config.confirm_delete.cancel": "取消",
+
   "key.better_experience.open_config": "打开配置界面",
   "category.better_experience.general": "Better Experience"
 }

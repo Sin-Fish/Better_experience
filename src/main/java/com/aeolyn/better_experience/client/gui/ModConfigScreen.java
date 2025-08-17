@@ -4,6 +4,7 @@ import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
 import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
+import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -28,11 +29,6 @@ public class ModConfigScreen extends BaseConfigScreen {
     }
     
     @Override
-    protected void saveData() {
-        // 入口界面不需要保存数据
-    }
-    
-    @Override
     protected void renderCustomContent(DrawContext context) {
         // 渲染说明文字
         renderDescription(context);
@@ -43,17 +39,30 @@ public class ModConfigScreen extends BaseConfigScreen {
         // 入口界面不需要添加功能
     }
     
-    @Override
-    protected void onSaveClicked() {
-        // 入口界面不需要保存功能
-    }
-    
     // ==================== 自定义按钮 ====================
+    
+    @Override
+    protected void addStandardButtons() {
+        // 主界面只显示关闭按钮，不显示返回按钮
+        int centerX = getCenterX();
+        int buttonWidth = getButtonWidth();
+        int buttonHeight = getButtonHeight();
+        
+        // 关闭按钮
+        closeButton = ButtonWidget.builder(
+            Text.translatable("better_experience.config.close"),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "close");
+                this.close();
+            }
+        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(closeButton);
+    }
     
     @Override
     protected void addCustomButtons() {
         int centerX = getCenterX();
-        int startY = getCenterY() - 60;
+        int startY = 100;
         int buttonWidth = 200;
         int buttonHeight = 20;
         int spacing = 30;
@@ -81,7 +90,7 @@ public class ModConfigScreen extends BaseConfigScreen {
             Text.literal("📁 导入导出配置"),
             button -> {
                 this.client.setScreen(new ConfigImportExportScreen(this, configManager));
-                LogUtil.logGuiAction("open_import_export", getScreenName(), "打开导入导出配置界面");
+                LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
             }
         ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
     }
@@ -96,9 +105,9 @@ public class ModConfigScreen extends BaseConfigScreen {
     private void renderDescription(DrawContext context) {
         renderCenteredText(context, "Better Experience Mod 配置中心", 40, 0xFFFFFF);
         renderCenteredText(context, "选择要配置的功能模块", 60, 0xCCCCCC);
-        renderCenteredText(context, "🎨 3D渲染配置 - 管理物品的3D渲染效果", 100, 0xAAAAAA);
-        renderCenteredText(context, "🛡️ 副手限制配置 - 管理副手物品使用限制", 120, 0xAAAAAA);
-        renderCenteredText(context, "📁 导入导出配置 - 备份和恢复配置", 140, 0xAAAAAA);
+        renderCenteredText(context, "🎨 3D渲染配置 - 管理物品的3D渲染效果", 80, 0xAAAAAA);
+        renderCenteredText(context, "🛡️ 副手限制配置 - 管理副手物品使用限制", 100, 0xAAAAAA);
+        renderCenteredText(context, "📁 导入导出配置 - 备份和恢复配置", 120, 0xAAAAAA);
     }
     
     // ==================== 公共方法 ====================

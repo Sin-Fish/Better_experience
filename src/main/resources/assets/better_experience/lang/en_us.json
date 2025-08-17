@@ -10,8 +10,7 @@
   "better_experience.config.add_item.title": "Add Item Config",
   "better_experience.config.item_id": "Item ID",
   "better_experience.config.render_id": "Render ID",
-  "better_experience.config.unified.title": "Better Experience Unified Config",
-  "better_experience.config.unified.description": "Select the feature module to configure",
+
   "better_experience.config.3d_rendering": "3D Item Rendering Config",
   "better_experience.config.offhand_restrictions": "Offhand Restrictions Config",
   "better_experience.config.close": "Close",
@@ -46,10 +45,7 @@
   "better_experience.config.first_person": "First Person",
   "better_experience.config.third_person": "Third Person",
   "better_experience.config.scroll": "Scroll",
-  "better_experience.config.confirm_delete": "Confirm Delete",
-  "better_experience.config.confirm_delete.message": "Are you sure you want to delete this item config?",
-  "better_experience.config.confirm_delete.confirm": "Confirm Delete",
-  "better_experience.config.confirm_delete.cancel": "Cancel",
+
   "key.better_experience.open_config": "Open Config Interface",
   "category.better_experience.general": "Better Experience"
 }
