@@ -108,6 +108,13 @@ public class ConfigManager {
     }
     
     /**
+     * 导入物品配置（不更新主配置）
+     */
+    public boolean importItemConfig(String itemId, ItemConfig config) {
+        return impl.importItemConfig(itemId, config);
+    }
+    
+    /**
      * 更新主配置
      */
     public void updateItemsConfig(ItemsConfig itemsConfig) {

@@ -3,6 +3,7 @@ package com.aeolyn.better_experience.client.gui;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.config.manager.ConfigImportExportManager;
 import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -37,6 +38,15 @@ public class ConfigImportExportScreen extends Screen {
     private ConfigImportExportManager.ValidationResult validationResult = null;
     private boolean showValidationDetails = false;
     
+    // 验证状态枚举
+    private enum ValidationStatus {
+        UNKNOWN,    // 黄色 - 未验证
+        VALID,      // 绿色 - 验证通过
+        INVALID     // 红色 - 验证失败
+    }
+    
+    private ValidationStatus validationStatus = ValidationStatus.UNKNOWN;
+    
     public ConfigImportExportScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.literal("配置导入导出"));
         this.parentScreen = parentScreen;
@@ -70,11 +80,17 @@ public class ConfigImportExportScreen extends Screen {
         // 导入路径输入框
         importPathField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth/2, separatorY, fieldWidth, fieldHeight, Text.literal("导入路径"));
         importPathField.setPlaceholder(Text.literal("例如: C:\\BetterExperience_Config"));
+        importPathField.setChangedListener(text -> {
+            // 当路径改变时，重置验证状态
+            validationStatus = ValidationStatus.UNKNOWN;
+            showValidationDetails = false;
+            validationResult = null;
+        });
         
-        // 验证按钮
+        // 验证按钮（和导入按钮一样大）
         validateButton = ButtonWidget.builder(
             Text.literal("验证导入配置"),
-            button -> validateImportConfigs()
+            button -> validateAllConfigs()
         ).dimensions(centerX - fieldWidth/2, separatorY + spacing, fieldWidth, fieldHeight).build();
         
         // 导入按钮
@@ -110,6 +126,18 @@ public class ConfigImportExportScreen extends Screen {
             if (success) {
                 showSuccess("配置导出成功！路径: " + exportPath);
                 LOGGER.info("配置导出成功: {}", exportPath);
+                
+                // 延迟2秒后返回主界面
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(2000);
+                        MinecraftClient.getInstance().execute(() -> {
+                            this.close();
+                        });
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }).start();
             } else {
                 showError("配置导出失败，请检查路径和权限");
             }
@@ -119,26 +147,39 @@ public class ConfigImportExportScreen extends Screen {
         }
     }
     
-    private void validateImportConfigs() {
+    private void validateAllConfigs() {
         String importPath = importPathField.getText().trim();
         if (importPath.isEmpty()) {
             showError("导入路径不能为空");
+            validationStatus = ValidationStatus.INVALID;
             return;
         }
         
         try {
-            validationResult = ConfigImportExportManager.validateImportConfigs(importPath);
+            // 先验证文件结构
+            ConfigImportExportManager.ValidationResult structureResult = ConfigImportExportManager.validateFileStructure(importPath);
+            
+            // 再验证配置内容
+            ConfigImportExportManager.ValidationResult contentResult = ConfigImportExportManager.validateImportConfigs(importPath);
+            
+            // 合并结果
+            validationResult = contentResult; // 使用内容验证结果作为主要结果，因为它包含了结构验证的信息
+            
             showValidationDetails = true;
             
-            if (validationResult.isValid()) {
+            // 只有当两个验证都通过时，状态才为有效
+            if (structureResult.isValid() && contentResult.isValid()) {
                 showSuccess("配置验证成功！");
+                validationStatus = ValidationStatus.VALID;
             } else {
                 showError("配置验证失败: " + validationResult.getMessage());
+                validationStatus = ValidationStatus.INVALID;
             }
             
             LOGGER.info("配置验证完成: {}", importPath);
         } catch (Exception e) {
             showError("配置验证失败: " + e.getMessage());
+            validationStatus = ValidationStatus.INVALID;
             LOGGER.error("配置验证失败: " + e.getMessage(), e);
         }
     }
@@ -155,7 +196,10 @@ public class ConfigImportExportScreen extends Screen {
             
             if (result.isSuccess()) {
                 StringBuilder message = new StringBuilder("配置导入成功！");
-                message.append("\n成功导入: ").append(result.getTotalImported()).append(" 个物品配置");
+                message.append("\n成功导入: ").append(result.getTotalImported()).append(" 个3D渲染物品配置");
+                if (result.isOffHandConfigImported()) {
+                    message.append("\n副手限制配置: 已导入");
+                }
                 if (result.getTotalFailed() > 0) {
                     message.append("\n失败: ").append(result.getTotalFailed()).append(" 个");
                 }
@@ -171,6 +215,18 @@ public class ConfigImportExportScreen extends Screen {
                 }
                 
                 LOGGER.info("配置导入完成，成功: {}, 失败: {}", result.getTotalImported(), result.getTotalFailed());
+                
+                // 延迟2秒后返回主界面
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(2000);
+                        MinecraftClient.getInstance().execute(() -> {
+                            this.close();
+                        });
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }).start();
             } else {
                 showError("配置导入失败: " + result.getMessage());
             }
@@ -202,6 +258,7 @@ public class ConfigImportExportScreen extends Screen {
         
         // 绘制说明文字
         context.drawTextWithShadow(this.textRenderer, Text.literal("导出配置: 将当前所有配置导出到指定目录"), this.width / 2 - 150, 60, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("包括: 3D渲染配置 + 副手限制配置"), this.width / 2 - 150, 75, 0xCCCCCC);
         context.drawTextWithShadow(this.textRenderer, Text.literal("导入配置: 从指定目录导入配置（会覆盖现有配置）"), this.width / 2 - 150, 200, 0xCCCCCC);
         
         // 显示状态消息
@@ -216,12 +273,53 @@ public class ConfigImportExportScreen extends Screen {
             statusMessageTicks--;
         }
         
+        // 绘制验证状态指示点
+        renderValidationStatusDot(context);
+        
         // 显示验证结果详情
         if (showValidationDetails && validationResult != null) {
             renderValidationDetails(context);
         }
         
         super.render(context, mouseX, mouseY, delta);
+    }
+    
+    private void renderValidationStatusDot(DrawContext context) {
+        // 计算状态指示点的位置（在导入路径输入框左侧）
+        int centerX = this.width / 2;
+        int fieldWidth = 300;
+        int startY = 80;
+        int spacing = 30;
+        int separatorY = startY + spacing * 3;
+        
+        // 状态指示点的位置（在导入路径输入框左侧）
+        int dotX = centerX - fieldWidth/2 - 15;
+        int dotY = separatorY + 6; // 输入框中间位置
+        int dotSize = 8;
+        
+        // 根据验证状态选择颜色
+        int color;
+        switch (validationStatus) {
+            case VALID:
+                color = 0xFF55FF55; // 绿色
+                break;
+            case INVALID:
+                color = 0xFFFF5555; // 红色
+                break;
+            case UNKNOWN:
+            default:
+                color = 0xFFFFFF55; // 黄色
+                break;
+        }
+        
+        // 绘制状态指示点
+        context.fill(dotX, dotY, dotX + dotSize, dotY + dotSize, color);
+        
+        // 绘制边框（深色）
+        context.fill(dotX, dotY, dotX + dotSize, dotY + 1, 0xFF000000);
+        context.fill(dotX, dotY, dotX + 1, dotY + dotSize, 0xFF000000);
+        context.fill(dotX + dotSize - 1, dotY, dotX + dotSize, dotY + dotSize, 0xFF000000);
+        context.fill(dotX, dotY + dotSize - 1, dotX + dotSize, dotY + dotSize, 0xFF000000);
     }
     
     private void renderValidationDetails(DrawContext context) {
@@ -233,18 +331,28 @@ public class ConfigImportExportScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, Text.literal("验证结果详情:"), this.width / 2 - 150, currentY, 0xFFFFFF);
         currentY += lineHeight + 5;
         
-        // 主配置文件状态
+        // 3D渲染主配置文件状态
         if (validationResult.isMainConfigValid()) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("✓ 主配置文件: 有效 (" + validationResult.getMainConfigItemsCount() + " 个物品)"), 
+            context.drawTextWithShadow(this.textRenderer, Text.literal("✓ 3D渲染主配置文件: 有效 (" + validationResult.getMainConfigItemsCount() + " 个物品)"), 
                 this.width / 2 - 150, currentY, 0x55FF55);
         } else {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("✗ 主配置文件: 无效"), 
+            context.drawTextWithShadow(this.textRenderer, Text.literal("✗ 3D渲染主配置文件: 无效"), 
                 this.width / 2 - 150, currentY, 0xFF5555);
         }
         currentY += lineHeight;
         
-        // 物品配置统计
-        context.drawTextWithShadow(this.textRenderer, Text.literal("有效物品配置: " + validationResult.getTotalValid()), 
+        // 副手限制配置文件状态
+        if (validationResult.isOffHandConfigValid()) {
+            context.drawTextWithShadow(this.textRenderer, Text.literal("✓ 副手限制配置文件: 有效 (" + validationResult.getOffHandConfigItemsCount() + " 个物品)"), 
+                this.width / 2 - 150, currentY, 0x55FF55);
+        } else {
+            context.drawTextWithShadow(this.textRenderer, Text.literal("✗ 副手限制配置文件: 无效"), 
+                this.width / 2 - 150, currentY, 0xFF5555);
+        }
+        currentY += lineHeight;
+        
+        // 3D渲染物品配置统计
+        context.drawTextWithShadow(this.textRenderer, Text.literal("有效3D渲染物品配置: " + validationResult.getTotalValid()), 
             this.width / 2 - 150, currentY, 0x55FF55);
         currentY += lineHeight;
         
@@ -261,6 +369,17 @@ public class ConfigImportExportScreen extends Screen {
             currentY += lineHeight;
             for (String error : validationResult.getErrors()) {
                 context.drawTextWithShadow(this.textRenderer, Text.literal("  • " + error), this.width / 2 - 150, currentY, 0xFF5555);
+                currentY += lineHeight;
+            }
+        }
+        
+        // 信息消息
+        if (!validationResult.getInfos().isEmpty()) {
+            currentY += 5;
+            context.drawTextWithShadow(this.textRenderer, Text.literal("信息:"), this.width / 2 - 150, currentY, 0x55FFFF);
+            currentY += lineHeight;
+            for (String info : validationResult.getInfos()) {
+                context.drawTextWithShadow(this.textRenderer, Text.literal("  • " + info), this.width / 2 - 150, currentY, 0x55FFFF);
                 currentY += lineHeight;
             }
         }

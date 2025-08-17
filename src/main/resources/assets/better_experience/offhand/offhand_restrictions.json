@@ -25,11 +25,10 @@
     "minecraft:item_frame"
   ],
   "disable_block_placement": {
-    "enabled": false,
-    "allowed_items": []
+    "enabled": false
+    
   },
   "disable_item_usage": {
-    "enabled": false,
-    "allowed_items": []
+    "enabled": false
   }
 }

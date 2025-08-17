@@ -255,6 +255,36 @@ public class ConfigManagerImpl {
     }
     
     /**
+     * 导入物品配置（不更新主配置）
+     */
+    public boolean importItemConfig(String itemId, ItemConfig config) {
+        ensureInitialized();
+        
+        try {
+                         // 验证配置
+             ValidationResult validation = ConfigValidationUtil.validate(config);
+             ConfigValidationUtil.logValidationResult(itemId, validation);
+             if (!validation.isValid()) {
+                 return false;
+             }
+             
+             // 保存配置（不更新主配置）
+             saver.saveItemConfig(itemId, config);
+             
+             // 更新缓存
+             cache.put(itemId, config);
+             cache.putEnabled(itemId, config.isEnabled());
+             
+             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置导入成功");
+             return true;
+             
+         } catch (Exception e) {
+             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "导入物品配置: " + itemId, e);
+             return false;
+         }
+    }
+    
+    /**
      * 删除物品配置
      */
     public void removeItemConfig(String itemId) {
