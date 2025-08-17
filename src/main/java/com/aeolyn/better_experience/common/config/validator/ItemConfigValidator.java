@@ -1,13 +1,13 @@
 package com.aeolyn.better_experience.common.config.validator;
 
-import com.aeolyn.better_experience.common.config.ItemsConfig;
-import com.aeolyn.better_experience.common.config.ItemConfig;
+import com.aeolyn.better_experience.render3d.config.ItemsConfig;
+import com.aeolyn.better_experience.render3d.config.ItemConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 物品配置验证器实�?
+ * 物品配置验证器实�?
  */
 public class ItemConfigValidator implements ConfigValidator {
     
@@ -123,14 +123,14 @@ public class ItemConfigValidator implements ConfigValidator {
             return ValidationResult.failure(errors);
         }
         
-        // 验证缩放�?
+        // 验证缩放�?
         if (settings.getScale() <= 0) {
             errors.add("Scale must be greater than 0");
         } else if (settings.getScale() > 10.0f) {
             warnings.add("Scale value is very large: " + settings.getScale());
         }
         
-        // 验证旋转�?
+        // 验证旋转�?
         if (Math.abs(settings.getRotationX()) > 360) {
             warnings.add("Rotation X value is outside normal range: " + settings.getRotationX());
         }
@@ -141,7 +141,7 @@ public class ItemConfigValidator implements ConfigValidator {
             warnings.add("Rotation Z value is outside normal range: " + settings.getRotationZ());
         }
         
-        // 验证平移�?
+        // 验证平移�?
         if (Math.abs(settings.getTranslateX()) > 100) {
             warnings.add("Translate X value is very large: " + settings.getTranslateX());
         }

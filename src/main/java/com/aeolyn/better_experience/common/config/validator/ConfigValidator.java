@@ -1,15 +1,15 @@
 package com.aeolyn.better_experience.common.config.validator;
 
-import com.aeolyn.better_experience.common.config.ItemsConfig;
-import com.aeolyn.better_experience.common.config.ItemConfig;
+import com.aeolyn.better_experience.render3d.config.ItemsConfig;
+import com.aeolyn.better_experience.render3d.config.ItemConfig;
 
 /**
- * 配置验证器接�?
+ * 配置验证器接�?
  */
 public interface ConfigValidator {
     
     /**
-     * 验证主配�?
+     * 验证主配�?
      */
     ValidationResult validate(ItemsConfig config);
     

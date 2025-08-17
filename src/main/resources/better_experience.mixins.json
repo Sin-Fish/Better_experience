@@ -1,13 +1,12 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.aeolyn.better_experience.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
   ],
   "client": [
-    "GenericItemRendererMixin",
-    "OffHandRestrictionMixin"
+    "com.aeolyn.better_experience.render3d.mixin.GenericItemRendererMixin",
+    "com.aeolyn.better_experience.offhand.mixin.OffHandRestrictionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,8 +1,8 @@
 package com.aeolyn.better_experience.common.config.saver;
 
-import com.aeolyn.better_experience.common.config.ItemsConfig;
-import com.aeolyn.better_experience.common.config.ItemConfig;
-import com.aeolyn.better_experience.common.config.OffHandRestrictionConfig;
+import com.aeolyn.better_experience.render3d.config.ItemsConfig;
+import com.aeolyn.better_experience.render3d.config.ItemConfig;
+import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.common.config.exception.ConfigSaveException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * 文件配置保存器实�?
+ * 文件配置保存器实�?
  */
 public class FileConfigSaver implements ConfigSaver {
     
@@ -53,9 +53,9 @@ public class FileConfigSaver implements ConfigSaver {
                 GSON.toJson(config, writer);
             }
             
-            LOGGER.info("主配置文件保存成�? {}", configPath);
+            LOGGER.info("主配置文件保存成�? {}", configPath);
         } catch (Exception e) {
-            LOGGER.error("保存主配置文件失�? " + e.getMessage(), e);
+            LOGGER.error("保存主配置文件失�? " + e.getMessage(), e);
             throw new ConfigSaveException("Failed to save items config to " + configPath, e);
         }
     }
@@ -122,7 +122,7 @@ public class FileConfigSaver implements ConfigSaver {
             }
             return Files.isWritable(parentDir);
         } catch (Exception e) {
-            LOGGER.error("检查写入权限失�? " + e.getMessage(), e);
+            LOGGER.error("检查写入权限失�? " + e.getMessage(), e);
             return false;
         }
     }
