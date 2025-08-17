@@ -30,8 +30,8 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     // 滚动相关
     private int scrollOffset = 0;
     private int maxScrollOffset = 0;
-    private static final int ITEM_HEIGHT = 25;
-    private static final int LIST_START_Y = 80;
+    private static final int ITEM_HEIGHT = 25; 
+    private static final int LIST_START_Y = 70;
     private static final int LIST_END_Y = 200;
     
     // 当前显示模式
@@ -328,6 +328,9 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     // ==================== 辅助方法 ====================
     
     private Text getToggleText(boolean enabled, String key) {
+        if ("offhand_restriction".equals(key)) {
+            return Text.literal(enabled ? "✓ 副手限制" : "✗ 副手限制");
+        }
         return Text.literal(enabled ? "✓ " + key : "✗ " + key);
     }
     
