@@ -1,4 +1,4 @@
-package com.aeolyn.better_experience.offhand.mixin;
+package com.aeolyn.better_experience.mixin.offhand.mixin;
 
 import com.aeolyn.better_experience.offhand.core.OffHandRestrictionController;
 import net.minecraft.client.MinecraftClient;
@@ -33,10 +33,18 @@ public class OffHandRestrictionMixin {
             ItemStack offHandStack = player.getOffHandStack();
             
             if (!offHandStack.isEmpty()) {
+                String itemId = net.minecraft.registry.Registries.ITEM.getId(offHandStack.getItem()).toString();
                 OffHandRestrictionController controller = OffHandRestrictionController.getInstance();
                 
+                // 添加调试日志
+                com.aeolyn.better_experience.BetterExperienceMod.LOGGER.debug("副手物品使用检查: {}", itemId);
+                
                 // 检查道具使用是否被允许
-                if (!controller.isItemUsageAllowed(offHandStack.getItem())) {
+                boolean isAllowed = controller.isItemUsageAllowed(offHandStack.getItem());
+                com.aeolyn.better_experience.BetterExperienceMod.LOGGER.debug("副手物品使用权限: {} = {}", itemId, isAllowed);
+                
+                if (!isAllowed) {
+                    com.aeolyn.better_experience.BetterExperienceMod.LOGGER.info("阻止副手物品使用: {}", itemId);
                     // 静默取消，不显示任何提示
                     cir.setReturnValue(net.minecraft.util.ActionResult.PASS);
                     cir.cancel();

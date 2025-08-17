@@ -1,5 +1,7 @@
 package com.aeolyn.better_experience.offhand;
 
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.offhand.core.OffHandRestrictionController;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,14 @@ public class OffHandMod implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("初始化副手限制模块");
-        // TODO: 初始化副手限制相关功能
+        
+        try {
+            // 初始化副手限制核心功能
+            OffHandRestrictionController.initialize();
+            
+            LOGGER.info("副手限制模块初始化成功");
+        } catch (Exception e) {
+            LOGGER.error("副手限制模块初始化失败", e);
+        }
     }
 }

@@ -36,6 +36,15 @@ public class ItemRenderer3D {
     }
     
     /**
+     * 初始化3D渲染器
+     */
+    public static void initialize() {
+        LOGGER.info("初始化3D物品渲染器");
+        // 这里可以添加任何需要的初始化逻辑
+        // 比如注册事件监听器、初始化缓存等
+    }
+    
+    /**
      * 渲染物品的3D模型
      */
     public void render3DItem(Item item, ItemDisplayContext displayContext, 

@@ -74,10 +74,7 @@ public class OffHandRestrictionUtil {
                    itemId.contains("beehive") ||
                    itemId.contains("bee_nest") ||
                    itemId.contains("jukebox") ||
-                   itemId.contains("note_block") ||
-                   itemId.contains("jukebox") ||
-                   itemId.contains("jukebox") ||
-                   itemId.contains("jukebox");
+                   itemId.contains("note_block");
         } catch (Exception e) {
             LOGGER.error("检查方块物品失败: " + e.getMessage(), e);
             return false;

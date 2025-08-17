@@ -19,6 +19,17 @@ public class OffHandRestrictionController {
     private OffHandRestrictionController() {}
     
     /**
+     * 初始化副手限制控制器
+     */
+    public static void initialize() {
+        LOGGER.info("初始化副手限制控制器");
+        // 确保单例实例已创建
+        getInstance();
+        // 这里可以添加任何需要的初始化逻辑
+        // 比如注册事件监听器、初始化缓存等
+    }
+    
+    /**
      * 获取单例实例
      */
     public static OffHandRestrictionController getInstance() {

@@ -19,14 +19,18 @@ public class BetterExperienceMod implements ModInitializer {
         // 初始化配置管理器
         ConfigManager.initialize();
         
-        // 测试配置持久化功能
-        ConfigManager.getInstance().testConfigPersistence();
-        
-        // This code runs as soon as Minecraft is in a mod-load-ready state.
-        // However, some things (like resources) may still be uninitialized.
-        // Proceed with mild caution.
-
-        LOGGER.info("Better Experience mod 初始化完成! 通用3D渲染系统和副手限制系统已启用!");
+        // 初始化各个模块
+        try {
+            // 初始化3D渲染模块
+            com.aeolyn.better_experience.render3d.core.ItemRenderer3D.initialize();
+            
+            // 初始化副手限制模块
+            com.aeolyn.better_experience.offhand.core.OffHandRestrictionController.initialize();
+            
+            LOGGER.info("Better Experience mod 初始化完成! 通用3D渲染系统和副手限制系统已启用!");
+        } catch (Exception e) {
+            LOGGER.error("模块初始化失败", e);
+        }
         
         // 注册服务器启动事件，在游戏完全加载后显示消息
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
@@ -37,8 +41,9 @@ public class BetterExperienceMod implements ModInitializer {
                     Thread.sleep(3000);
                     
                     // 向所有在线玩家发送消息
-                    if (server.getPlayerManager().getPlayerList().size() > 0) {
-                        server.getPlayerManager().getPlayerList().get(0).sendMessage(
+                    var playerList = server.getPlayerManager().getPlayerList();
+                    if (playerList != null && !playerList.isEmpty()) {
+                        playerList.get(0).sendMessage(
                             Text.literal("[Better Experience] 通用3D渲染和副手限制mod已成功加载!"), false
                         );
                     }
