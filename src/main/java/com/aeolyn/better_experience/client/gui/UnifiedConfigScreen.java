@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
+import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -30,12 +31,12 @@ public class UnifiedConfigScreen extends Screen {
         int spacing = 30;
         
         // 3D渲染配置按钮
-                       this.addDrawableChild(ButtonWidget.builder(
-                   Text.translatable("better_experience.config.3d_rendering"),
-                   button -> {
-                       this.client.setScreen(new ModConfigScreen(this, configManager));
-                   }
-               ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.translatable("better_experience.config.3d_rendering"),
+            button -> {
+                this.client.setScreen(new Render3DConfigScreen(this, configManager));
+            }
+        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
         
         // 副手限制配置按钮
         this.addDrawableChild(ButtonWidget.builder(

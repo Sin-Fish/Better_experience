@@ -117,6 +117,14 @@ public class Render3DConfigScreen extends BaseConfigScreen {
         updateItemWidgets();
     }
     
+    // ==================== 重写标准按钮 ====================
+    
+    @Override
+    protected void addStandardButtons() {
+        // 使用BaseConfigScreen的默认实现，包含保存、返回和关闭按钮
+        super.addStandardButtons();
+    }
+    
     // ==================== 滚动按钮 ====================
     
     private void addScrollButtons() {

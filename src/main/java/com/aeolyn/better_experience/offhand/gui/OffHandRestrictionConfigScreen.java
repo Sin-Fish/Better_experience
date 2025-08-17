@@ -17,6 +17,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 副手限制配置界面
@@ -97,6 +98,14 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
         if (currentMode == DisplayMode.WHITELIST) {
             setupWhitelistScroll();
         }
+    }
+    
+    // ==================== 重写标准按钮 ====================
+    
+    @Override
+    protected void addStandardButtons() {
+        // 使用BaseConfigScreen的默认实现，包含保存、返回和关闭按钮
+        super.addStandardButtons();
     }
     
     // ==================== 主菜单模式 ====================
@@ -221,7 +230,12 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
             getCenterX() - 100, y, 20, 20,
             itemId, true, // 白名单中的物品都是启用的
             button -> {
-                // 可以在这里添加点击物品的详细配置
+                // 点击物品图标可以显示物品信息或进行其他操作
+                Item item = Registries.ITEM.get(Identifier.of(itemId));
+                String displayName = item != null ? item.getName().getString() : itemId;
+                showInfoDialog("物品信息", "物品ID: " + itemId + "\n显示名称: " + displayName);
+                LogUtil.logGuiAction("click_offhand_item", getScreenName(), 
+                    Map.of("itemId", itemId, "action", "info"));
             }
         );
         
