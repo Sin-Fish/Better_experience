@@ -1790,7 +1790,7 @@ public class InventorySortController {
 
     /**
      * 在玩家主背包(9-35)范围内执行"只堆叠不跨容器"的服务端同步合并。
-     * 使用 PICKUP 点击模拟，将后续槽位的相同物品依次堆到前面的未满栈上。
+     * 实现真正的"前向堆叠合并"：收集所有相同物品，然后从前往后依次填充。
      */
     private void mergePlayerMainWithPickup(ClientPlayerEntity player) {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -1808,34 +1808,107 @@ public class InventorySortController {
         playerSlots.sort(Comparator.comparingInt(Slot::getIndex));
         if (playerSlots.size() != 27) return;
 
-        for (int i = 0; i < playerSlots.size(); i++) {
-            Slot target = playerSlots.get(i);
-            ItemStack targetStack = target.getStack();
-            if (targetStack.isEmpty() || targetStack.getCount() >= targetStack.getMaxCount()) continue;
-
-            for (int j = i + 1; j < playerSlots.size(); j++) {
-                Slot src = playerSlots.get(j);
-                ItemStack srcStack = src.getStack();
-                if (srcStack.isEmpty()) continue;
-                if (!canMergeStacks(targetStack, srcStack)) continue;
-
-                // 拿起源槽
-                client.interactionManager.clickSlot(syncId, src.id, 0, SlotActionType.PICKUP, player);
-                // 放到目标槽（部分或全部）
-                client.interactionManager.clickSlot(syncId, target.id, 0, SlotActionType.PICKUP, player);
-
-                // 如果鼠标上还有剩余（目标已满但源还有），则放回源槽
-                ItemStack cursor = handler.getCursorStack();
-                if (!cursor.isEmpty()) {
-                    client.interactionManager.clickSlot(syncId, src.id, 0, SlotActionType.PICKUP, player);
-                }
-
-        		// 若目标已满，终止该目标并进入下一个目标
-                ItemStack newTarget = target.getStack();
-                if (!newTarget.isEmpty() && newTarget.getCount() >= newTarget.getMaxCount()) {
-                    break;
-                }
+        // 第一步：收集所有物品并按类型分组
+        Map<String, List<Slot>> itemGroups = new HashMap<>();
+        for (Slot slot : playerSlots) {
+            ItemStack stack = slot.getStack();
+            if (!stack.isEmpty()) {
+                String itemKey = getItemKey(stack);
+                itemGroups.computeIfAbsent(itemKey, k -> new ArrayList<>()).add(slot);
             }
         }
+
+        // 第二步：对每种物品执行前向堆叠合并
+        int currentFillSlot = 0; // 当前填充位置
+        
+        // 对物品组进行排序，确保按正确顺序处理
+        List<Map.Entry<String, List<Slot>>> sortedEntries = new ArrayList<>(itemGroups.entrySet());
+        sortedEntries.sort((a, b) -> {
+            // 按物品名称排序，确保一致的顺序
+            String nameA = a.getValue().get(0).getStack().getName().getString();
+            String nameB = b.getValue().get(0).getStack().getName().getString();
+            return nameA.compareTo(nameB);
+        });
+        
+        for (Map.Entry<String, List<Slot>> entry : sortedEntries) {
+            List<Slot> sameTypeSlots = entry.getValue();
+            if (sameTypeSlots.size() <= 1) continue; // 只有1个或0个，无需合并
+
+            // 计算总数量
+            int totalCount = sameTypeSlots.stream()
+                .mapToInt(slot -> slot.getStack().getCount())
+                .sum();
+            
+            ItemStack firstStack = sameTypeSlots.get(0).getStack();
+            int maxStackSize = firstStack.getMaxCount();
+            
+            LogUtil.info("Inventory", "合并物品: " + firstStack.getName().getString() + 
+                ", 总数量: " + totalCount + ", 最大堆叠: " + maxStackSize);
+
+            // 第三步：从前往后填充，填满64个就移动到下一个位置
+            int remainingToFill = totalCount;
+            int filledSlots = 0;
+            
+            while (remainingToFill > 0 && currentFillSlot < playerSlots.size()) {
+                Slot targetSlot = playerSlots.get(currentFillSlot);
+                int toFill = Math.min(remainingToFill, maxStackSize);
+                
+                // 如果目标槽位不是空的且不是相同物品，需要先清空
+                if (!targetSlot.getStack().isEmpty() && 
+                    !canMergeStacks(targetSlot.getStack(), firstStack)) {
+                    // 找到后面的空槽位来临时存放
+                    for (int k = currentFillSlot + 1; k < playerSlots.size(); k++) {
+                        Slot emptySlot = playerSlots.get(k);
+                        if (emptySlot.getStack().isEmpty()) {
+                            // 移动目标槽位的物品到空槽位
+                            client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
+                            client.interactionManager.clickSlot(syncId, emptySlot.id, 0, SlotActionType.PICKUP, player);
+                            break;
+                        }
+                    }
+                }
+                
+                // 现在目标槽位应该是空的或包含相同物品，开始填充
+                boolean firstItemPlaced = false;
+                for (Slot sourceSlot : sameTypeSlots) {
+                    if (sourceSlot.getStack().isEmpty()) continue;
+                    
+                    if (!firstItemPlaced) {
+                        // 第一个物品直接放到目标槽位
+                        client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
+                        client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
+                        firstItemPlaced = true;
+                    } else {
+                        // 后续物品尝试堆叠到目标槽位
+                        client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
+                        client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
+                        
+                        // 如果鼠标上还有剩余，放回源槽位
+                        ItemStack cursor = handler.getCursorStack();
+                        if (!cursor.isEmpty()) {
+                            client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
+                        }
+                    }
+                    
+                    // 检查目标槽位是否已满
+                    ItemStack targetStack = targetSlot.getStack();
+                    if (!targetStack.isEmpty() && targetStack.getCount() >= maxStackSize) {
+                        break;
+                    }
+                }
+                
+                filledSlots++;
+                remainingToFill -= toFill;
+                currentFillSlot++;
+                
+                LogUtil.info("Inventory", "填充槽位 " + targetSlot.getIndex() + 
+                    ", 填充数量: " + toFill + ", 剩余: " + remainingToFill);
+            }
+            
+            LogUtil.info("Inventory", "物品 " + firstStack.getName().getString() + 
+                " 合并完成，填充了 " + filledSlots + " 个槽位");
+        }
+        
+        LogUtil.info("Inventory", "前向堆叠合并完成，所有物品已集中在背包前部");
     }
 }

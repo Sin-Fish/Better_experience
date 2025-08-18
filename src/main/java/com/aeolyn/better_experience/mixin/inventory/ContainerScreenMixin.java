@@ -140,26 +140,25 @@ public class ContainerScreenMixin {
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
 
-        if (screen instanceof GenericContainerScreen) {
-            var sortKey = KeyBindings.getSortInventoryKey();
-            var smartKey = KeyBindings.getSmartTransferKey();
-            boolean sortMatch = sortKey != null && sortKey.matchesKey(keyCode, scanCode);
-            boolean smartMatch = smartKey != null && smartKey.matchesKey(keyCode, scanCode);
+        // 扩展支持所有界面，不仅仅是容器界面
+        var sortKey = KeyBindings.getSortInventoryKey();
+        var smartKey = KeyBindings.getSmartTransferKey();
+        boolean sortMatch = sortKey != null && sortKey.matchesKey(keyCode, scanCode);
+        boolean smartMatch = smartKey != null && smartKey.matchesKey(keyCode, scanCode);
 
-            if (sortMatch || smartMatch) {
-                boolean isShiftPressed = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
-                InventorySortController controller = InventorySortController.getInstance();
+        if (sortMatch || smartMatch) {
+            boolean isShiftPressed = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+            InventorySortController controller = InventorySortController.getInstance();
 
-                if (smartMatch && (!sortMatch || isShiftPressed)) {
-                    LogUtil.info("ContainerScreenMixin", "在容器界面检测到 智能转移 快捷键，执行智能转移");
-                    controller.smartTransferItems();
-                } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
-                    LogUtil.info("ContainerScreenMixin", "在容器界面检测到 一键整理 快捷键，执行一键整理");
-                    controller.smartSortByMousePosition();
-                }
-
-                cir.setReturnValue(true);
+            if (smartMatch && (!sortMatch || isShiftPressed)) {
+                LogUtil.info("ContainerScreenMixin", "在界面 " + screen.getClass().getSimpleName() + " 检测到 智能转移 快捷键，执行智能转移");
+                controller.smartTransferItems();
+            } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
+                LogUtil.info("ContainerScreenMixin", "在界面 " + screen.getClass().getSimpleName() + " 检测到 一键整理 快捷键，执行一键整理");
+                controller.smartSortByMousePosition();
             }
+
+            cir.setReturnValue(true);
         }
     }
 }
