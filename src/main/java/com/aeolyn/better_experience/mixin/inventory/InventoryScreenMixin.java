@@ -43,7 +43,9 @@ public class InventoryScreenMixin {
                 }
             ).dimensions(screen.width - 100, 10, 80, 20).build();
             
+            // 暂时注释掉按钮添加逻辑，专注于解决UI刷新问题
             // 使用反射添加按钮到界面
+            /*
             try {
                 // 尝试不同的字段名
                 java.lang.reflect.Field childrenField = null;
@@ -59,13 +61,17 @@ public class InventoryScreenMixin {
                 
                 if (childrenField != null) {
                     childrenField.setAccessible(true);
-                    java.util.List<net.minecraft.client.gui.Element> children = (java.util.List<net.minecraft.client.gui.Element>) childrenField.get(screen);
-                    children.add(sortButton);
+                    Object childrenObj = childrenField.get(screen);
+                    if (childrenObj instanceof java.util.List) {
+                        java.util.List<net.minecraft.client.gui.Element> children = (java.util.List<net.minecraft.client.gui.Element>) childrenObj;
+                        children.add(sortButton);
+                    }
                 }
             } catch (Exception e) {
                 // 如果反射失败，记录错误但不崩溃
                 com.aeolyn.better_experience.BetterExperienceMod.LOGGER.warn("无法添加整理按钮到背包界面", e);
             }
+            */
         }
         }
     }
