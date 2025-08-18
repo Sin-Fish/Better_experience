@@ -8,14 +8,16 @@ import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * 容器界面Mixin
- * 在容器界面添加整理按钮
+ * 在容器界面添加整理按钮和 R 键处理
  */
 @Mixin(HandledScreen.class)
 public class ContainerScreenMixin {
@@ -130,5 +132,23 @@ public class ContainerScreenMixin {
             LogUtil.warn("ContainerScreenMixin", "无法获取容器实例: " + e.getMessage());
         }
         return null;
+    }
+    
+    // 新添加：处理 R 键按下
+    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true)
+    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        
+        // 只对容器屏幕处理 R 键
+        if (screen instanceof GenericContainerScreen && keyCode == GLFW.GLFW_KEY_R) {
+            LogUtil.info("ContainerScreenMixin", "在容器界面检测到 R 键按下");
+            
+            // 执行智能排序
+            InventorySortController controller = InventorySortController.getInstance();
+            controller.smartSortByMousePosition();
+            
+            // 阻止按键继续传播
+            cir.setReturnValue(true);
+        }
     }
 }

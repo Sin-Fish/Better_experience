@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import net.minecraft.screen.ScreenHandler;
 
 /**
  * 背包整理控制器
@@ -628,7 +629,25 @@ public class InventorySortController {
              throw new IllegalStateException("interactionManager 不可用");
          }
          
-         int syncId = player.currentScreenHandler.syncId;
+         ScreenHandler handler = player.currentScreenHandler;
+         int syncId = handler.syncId;
+         
+         List<Integer> mainSlotIds = new ArrayList<>();
+         for (Slot s : handler.slots) {
+             if (s.inventory == player.getInventory() && s.getIndex() >= 9 && s.getIndex() < 36) {
+                 mainSlotIds.add(s.id);
+             }
+         }
+         // Sort by internal index to ensure order
+         mainSlotIds.sort(Comparator.comparingInt(id -> {
+             for (Slot s : handler.slots) {
+                 if (s.id == id) return s.getIndex();
+             }
+             return -1;
+         }));
+         if (mainSlotIds.size() != 27) {
+             throw new IllegalStateException("意外的玩家主背包槽位数量: " + mainSlotIds.size());
+         }
          
          for (int i = 0; i < 27; i++) {
              ItemStack want = desired.get(i);
@@ -656,8 +675,8 @@ public class InventorySortController {
              }
              
              if (j != -1 && j != i) {
-                 int slotA = i + 9;
-                 int slotB = j + 9;
+                 int slotA = mainSlotIds.get(i);
+                 int slotB = mainSlotIds.get(j);
                  clickSwap(client, syncId, slotA, slotB, player);
                  ItemStack tmp = current.get(i);
                  current.set(i, current.get(j));
@@ -675,10 +694,14 @@ public class InventorySortController {
              throw new IllegalStateException("interactionManager 不可用");
          }
          
-         int syncId = player.currentScreenHandler.syncId;
+         ScreenHandler handler = player.currentScreenHandler;
+         int syncId = handler.syncId;
          
-         // 计算容器槽位的偏移量（容器槽位通常在玩家背包槽位之后）
-         int containerStartSlot = 36; // 假设容器从第36个槽位开始
+         List<Integer> slotIndices = getSlotIndicesForInventory(handler, container);
+         
+         if (slotIndices.size() != container.size()) {
+             throw new IllegalStateException("意外的容器槽位数量: " + slotIndices.size() + " vs " + container.size());
+         }
          
          for (int i = 0; i < container.size(); i++) {
              ItemStack want = desired.get(i);
@@ -706,8 +729,8 @@ public class InventorySortController {
              }
              
              if (j != -1 && j != i) {
-                 int slotA = containerStartSlot + i;
-                 int slotB = containerStartSlot + j;
+                 int slotA = slotIndices.get(i);
+                 int slotB = slotIndices.get(j);
                  clickSwap(client, syncId, slotA, slotB, player);
                  ItemStack tmp = current.get(i);
                  current.set(i, current.get(j));
@@ -742,9 +765,11 @@ public class InventorySortController {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
-                LogUtil.info("Inventory", "没有打开库存界面，跳过智能排序");
+                LogUtil.info("Inventory", "R键按下，但没有打开库存界面，跳过智能排序");
                 return;
             }
+            // 添加调试输出
+            LogUtil.info("Inventory", "R键按下，当前屏幕类: " + client.currentScreen.getClass().getName());
             
             // 获取缩放后的鼠标位置
             double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
@@ -756,36 +781,219 @@ public class InventorySortController {
             net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
                 (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
             
-            // 使用反射调用 getSlotAt (尝试多个混淆名)
-            String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542"}; // 常见混淆名
+            // 输出所有方法名以调试
+            java.lang.reflect.Method[] methods = handledScreen.getClass().getDeclaredMethods();
+            StringBuilder methodList = new StringBuilder("handledScreen 方法列表: ");
+            for (java.lang.reflect.Method m : methods) {
+                methodList.append(m.getName()).append(", ");
+            }
+            LogUtil.info("Inventory", methodList.toString());
+
+            // 输出当前类方法列表（已有）
+            // 获取超类
+            Class<?> superClass = handledScreen.getClass().getSuperclass();
+            LogUtil.info("Inventory", "超类名: " + superClass.getName());
+
+            // 输出超类方法列表 (已有)
+
+            // 添加过滤: 找出签名匹配 (double, double) 的方法
+            java.lang.reflect.Method[] superMethods = superClass.getDeclaredMethods(); // 添加声明
+            StringBuilder matchingMethods = new StringBuilder("匹配签名 (double, double) 的方法: ");
+            String autoMethodName = null;
+            for (java.lang.reflect.Method m : superMethods) {
+                Class<?>[] params = m.getParameterTypes();
+                String signature = m.getName() + " params: " + Arrays.toString(params) + " return: " + m.getReturnType().getSimpleName();
+                LogUtil.info("Inventory", "方法签名: " + signature);
+                if (params.length == 2 && params[0] == double.class && params[1] == double.class && m.getReturnType() == net.minecraft.screen.slot.Slot.class) {
+                    matchingMethods.append(m.getName()).append(", ");
+                    if (autoMethodName == null) autoMethodName = m.getName(); // 使用第一个匹配
+                }
+            }
+            LogUtil.info("Inventory", matchingMethods.toString());
+
+            // 声明 slot
             net.minecraft.screen.slot.Slot slot = null;
-            for (String methodName : possibleMethodNames) {
-                try {
-                    java.lang.reflect.Method getSlotAtMethod = handledScreen.getClass().getDeclaredMethod(methodName, double.class, double.class);
-                    getSlotAtMethod.setAccessible(true);
-                    slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
-                    LogUtil.info("Inventory", "成功调用 getSlotAt，使用方法名: " + methodName);
-                    break;
-                } catch (NoSuchMethodException e) {
-                    // 继续尝试下一个
-                } catch (Exception e) {
-                    LogUtil.warn("Inventory", "调用 " + methodName + " 失败: " + e.getMessage());
+
+            // 在Creative if 中加强调试和动态查找
+            String className = handledScreen.getClass().getName(); // 添加声明
+            if (className.contains("CreativeInventoryScreen") || className.equals("net.minecraft.class_10260")) {
+                LogUtil.info("Inventory", "检测到CreativeInventoryScreen，开始调试输出");
+                // 输出当前类方法列表 (已有)
+                java.lang.reflect.Method[] creativeMethods = handledScreen.getClass().getDeclaredMethods();
+                StringBuilder creativeMethodList = new StringBuilder("Creative类方法列表: ");
+                for (java.lang.reflect.Method m : creativeMethods) {
+                    creativeMethodList.append(m.getName()).append(", ");
+                }
+                LogUtil.info("Inventory", creativeMethodList.toString());
+                // 签名匹配并动态选择方法
+                StringBuilder creativeMatching = new StringBuilder("Creative匹配 (double, double) 方法: ");
+                String creativeMethodName = null;
+                for (java.lang.reflect.Method m : creativeMethods) {
+                    Class<?>[] params = m.getParameterTypes();
+                    if (params.length == 2 && params[0] == double.class && params[1] == double.class) { // 移除 return 检查
+                        creativeMatching.append(m.getName() + " return: " + m.getReturnType().getSimpleName()).append(", ");
+                        if (creativeMethodName == null) creativeMethodName = m.getName(); // 第一个匹配
+                    }
+                }
+                LogUtil.info("Inventory", creativeMatching.toString());
+                if (creativeMethodName != null) {
+                    try {
+                        LogUtil.info("Inventory", "动态尝试调用 " + creativeMethodName + ", 输入: (" + mouseX + ", " + mouseY + ")"); 
+                        java.lang.reflect.Method getSlotAtMethod = handledScreen.getClass().getDeclaredMethod(creativeMethodName, double.class, double.class);
+                        getSlotAtMethod.setAccessible(true);
+                        slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
+                        LogUtil.info("Inventory", "Creative动态调用 " + creativeMethodName + " 成功, slot " + (slot == null ? "null" : "not null"));
+                        if (slot != null) {
+                            LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 库存类型: " + slot.inventory.getClass().getSimpleName());
+                        }
+                    } catch (Exception e) {
+                        LogUtil.warn("Inventory", "Creative动态调用 " + creativeMethodName + " 失败: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    LogUtil.warn("Inventory", "未找到匹配签名的方法，尝试备用: method_2385, method_2383");
+                    String[] backupNames = {"method_2385", "method_2383"};
+                    for (String backup : backupNames) {
+                        try {
+                            java.lang.reflect.Method getSlotAtMethod = handledScreen.getClass().getDeclaredMethod(backup, double.class, double.class);
+                            getSlotAtMethod.setAccessible(true);
+                            slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
+                            LogUtil.info("Inventory", "Creative备用 " + backup + " 成功调用");
+                            if (slot != null) {
+                                LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 库存类型: " + slot.inventory.getClass().getSimpleName());
+                            }
+                            break;
+                        } catch (Exception e) {
+                            LogUtil.warn("Inventory", "备用 " + backup + " 失败: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            // 如果 slot 仍为 null，继续原循环
+            if (slot == null) {
+                Class<?> currentClass = handledScreen.getClass();
+                LogUtil.info("Inventory", "当前类名: " + currentClass.getName());
+
+                while (currentClass != null && slot == null) {
+                    LogUtil.info("Inventory", "在类 " + currentClass.getName() + " 中查找 getSlotAt");
+
+                    java.lang.reflect.Method[] classMethods = currentClass.getDeclaredMethods();
+                    StringBuilder classMethodList = new StringBuilder("当前类方法列表: ");
+                    for (java.lang.reflect.Method m : classMethods) {
+                        classMethodList.append(m.getName()).append(", ");
+                    }
+                    LogUtil.info("Inventory", classMethodList.toString());
+
+                    String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542", "method_64240", "method_2383", "method_64241", "method_2381", "method_2378"}; // 添加日志中方法
+                    LogUtil.info("Inventory", "开始尝试调用 getSlotAt，方法列表: " + Arrays.toString(possibleMethodNames));
+                    for (String methodName : possibleMethodNames) {
+                        try {
+                            java.lang.reflect.Method getSlotAtMethod = currentClass.getDeclaredMethod(methodName, double.class, double.class);
+                            getSlotAtMethod.setAccessible(true);
+                            slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
+                            LogUtil.info("Inventory", "成功调用 getSlotAt，使用方法名: " + methodName + " 在类 " + currentClass.getName());
+                            if (slot != null) {
+                                LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 库存类型: " + slot.inventory.getClass().getSimpleName());
+                                LogUtil.info("Inventory", "槽位坐标: (" + slot.x + ", " + slot.y + ")"); // 添加坐标输出
+                            } else {
+                                LogUtil.warn("Inventory", "调用成功但 slot 为 null");
+                            }
+                            break;
+                        } catch (NoSuchMethodException e) {
+                            LogUtil.warn("Inventory", "方法 " + methodName + " 不存在在 " + currentClass.getName() + ": " + e.getMessage());
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            LogUtil.error("Inventory", "调用 " + methodName + " 失败在 " + currentClass.getName() + ": " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                    if (slot == null) {
+                        currentClass = currentClass.getSuperclass();
+                    }
+                }
+            }
+            // 强制进入手动查找如果 slot == null
+            if (slot == null) {
+                LogUtil.info("Inventory", "反射返回 null，强制手动查找");
+                // 获取 handler 字段
+                net.minecraft.screen.ScreenHandler handler = null;
+                String[] handlerFieldNames = {"handler", "field_22718"}; // Yarn 1.21.6 确切名称
+                Class<?> screenClass = handledScreen.getClass();
+                while (screenClass != null && handler == null) {
+                    for (String fieldName : handlerFieldNames) {
+                        try {
+                            java.lang.reflect.Field handlerField = screenClass.getDeclaredField(fieldName);
+                            handlerField.setAccessible(true);
+                            handler = (net.minecraft.screen.ScreenHandler) handlerField.get(handledScreen);
+                            LogUtil.info("Inventory", "成功获取 handler 使用字段: " + fieldName);
+                            break;
+                        } catch (NoSuchFieldException e) {
+                            // ignore
+                        }
+                    }
+                    if (handler == null) {
+                        screenClass = screenClass.getSuperclass();
+                    }
+                }
+                if (handler == null) {
+                    LogUtil.warn("Inventory", "无法获取 handler 字段");
+                    // 输出所有字段
+                    StringBuilder fieldsList = new StringBuilder("screenClass 所有字段: ");
+                    for (java.lang.reflect.Field f : screenClass.getDeclaredFields()) {
+                        fieldsList.append(f.getName()).append(", ");
+                    }
+                    LogUtil.info("Inventory", fieldsList.toString());
+                }
+                // 获取 slots 列表
+                java.lang.reflect.Field slotsField = null;
+                String[] slotsFieldNames = {"slots", "field_5468"}; // Yarn 1.21.6 确切名称
+                Class<?> handlerClass = handler.getClass();
+                while (handlerClass != null && slotsField == null) {
+                    for (String fieldName : slotsFieldNames) {
+                        try {
+                            slotsField = handlerClass.getDeclaredField(fieldName);
+                            slotsField.setAccessible(true);
+                            LogUtil.info("Inventory", "成功获取 slots 使用字段: " + fieldName);
+                            break;
+                        } catch (NoSuchFieldException e) {
+                            // ignore
+                        }
+                    }
+                    if (slotsField == null) {
+                        handlerClass = handlerClass.getSuperclass();
+                    }
+                }
+                if (slotsField != null) {
+                    @SuppressWarnings("unchecked")
+                    java.util.List<net.minecraft.screen.slot.Slot> slots = (java.util.List<net.minecraft.screen.slot.Slot>) slotsField.get(handler);
+                    for (net.minecraft.screen.slot.Slot s : slots) {
+                        if (mouseX >= s.x && mouseX <= s.x + 16 && mouseY >= s.y && mouseY <= s.y + 16) { // 改为 <= 以包含边界
+                            slot = s;
+                            LogUtil.info("Inventory", "手动找到槽位: " + slot.id + ", 库存类型: " + slot.inventory.getClass().getSimpleName());
+                            break;
+                        }
+                    }
+                    if (slot == null) {
+                        LogUtil.warn("Inventory", "手动查找未找到槽位");
+                    }
+                } else {
+                    LogUtil.warn("Inventory", "无法获取 slots 字段");
                 }
             }
             
             if (slot == null) {
-                LogUtil.info("Inventory", "无法找到 getSlotAt 方法或鼠标不在槽位上，跳过排序");
-                return;
-            }
-            
-            // 判断槽位所属库存
-            net.minecraft.inventory.Inventory inventory = slot.inventory;
-            if (inventory == client.player.getInventory()) {
-                LogUtil.info("Inventory", "鼠标在背包槽位上，执行背包排序");
-                sortInventory(InventorySortConfig.SortMode.NAME, true); // 合并模式
+                LogUtil.warn("Inventory", "所有方法尝试失败，无法获取槽位");
             } else {
-                LogUtil.info("Inventory", "鼠标在容器槽位上，执行容器排序");
-                sortContainer(inventory, InventorySortConfig.SortMode.NAME, true); // 合并模式
+                net.minecraft.inventory.Inventory inventory = slot.inventory;
+                boolean isPlayerInventory = inventory == client.player.getInventory();
+                LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 环境: " + (isPlayerInventory ? "玩家背包" : "容器"));
+                if (isPlayerInventory) {
+                    LogUtil.info("Inventory", "鼠标在背包槽位上，执行背包排序");
+                    sortInventory(InventorySortConfig.SortMode.NAME, true); // 合并模式
+                } else {
+                    LogUtil.info("Inventory", "鼠标在容器槽位上，执行容器排序");
+                    sortContainer(inventory, InventorySortConfig.SortMode.NAME, true); // 合并模式
+                }
             }
             
         } catch (Exception e) {
@@ -956,4 +1164,17 @@ public class InventorySortController {
             return null;
         }
     }
- }
+
+    /**
+     * Get list of slot indices for a specific inventory in the current screen handler.
+     */
+    private List<Integer> getSlotIndicesForInventory(ScreenHandler handler, Inventory targetInventory) {
+        List<Integer> indices = new ArrayList<>();
+        for (Slot s : handler.slots) {
+            if (s.inventory == targetInventory) {
+                indices.add(s.id);
+            }
+        }
+        return indices;
+    }
+}
