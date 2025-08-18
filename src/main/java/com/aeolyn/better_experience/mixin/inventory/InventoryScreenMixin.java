@@ -3,6 +3,7 @@ package com.aeolyn.better_experience.mixin.inventory;
 import com.aeolyn.better_experience.client.KeyBindings;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.core.InventorySortController;
+import com.aeolyn.better_experience.inventory.core.InventoryTransferController;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,7 +35,7 @@ public class InventoryScreenMixin {
 
             if (smartMatch && (!sortMatch || isShiftPressed)) {
                 LogUtil.info("InventoryScreenMixin", "在背包界面检测到 智能转移 快捷键，执行智能转移");
-                controller.smartTransferItems();
+                InventoryTransferController.getInstance().smartTransferItems();
             } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
                 LogUtil.info("InventoryScreenMixin", "在背包界面检测到 一键整理 快捷键，执行背包排序");
                 // 直接调用背包排序，启用合并模式

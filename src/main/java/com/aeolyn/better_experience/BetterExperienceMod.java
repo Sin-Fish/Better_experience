@@ -48,7 +48,10 @@ public class BetterExperienceMod implements ModInitializer {
             // 初始化背包整理模块
             com.aeolyn.better_experience.inventory.core.InventorySortController.initialize();
             
-            LogUtil.info("General", "Better Experience mod 初始化完成! 通用3D渲染系统、副手限制系统和背包整理系统已启用!");
+            // 初始化智能转移模块
+            com.aeolyn.better_experience.inventory.core.InventoryTransferController.initialize();
+            
+            LogUtil.info("General", "Better Experience mod 初始化完成! 通用3D渲染系统、副手限制系统、背包整理系统和智能转移系统已启用!");
         } catch (Exception e) {
             LOGGER.error("模块初始化失败", e);
         }
