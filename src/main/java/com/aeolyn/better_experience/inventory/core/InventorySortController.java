@@ -107,10 +107,10 @@ public class InventorySortController {
             // 容器排序：使用PICKUP操作在容器内部进行排序，不使用QUICK_MOVE避免跨容器移动
             if (mergeFirst) {
                 // 使用PICKUP操作进行合并和排序
-                performContainerSortWithPickup(player, container, current, desired);
+                performContainerSortWithPickupInternal(player, container, current, desired);
             } else {
                 // 使用PICKUP操作进行排序
-                performContainerReorderWithPickup(player, container, current, desired);
+                performContainerReorderWithPickupInternal(player, container, current, desired);
             }
             LogUtil.info("Inventory", "容器整理完成，模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
             
@@ -868,23 +868,31 @@ public class InventorySortController {
                 return;
             }
             
-            net.minecraft.inventory.Inventory inventory = slot.inventory;
-            boolean isPlayerInventory = inventory == client.player.getInventory();
-            LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 环境: " + (isPlayerInventory ? "玩家背包" : "容器"));
-            
-            if (isPlayerInventory) {
-                // 检查是否是主背包槽位（9-35），排除工具栏（0-8）
-                if (slot.getIndex() >= 9 && slot.getIndex() < 36) {
-                    LogUtil.info("Inventory", "鼠标在主背包槽位上，执行背包排序");
-                    // 使用简单的选择排序算法，启用合并模式
-                    simpleSelectionSort(InventorySortConfig.SortMode.NAME, true);
-                } else {
-                    LogUtil.info("Inventory", "鼠标在工具栏槽位上，跳过排序");
-                }
+            // 根据当前界面类型决定排序策略
+            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+                // 背包界面：根据游戏模式选择排序策略（创造用setStack，生存用PICKUP）
+                LogUtil.info("Inventory", "背包界面：根据游戏模式选择排序策略");
+                simpleSelectionSort(InventorySortConfig.SortMode.NAME, true);
             } else {
-                LogUtil.info("Inventory", "鼠标在容器槽位上，执行容器排序");
-                // 直接使用槽位的库存进行排序
-                sortContainer(inventory, InventorySortConfig.SortMode.NAME, true);
+                // 容器界面：统一使用PICKUP操作，不区分创造/生存模式
+                LogUtil.info("Inventory", "容器界面：统一使用PICKUP操作排序");
+                
+                // 判断鼠标在哪个位置，确定整理哪个容器
+                net.minecraft.inventory.Inventory inventory = slot.inventory;
+                boolean isPlayerInventory = inventory == client.player.getInventory();
+                LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 环境: " + (isPlayerInventory ? "玩家背包" : "容器"));
+                
+                if (isPlayerInventory) {
+                    // 鼠标在背包槽位上，整理背包（容器界面中统一用PICKUP）
+                    LogUtil.info("Inventory", "容器界面中鼠标在背包槽位上，整理背包（统一用PICKUP）");
+                    List<Slot> playerSlots = getMainInventorySlots(client.player);
+                    performUniversalSort(client.player, playerSlots, InventorySortConfig.SortMode.NAME, true);
+                } else {
+                    // 鼠标在容器槽位上，整理容器（统一用PICKUP）
+                    LogUtil.info("Inventory", "容器界面中鼠标在容器槽位上，整理容器（统一用PICKUP）");
+                    List<Slot> containerSlots = getContainerSlots(client.player, inventory);
+                    performUniversalSort(client.player, containerSlots, InventorySortConfig.SortMode.NAME, true);
+                }
             }
             
         } catch (Exception e) {
@@ -2098,7 +2106,7 @@ public class InventorySortController {
 
     /**
      * 简单的选择排序算法
-     * 先实现基本功能，后续再优化
+     * 根据游戏模式选择不同的排序策略
      */
     public void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
         try {
@@ -2110,34 +2118,66 @@ public class InventorySortController {
                 return;
             }
 
-            Inventory inventory = player.getInventory();
-            
-            // 收集当前主背包状态（9-35槽位）
-            List<ItemStack> currentItems = new ArrayList<>();
-            for (int i = 9; i < 36; i++) {
-                currentItems.add(inventory.getStack(i).copy());
-            }
-            
-            int nonEmptyCount = (int) currentItems.stream().filter(s -> !s.isEmpty()).count();
-            LogUtil.info("Inventory", "收集到 " + nonEmptyCount + " 个非空物品");
-
-            if (nonEmptyCount == 0) {
-                LogUtil.info("Inventory", "背包为空，无需整理");
-                return;
-            }
-
-            if (mergeFirst) {
-                // 合并模式：先合并相同物品，再排序
-                performSimpleMergeSort(player, currentItems, sortMode);
+            // 根据游戏模式选择不同的排序策略
+            if (player.getAbilities().creativeMode) {
+                // 创造模式：使用直接操作 + 数据包同步
+                performCreativeModeSort(player, sortMode, mergeFirst);
             } else {
-                // 普通模式：直接排序
-                performSimpleSort(player, currentItems, sortMode);
+                // 生存模式：使用PICKUP操作优化
+                performSurvivalModeSort(player, sortMode, mergeFirst);
             }
             
             LogUtil.info("Inventory", "简单选择排序完成");
             
         } catch (Exception e) {
             LogUtil.error("Inventory", "简单选择排序失败", e);
+        }
+    }
+    
+    /**
+     * 创造模式排序：直接操作库存 + 数据包同步
+     */
+    private void performCreativeModeSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        Inventory inventory = player.getInventory();
+        
+        // 收集当前主背包状态（9-35槽位）
+        List<ItemStack> currentItems = new ArrayList<>();
+        for (int i = 9; i < 36; i++) {
+            currentItems.add(inventory.getStack(i).copy());
+        }
+        
+        int nonEmptyCount = (int) currentItems.stream().filter(s -> !s.isEmpty()).count();
+        LogUtil.info("Inventory", "创造模式：收集到 " + nonEmptyCount + " 个非空物品");
+
+        if (nonEmptyCount == 0) {
+            LogUtil.info("Inventory", "创造模式：背包为空，无需整理");
+            return;
+        }
+
+        if (mergeFirst) {
+            // 合并模式：先合并相同物品，再排序
+            performSimpleMergeSort(player, currentItems, sortMode);
+        } else {
+            // 普通模式：直接排序
+            performSimpleSort(player, currentItems, sortMode);
+        }
+    }
+    
+    /**
+     * 生存模式排序：使用PICKUP操作优化
+     */
+    private void performSurvivalModeSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        LogUtil.info("Inventory", "生存模式：使用PICKUP优化排序");
+        
+        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+        List<Slot> mainSlots = getMainInventorySlots(player);
+        
+        if (mergeFirst) {
+            // 生存模式合并：使用PICKUP的堆叠特性
+            performSurvivalMergeSort(player, strategy, mainSlots, sortMode);
+        } else {
+            // 生存模式排序：使用PICKUP的交换特性
+            performSurvivalSelectionSort(player, strategy, mainSlots, sortMode);
         }
     }
     
@@ -2534,9 +2574,9 @@ public class InventorySortController {
     }
     
     /**
-     * 使用PICKUP操作在容器内部进行合并和排序
+     * 使用PICKUP操作在容器内部进行合并和排序（内部实现）
      */
-    private void performContainerSortWithPickup(ClientPlayerEntity player, Inventory container, List<ItemStack> current, List<ItemStack> desired) {
+    private void performContainerSortWithPickupInternal(ClientPlayerEntity player, Inventory container, List<ItemStack> current, List<ItemStack> desired) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.interactionManager == null) {
             throw new IllegalStateException("interactionManager 不可用");
@@ -2621,22 +2661,41 @@ public class InventorySortController {
                     }
                 }
             } else if (!have.isEmpty()) {
-                // 这个位置应该是空的，但当前有物品，需要移动到容器内后面的空位
-                for (int j = container.size() - 1; j > i; j--) {
-                    if (current.get(j).isEmpty()) {
-                        int sourceSlot = slotIndices.get(i);
-                        int targetSlot = slotIndices.get(j);
-                        
-                        // 使用PICKUP操作移动物品
-                        client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
-                        client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
-                        
-                        LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动物品到空位)");
-                        
-                        // 更新跟踪状态
-                        current.set(j, have.copy());
-                        current.set(i, ItemStack.EMPTY);
-                        break;
+                // 这个位置应该是空的，但当前有物品，需要找到正确的目标位置
+                // 根据排序规则，找到这个物品应该放在哪里
+                int correctPosition = findCorrectPositionForItem(have, desired, i);
+                if (correctPosition != i && correctPosition < container.size()) {
+                    // 如果找到了正确的位置，移动到那里
+                    int sourceSlot = slotIndices.get(i);
+                    int targetSlot = slotIndices.get(correctPosition);
+                    
+                    // 使用PICKUP操作移动物品
+                    client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
+                    client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
+                    
+                    LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动到正确位置)");
+                    
+                    // 更新跟踪状态
+                    current.set(correctPosition, have.copy());
+                    current.set(i, ItemStack.EMPTY);
+                } else {
+                    // 如果没找到正确位置，移动到容器末尾的空位
+                    for (int j = container.size() - 1; j > i; j--) {
+                        if (current.get(j).isEmpty()) {
+                            int sourceSlot = slotIndices.get(i);
+                            int targetSlot = slotIndices.get(j);
+                            
+                            // 使用PICKUP操作移动物品
+                            client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
+                            client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
+                            
+                            LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动到末尾空位)");
+                            
+                            // 更新跟踪状态
+                            current.set(j, have.copy());
+                            current.set(i, ItemStack.EMPTY);
+                            break;
+                        }
                     }
                 }
             }
@@ -2646,9 +2705,9 @@ public class InventorySortController {
     }
     
     /**
-     * 使用PICKUP操作在容器内部进行排序（不合并）
+     * 使用PICKUP操作在容器内部进行排序（不合并）（内部实现）
      */
-    private void performContainerReorderWithPickup(ClientPlayerEntity player, Inventory container, List<ItemStack> current, List<ItemStack> desired) {
+    private void performContainerReorderWithPickupInternal(ClientPlayerEntity player, Inventory container, List<ItemStack> current, List<ItemStack> desired) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.interactionManager == null) {
             throw new IllegalStateException("interactionManager 不可用");
@@ -2701,27 +2760,355 @@ public class InventorySortController {
                     }
                 }
             } else if (!have.isEmpty()) {
-                // 这个位置应该是空的，但当前有物品，需要移动到容器内后面的空位
-                for (int j = container.size() - 1; j > i; j--) {
-                    if (current.get(j).isEmpty()) {
-                        int sourceSlot = slotIndices.get(i);
-                        int targetSlot = slotIndices.get(j);
-                        
-                        // 使用PICKUP操作移动物品
-                        client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
-                        client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
-                        
-                        LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动物品到空位)");
-                        
-                        // 更新跟踪状态
-                        current.set(j, have.copy());
-                        current.set(i, ItemStack.EMPTY);
-                        break;
+                // 这个位置应该是空的，但当前有物品，需要找到正确的目标位置
+                // 根据排序规则，找到这个物品应该放在哪里
+                int correctPosition = findCorrectPositionForItem(have, desired, i);
+                if (correctPosition != i && correctPosition < container.size()) {
+                    // 如果找到了正确的位置，移动到那里
+                    int sourceSlot = slotIndices.get(i);
+                    int targetSlot = slotIndices.get(correctPosition);
+                    
+                    // 使用PICKUP操作移动物品
+                    client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
+                    client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
+                    
+                    LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动到正确位置)");
+                    
+                    // 更新跟踪状态
+                    current.set(correctPosition, have.copy());
+                    current.set(i, ItemStack.EMPTY);
+                } else {
+                    // 如果没找到正确位置，移动到容器末尾的空位
+                    for (int j = container.size() - 1; j > i; j--) {
+                        if (current.get(j).isEmpty()) {
+                            int sourceSlot = slotIndices.get(i);
+                            int targetSlot = slotIndices.get(j);
+                            
+                            // 使用PICKUP操作移动物品
+                            client.interactionManager.clickSlot(syncId, sourceSlot, 0, SlotActionType.PICKUP, player);
+                            client.interactionManager.clickSlot(syncId, targetSlot, 0, SlotActionType.PICKUP, player);
+                            
+                            LogUtil.info("Inventory", "容器 PICKUP 移动: 槽位 " + sourceSlot + " -> " + targetSlot + " (移动到末尾空位)");
+                            
+                            // 更新跟踪状态
+                            current.set(j, have.copy());
+                            current.set(i, ItemStack.EMPTY);
+                            break;
+                        }
                     }
                 }
             }
         }
         
         LogUtil.info("Inventory", "容器 PICKUP 排序完成");
+    }
+    
+    /**
+     * 为物品找到正确的排序位置
+     */
+    private int findCorrectPositionForItem(ItemStack item, List<ItemStack> desired, int currentPosition) {
+        if (item.isEmpty()) {
+            return currentPosition;
+        }
+        
+        // 在desired列表中找到这个物品应该出现的位置
+        for (int i = 0; i < desired.size(); i++) {
+            ItemStack desiredItem = desired.get(i);
+            if (!desiredItem.isEmpty() && areStacksEqualType(item, desiredItem)) {
+                return i;
+            }
+        }
+        
+        // 如果没找到，返回当前位置
+        return currentPosition;
+    }
+    
+    /**
+     * 生存模式合并排序：利用PICKUP的堆叠特性
+     */
+    private void performSurvivalMergeSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> mainSlots, InventorySortConfig.SortMode sortMode) {
+        LogUtil.info("Inventory", "生存模式：开始合并排序");
+        
+        // 第一步：使用PICKUP的堆叠特性合并相同物品
+        // 从前往后遍历，将相同物品堆叠到前面的槽位
+        for (int i = 0; i < mainSlots.size(); i++) {
+            Slot slotI = mainSlots.get(i);
+            ItemStack stackI = slotI.getStack();
+            
+            if (stackI.isEmpty()) continue;
+            
+            // 从当前位置开始，向后查找相同物品进行堆叠
+            for (int j = i + 1; j < mainSlots.size(); j++) {
+                Slot slotJ = mainSlots.get(j);
+                ItemStack stackJ = slotJ.getStack();
+                
+                if (stackJ.isEmpty()) continue;
+                
+                // 检查是否是相同物品且可以堆叠
+                if (stackI.isOf(stackJ.getItem()) && strategy.canStackItems(stackI, stackJ)) {
+                    strategy.stackItem(player, slotJ, slotI);
+                    LogUtil.info("Inventory", "生存模式合并: 槽位 " + j + " -> " + i);
+                }
+            }
+        }
+        
+        // 第二步：对合并后的物品进行排序
+        performSurvivalSelectionSort(player, strategy, mainSlots, sortMode);
+        
+        LogUtil.info("Inventory", "生存模式合并排序完成");
+    }
+    
+    /**
+     * 生存模式选择排序：利用PICKUP的交换特性
+     */
+    private void performSurvivalSelectionSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> mainSlots, InventorySortConfig.SortMode sortMode) {
+        LogUtil.info("Inventory", "生存模式：开始选择排序");
+        
+        // 获取排序比较器
+        SortComparator comparator = SortComparatorFactory.getComparator(sortMode);
+        LogUtil.info("Inventory", "生存模式使用排序策略: " + comparator.getName());
+        
+        // 使用选择排序算法，但优化PICKUP操作
+        for (int i = 0; i < mainSlots.size(); i++) {
+            Slot slotI = mainSlots.get(i);
+            ItemStack stackI = slotI.getStack();
+            
+            // 如果当前位置为空，找到后面最应该靠前的非空物品
+            if (stackI.isEmpty()) {
+                int bestEmptyIndex = -1;
+                ItemStack bestEmptyStack = null;
+                
+                // 找到后面最应该靠前的物品
+                for (int j = i + 1; j < mainSlots.size(); j++) {
+                    Slot slotJ = mainSlots.get(j);
+                    ItemStack stackJ = slotJ.getStack();
+                    
+                    if (!stackJ.isEmpty()) {
+                        if (bestEmptyStack == null || comparator.compare(stackJ, bestEmptyStack) < 0) {
+                            bestEmptyIndex = j;
+                            bestEmptyStack = stackJ;
+                        }
+                    }
+                }
+                
+                // 如果找到了物品，移动到当前位置
+                if (bestEmptyIndex != -1) {
+                    Slot slotBest = mainSlots.get(bestEmptyIndex);
+                    strategy.moveItem(player, slotBest, slotI);
+                    LogUtil.info("Inventory", "生存模式移动: 槽位 " + bestEmptyIndex + " -> " + i + ": " + bestEmptyStack.getName().getString());
+                }
+                continue;
+            }
+            
+            // 当前位置有物品，找到整个背包中最应该靠前的物品
+            int bestIndex = i;
+            ItemStack bestStack = stackI;
+            
+            // 从当前位置开始，找到最应该靠前的物品
+            for (int j = i + 1; j < mainSlots.size(); j++) {
+                Slot slotJ = mainSlots.get(j);
+                ItemStack stackJ = slotJ.getStack();
+                
+                if (stackJ.isEmpty()) continue;
+                
+                // 使用策略比较物品，找到最应该靠前的
+                if (comparator.compare(stackJ, bestStack) < 0) {
+                    bestIndex = j;
+                    bestStack = stackJ;
+                }
+            }
+            
+            // 如果找到了更靠前的物品，进行交换
+            if (bestIndex != i) {
+                Slot slotBest = mainSlots.get(bestIndex);
+                strategy.swapSlots(player, slotI, slotBest);
+                LogUtil.info("Inventory", "生存模式交换: 槽位 " + i + " <-> " + bestIndex + ": " + 
+                    stackI.getName().getString() + " <-> " + bestStack.getName().getString());
+            }
+        }
+        
+        LogUtil.info("Inventory", "生存模式选择排序完成");
+    }
+    
+    /**
+     * 容器界面统一排序：使用PICKUP操作，不区分创造/生存模式
+     */
+    private void performContainerSortWithPickup(ClientPlayerEntity player, Inventory container, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        try {
+            LogUtil.info("Inventory", "容器界面统一排序：开始整理容器，排序模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
+            
+            if (player == null) {
+                LogUtil.warn("Inventory", "玩家不存在，无法整理容器");
+                return;
+            }
+
+            // 收集容器当前状态
+            List<ItemStack> current = new ArrayList<>(container.size());
+            for (int i = 0; i < container.size(); i++) {
+                current.add(container.getStack(i).copy());
+            }
+            int nonEmpty = (int) current.stream().filter(s -> !s.isEmpty()).count();
+            LogUtil.info("Inventory", "收集容器非空物品: " + nonEmpty);
+
+            if (nonEmpty == 0) {
+                LogUtil.info("Inventory", "容器为空，无需整理");
+                return;
+            }
+
+            List<ItemStack> desired;
+            if (mergeFirst) {
+                // 合并模式：先合并相同物品，再排序
+                desired = mergeAndSortItems(current, sortMode);
+            } else {
+                // 普通模式：直接排序，保持原堆叠
+                desired = current.stream().filter(s -> !s.isEmpty()).map(ItemStack::copy).collect(Collectors.toList());
+                sortItems(desired, sortMode);
+            }
+            while (desired.size() < container.size()) desired.add(ItemStack.EMPTY);
+
+            // 容器界面统一使用PICKUP操作进行排序
+            if (mergeFirst) {
+                // 使用PICKUP操作进行合并和排序
+                performContainerSortWithPickupInternal(player, container, current, desired);
+            } else {
+                // 使用PICKUP操作进行排序
+                performContainerReorderWithPickupInternal(player, container, current, desired);
+            }
+            LogUtil.info("Inventory", "容器界面统一排序完成，模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
+            
+        } catch (Exception e) {
+            LogUtil.error("Inventory", "容器界面统一排序失败", e);
+        }
+    }
+    
+    /**
+     * 通用排序方法：可以指定排序范围，统一使用PICKUP操作
+     */
+    private void performUniversalSort(ClientPlayerEntity player, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        LogUtil.info("Inventory", "通用排序：使用PICKUP操作，排序范围: " + targetSlots.size() + " 个槽位");
+        
+        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+        
+        if (mergeFirst) {
+            // 合并：使用PICKUP的堆叠特性
+            performUniversalMergeSort(player, strategy, targetSlots, sortMode);
+        } else {
+            // 排序：使用PICKUP的交换特性
+            performUniversalSelectionSort(player, strategy, targetSlots, sortMode);
+        }
+    }
+    
+    /**
+     * 通用合并排序
+     */
+    private void performUniversalMergeSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode) {
+        LogUtil.info("Inventory", "通用合并排序：开始合并相同物品");
+        
+        // 第一步：合并相同物品
+        for (int i = 0; i < targetSlots.size(); i++) {
+            Slot slotI = targetSlots.get(i);
+            ItemStack stackI = slotI.getStack();
+            
+            if (stackI.isEmpty()) continue;
+            
+            for (int j = i + 1; j < targetSlots.size(); j++) {
+                Slot slotJ = targetSlots.get(j);
+                ItemStack stackJ = slotJ.getStack();
+                
+                if (stackJ.isEmpty()) continue;
+                
+                // 检查是否是相同物品
+                if (stackI.isOf(stackJ.getItem())) {
+                    // 尝试堆叠
+                    if (strategy.canStackItems(stackI, stackJ)) {
+                        strategy.stackItem(player, slotJ, slotI);
+                        LogUtil.info("Inventory", "合并槽位 " + j + " 到槽位 " + i);
+                    }
+                }
+            }
+        }
+        
+        // 第二步：对合并后的物品进行排序
+        performUniversalSelectionSort(player, strategy, targetSlots, sortMode);
+        
+        LogUtil.info("Inventory", "通用合并排序完成");
+    }
+    
+    /**
+     * 通用选择排序
+     */
+    private void performUniversalSelectionSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode) {
+        LogUtil.info("Inventory", "通用选择排序：开始排序");
+        
+        // 获取排序比较器
+        SortComparator comparator = SortComparatorFactory.getComparator(sortMode);
+        LogUtil.info("Inventory", "使用排序策略: " + comparator.getName());
+        
+        // 使用选择排序算法：找到整个范围内最应该靠前的物品
+        for (int i = 0; i < targetSlots.size(); i++) {
+            Slot slotI = targetSlots.get(i);
+            ItemStack stackI = slotI.getStack();
+            
+            // 如果当前位置为空，找到后面最应该靠前的非空物品
+            if (stackI.isEmpty()) {
+                int bestEmptyIndex = -1;
+                ItemStack bestEmptyStack = null;
+                
+                // 找到后面最应该靠前的物品
+                for (int j = i + 1; j < targetSlots.size(); j++) {
+                    Slot slotJ = targetSlots.get(j);
+                    ItemStack stackJ = slotJ.getStack();
+                    
+                    if (!stackJ.isEmpty()) {
+                        if (bestEmptyStack == null || comparator.compare(stackJ, bestEmptyStack) < 0) {
+                            bestEmptyStack = stackJ;
+                            bestEmptyIndex = j;
+                        }
+                    }
+                }
+                
+                // 如果找到了更好的物品，移动到当前位置
+                if (bestEmptyIndex != -1) {
+                    strategy.moveItem(player, targetSlots.get(bestEmptyIndex), slotI);
+                    LogUtil.info("Inventory", "移动槽位 " + bestEmptyIndex + " 到空槽位 " + i);
+                }
+            } else {
+                // 当前位置有物品，找到后面最应该靠前的物品
+                int bestIndex = i;
+                ItemStack bestStack = stackI;
+                
+                for (int j = i + 1; j < targetSlots.size(); j++) {
+                    Slot slotJ = targetSlots.get(j);
+                    ItemStack stackJ = slotJ.getStack();
+                    
+                    if (!stackJ.isEmpty() && comparator.compare(stackJ, bestStack) < 0) {
+                        bestStack = stackJ;
+                        bestIndex = j;
+                    }
+                }
+                
+                // 如果找到了更好的物品，交换位置
+                if (bestIndex != i) {
+                    strategy.swapSlots(player, slotI, targetSlots.get(bestIndex));
+                    LogUtil.info("Inventory", "移动槽位 " + i + " 和槽位 " + bestIndex);
+                }
+            }
+        }
+        
+        LogUtil.info("Inventory", "通用选择排序完成");
+    }
+
+    /**
+     * 获取容器槽位
+     */
+    private List<Slot> getContainerSlots(ClientPlayerEntity player, net.minecraft.inventory.Inventory container) {
+        List<Slot> containerSlots = new ArrayList<>();
+        for (Slot slot : player.currentScreenHandler.slots) {
+            if (slot.inventory == container) {
+                containerSlots.add(slot);
+            }
+        }
+        containerSlots.sort(Comparator.comparingInt(Slot::getIndex));
+        return containerSlots;
     }
 }

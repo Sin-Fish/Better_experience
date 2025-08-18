@@ -9,7 +9,7 @@ import net.minecraft.screen.slot.SlotActionType;
 
 /**
  * 生存模式物品移动策略
- * 使用PICKUP点击进行物品移动
+ * 使用PICKUP点击进行物品移动，优化操作减少延迟
  */
 public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
     
@@ -23,7 +23,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用三次PICKUP点击完成交换
+        // 使用三次PICKUP点击完成交换，不添加等待
         client.interactionManager.clickSlot(syncId, slotA.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, slotB.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, slotA.id, 0, SlotActionType.PICKUP, player);
@@ -41,7 +41,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用两次PICKUP点击完成移动
+        // 使用两次PICKUP点击完成移动，不添加等待
         client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
         
@@ -75,7 +75,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用PICKUP点击进行堆叠
+        // 使用PICKUP点击进行堆叠，不添加等待
         client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
         
@@ -97,9 +97,8 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用PICKUP点击清空槽位（将物品放到鼠标上，然后丢弃）
+        // 使用PICKUP点击清空槽位，不添加等待
         client.interactionManager.clickSlot(syncId, slot.id, 0, SlotActionType.PICKUP, player);
-        // 注意：这里可能需要额外的逻辑来处理鼠标上的物品
         
         LogUtil.info("Inventory", "生存模式清空槽位: " + slot.id);
     }
