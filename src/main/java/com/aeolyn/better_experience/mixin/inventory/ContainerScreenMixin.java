@@ -12,17 +12,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * 容器界面Mixin
- * 处理快捷键排序功能
+ * 处理容器界面的按键事件
  */
 @Mixin(HandledScreen.class)
 public class ContainerScreenMixin {
     
-    // 处理 R 键和 Shift+R 键按下（支持按键绑定界面可见与重映射）
-    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true)
+    // 处理容器界面的 R 键和 Shift+R 键按下
+    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true, require = 0)
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
 
-        // 扩展支持所有界面，不仅仅是容器界面
+        // 检查按键匹配
         var sortKey = KeyBindings.getSortInventoryKey();
         var smartKey = KeyBindings.getSmartTransferKey();
         boolean sortMatch = sortKey != null && sortKey.matchesKey(keyCode, scanCode);
@@ -33,10 +33,10 @@ public class ContainerScreenMixin {
             InventorySortController controller = InventorySortController.getInstance();
 
             if (smartMatch && (!sortMatch || isShiftPressed)) {
-                LogUtil.info("ContainerScreenMixin", "在界面 " + screen.getClass().getSimpleName() + " 检测到 智能转移 快捷键，执行智能转移");
+                LogUtil.info("ContainerScreenMixin", "在容器界面检测到 智能转移 快捷键，执行智能转移");
                 controller.smartTransferItems();
             } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
-                LogUtil.info("ContainerScreenMixin", "在界面 " + screen.getClass().getSimpleName() + " 检测到 一键整理 快捷键，执行一键整理");
+                LogUtil.info("ContainerScreenMixin", "在容器界面检测到 一键整理 快捷键，执行智能排序");
                 controller.smartSortByMousePosition();
             }
 
