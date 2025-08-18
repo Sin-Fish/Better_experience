@@ -23,15 +23,24 @@ public class ContainerScreenMixin {
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
 
+        // 添加调试信息，帮助诊断潜影盒问题
+        LogUtil.info("ContainerScreenMixin", "按键事件触发 - 界面类型: " + screen.getClass().getSimpleName() + 
+            ", 按键代码: " + keyCode + ", 扫描代码: " + scanCode + ", 修饰符: " + modifiers);
+
         // 检查按键匹配
         var sortKey = KeyBindings.getSortInventoryKey();
         var smartKey = KeyBindings.getSmartTransferKey();
         boolean sortMatch = sortKey != null && sortKey.matchesKey(keyCode, scanCode);
         boolean smartMatch = smartKey != null && smartKey.matchesKey(keyCode, scanCode);
 
+        LogUtil.info("ContainerScreenMixin", "按键匹配结果 - 排序键匹配: " + sortMatch + ", 智能键匹配: " + smartMatch);
+
         if (sortMatch || smartMatch) {
             boolean isShiftPressed = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
             InventorySortController controller = InventorySortController.getInstance();
+
+            LogUtil.info("ContainerScreenMixin", "检测到快捷键 - Shift按下: " + isShiftPressed + 
+                ", 界面类型: " + screen.getClass().getSimpleName());
 
             if (smartMatch && (!sortMatch || isShiftPressed)) {
                 LogUtil.info("ContainerScreenMixin", "在容器界面检测到 智能转移 快捷键，执行智能转移");

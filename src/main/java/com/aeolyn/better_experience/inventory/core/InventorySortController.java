@@ -811,6 +811,10 @@ public class InventorySortController {
                 return;
             }
             
+            // 添加详细的界面类型调试信息
+            LogUtil.info("Inventory", "智能排序开始 - 当前界面: " + 
+                (client.currentScreen != null ? client.currentScreen.getClass().getSimpleName() : "null"));
+            
             // 检查是否在背包界面
             if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
                 LogUtil.info("Inventory", "在背包界面，执行背包排序");
@@ -827,6 +831,11 @@ public class InventorySortController {
             
             // 添加调试输出
             LogUtil.info("Inventory", "R键按下，当前屏幕类: " + client.currentScreen.getClass().getName());
+            
+            // 特别检查潜影盒界面
+            if (client.currentScreen.getClass().getSimpleName().contains("ShulkerBox")) {
+                LogUtil.info("Inventory", "检测到潜影盒界面！");
+            }
             
             // 获取缩放后的鼠标位置
             double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
@@ -882,6 +891,12 @@ public class InventorySortController {
                 boolean isPlayerInventory = inventory == client.player.getInventory();
                 LogUtil.info("Inventory", "找到槽位: " + slot.id + ", 环境: " + (isPlayerInventory ? "玩家背包" : "容器"));
                 
+                // 添加容器类型调试信息
+                if (!isPlayerInventory) {
+                    LogUtil.info("Inventory", "容器类型: " + inventory.getClass().getSimpleName() + 
+                        ", 容器大小: " + inventory.size());
+                }
+                
                 if (isPlayerInventory) {
                     // 鼠标在背包槽位上，整理背包（容器界面中统一用PICKUP）
                     LogUtil.info("Inventory", "容器界面中鼠标在背包槽位上，整理背包（统一用PICKUP）");
@@ -891,12 +906,13 @@ public class InventorySortController {
                     // 鼠标在容器槽位上，整理容器（统一用PICKUP）
                     LogUtil.info("Inventory", "容器界面中鼠标在容器槽位上，整理容器（统一用PICKUP）");
                     List<Slot> containerSlots = getContainerSlots(client.player, inventory);
+                    LogUtil.info("Inventory", "获取到容器槽位数量: " + containerSlots.size());
                     performUniversalSort(client.player, containerSlots, InventorySortConfig.SortMode.NAME, true);
                 }
             }
             
         } catch (Exception e) {
-            LogUtil.error("Inventory", "智能排序失败: " + e.getMessage());
+            LogUtil.error("Inventory", "智能排序失败: " + e.getMessage(), e);
         }
     }
      
@@ -1778,7 +1794,9 @@ public class InventorySortController {
     private void performUniversalSort(ClientPlayerEntity player, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
         LogUtil.info("Inventory", "通用排序：使用PICKUP操作，排序范围: " + targetSlots.size() + " 个槽位");
         
-        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+        // 容器/通用排序一律使用生存策略（PICKUP），即使在创造模式也通过点击同步容器
+        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createSurvivalStrategy();
+        LogUtil.info("Inventory", "通用排序：已强制使用生存模式PICKUP策略");
         
         if (mergeFirst) {
             // 合并：使用PICKUP的堆叠特性
@@ -1901,5 +1919,80 @@ public class InventorySortController {
         }
         containerSlots.sort(Comparator.comparingInt(Slot::getIndex));
         return containerSlots;
+    }
+    
+    /**
+     * 测试潜影盒支持
+     * 用于诊断潜影盒排序问题
+     */
+    public void testShulkerBoxSupport() {
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client == null || client.currentScreen == null) {
+                LogUtil.info("Inventory", "测试潜影盒支持：客户端或屏幕为空");
+                return;
+            }
+            
+            LogUtil.info("Inventory", "=== 潜影盒支持测试开始 ===");
+            LogUtil.info("Inventory", "当前界面类型: " + client.currentScreen.getClass().getSimpleName());
+            LogUtil.info("Inventory", "当前界面完整类名: " + client.currentScreen.getClass().getName());
+            
+            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen) {
+                net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+                    (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+                
+                LogUtil.info("Inventory", "ScreenHandler类型: " + handledScreen.getScreenHandler().getClass().getSimpleName());
+                LogUtil.info("Inventory", "ScreenHandler完整类名: " + handledScreen.getScreenHandler().getClass().getName());
+                
+                // 检查所有槽位
+                LogUtil.info("Inventory", "=== 槽位信息 ===");
+                for (int i = 0; i < handledScreen.getScreenHandler().slots.size(); i++) {
+                    Slot slot = handledScreen.getScreenHandler().slots.get(i);
+                    LogUtil.info("Inventory", "槽位 " + i + ": ID=" + slot.id + 
+                        ", Index=" + slot.getIndex() + 
+                        ", Inventory=" + slot.inventory.getClass().getSimpleName() +
+                        ", 物品=" + (slot.getStack().isEmpty() ? "空" : slot.getStack().getName().getString()));
+                }
+                
+                // 检查是否是潜影盒
+                boolean isShulkerBox = client.currentScreen.getClass().getSimpleName().contains("ShulkerBox") ||
+                                     handledScreen.getScreenHandler().getClass().getSimpleName().contains("ShulkerBox");
+                
+                LogUtil.info("Inventory", "是否是潜影盒界面: " + isShulkerBox);
+                
+                if (isShulkerBox) {
+                    LogUtil.info("Inventory", "=== 潜影盒特殊检测 ===");
+                    // 尝试直接对潜影盒进行排序
+                    try {
+                        // 获取潜影盒的容器
+                        net.minecraft.inventory.Inventory shulkerInventory = null;
+                        for (Slot slot : handledScreen.getScreenHandler().slots) {
+                            if (slot.inventory != client.player.getInventory()) {
+                                shulkerInventory = slot.inventory;
+                                break;
+                            }
+                        }
+                        
+                        if (shulkerInventory != null) {
+                            LogUtil.info("Inventory", "找到潜影盒容器: " + shulkerInventory.getClass().getSimpleName());
+                            LogUtil.info("Inventory", "潜影盒容器大小: " + shulkerInventory.size());
+                            
+                            // 尝试直接排序
+                            sortContainer(shulkerInventory, InventorySortConfig.SortMode.NAME, true);
+                            LogUtil.info("Inventory", "潜影盒排序完成");
+                        } else {
+                            LogUtil.warn("Inventory", "未找到潜影盒容器");
+                        }
+                    } catch (Exception e) {
+                        LogUtil.error("Inventory", "潜影盒排序失败", e);
+                    }
+                }
+            }
+            
+            LogUtil.info("Inventory", "=== 潜影盒支持测试结束 ===");
+            
+        } catch (Exception e) {
+            LogUtil.error("Inventory", "潜影盒支持测试失败", e);
+        }
     }
 }
