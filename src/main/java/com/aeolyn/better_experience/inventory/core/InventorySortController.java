@@ -102,14 +102,40 @@ public class InventorySortController {
                 inventory.setStack(i, ItemStack.EMPTY);
             }
             
-            // 5. 将排序后的物品重新放入背包
-            LogUtil.info("Inventory", "开始将排序后的物品重新放入背包");
-            int slotIndex = 9;
-            for (ItemStack item : items) {
-                if (slotIndex >= 36) break;
-                inventory.setStack(slotIndex++, item);
-            }
-            LogUtil.info("Inventory", "物品重新放置完成，共放置 " + items.size() + " 个物品");
+                           // 5. 将排序后的物品重新放入背包
+               LogUtil.info("Inventory", "开始将排序后的物品重新放入背包");
+               int slotIndex = 9;
+               for (ItemStack item : items) {
+                   if (slotIndex >= 36) break;
+                   inventory.setStack(slotIndex++, item);
+               }
+               LogUtil.info("Inventory", "物品重新放置完成，共放置 " + items.size() + " 个物品");
+               
+                               // 6. 强制刷新客户端UI
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client != null && client.player != null) {
+                    // 通知客户端背包已更新
+                    client.player.getInventory().markDirty();
+                    
+                    // 强制刷新当前界面
+                    if (client.currentScreen != null) {
+                        try {
+                            // 使用反射调用resize方法
+                            client.currentScreen.getClass()
+                                .getMethod("resize", MinecraftClient.class, int.class, int.class)
+                                .invoke(client.currentScreen, client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
+                        } catch (Exception e) {
+                            // 如果反射失败，尝试重新初始化界面
+                            try {
+                                client.currentScreen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
+                            } catch (Exception ex) {
+                                LogUtil.warn("Inventory", "无法刷新界面: " + ex.getMessage());
+                            }
+                        }
+                    }
+                    
+                    LogUtil.info("Inventory", "已通知客户端UI刷新");
+                }
             
             LogUtil.info("Inventory", "背包整理完成，模式: " + sortMode.getDisplayName() + "，共整理 " + items.size() + " 个物品");
             

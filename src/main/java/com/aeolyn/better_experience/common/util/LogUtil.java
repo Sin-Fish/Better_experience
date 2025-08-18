@@ -55,9 +55,15 @@ public class LogUtil {
     private static boolean shouldLog(String module, String level) {
         try {
             DebugConfig debugConfig = DebugConfig.getInstance();
-            return debugConfig.shouldLog(module.toLowerCase(), level);
+            boolean shouldLog = debugConfig.shouldLog(module.toLowerCase(), level);
+            // 添加调试日志来确认LogUtil是否工作
+            if (module.equalsIgnoreCase("client") || module.equalsIgnoreCase("keybindings")) {
+                LoggerFactory.getLogger("BetterExperience-LogUtil-Debug").info("LogUtil检查: 模块={}, 级别={}, 应该记录={}", module, level, shouldLog);
+            }
+            return shouldLog;
         } catch (Exception e) {
             // 如果调试配置不可用，默认记录所有日志
+            LoggerFactory.getLogger("BetterExperience-LogUtil-Debug").error("LogUtil异常: {}", e.getMessage());
             return true;
         }
     }

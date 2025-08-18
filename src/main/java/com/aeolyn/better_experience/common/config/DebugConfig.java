@@ -56,14 +56,15 @@ public class DebugConfig {
      */
     private void initializeDefaultConfig() {
         // 设置默认模块配置
-        modules.put("inventory", new ModuleConfig(false, "INFO"));
+        modules.put("inventory", new ModuleConfig(true, "INFO"));
         modules.put("render3d", new ModuleConfig(false, "INFO"));
         modules.put("offhand", new ModuleConfig(false, "INFO"));
         modules.put("importexport", new ModuleConfig(false, "INFO"));
         modules.put("config", new ModuleConfig(false, "INFO"));
-        modules.put("keybindings", new ModuleConfig(false, "INFO"));
+        modules.put("keybindings", new ModuleConfig(true, "INFO"));
         modules.put("gui", new ModuleConfig(false, "INFO"));
         modules.put("general", new ModuleConfig(true, "INFO"));
+        modules.put("client", new ModuleConfig(true, "INFO"));
         
         // 设置日志级别
         logLevels.put("TRACE", 0);

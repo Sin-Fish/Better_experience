@@ -32,6 +32,10 @@
     "general": {
       "enabled": true,
       "level": "INFO"
+    },
+    "client": {
+      "enabled": true,
+      "level": "INFO"
     }
   },
   "log_levels": {
