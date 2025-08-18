@@ -1,0 +1,88 @@
+// 多版本构建脚本
+// Multi-version build script
+
+def supportedVersions = [
+    "1.21.0",
+    "1.21.1", 
+    "1.21.2",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.7",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10"
+]
+
+task buildAllVersions {
+    group = 'build'
+    description = '构建所有支持的Minecraft版本'
+    
+    doLast {
+        println "开始构建所有支持的版本..."
+        
+        supportedVersions.each { version ->
+            println "构建版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行构建
+            exec {
+                commandLine './gradlew', 'build', '-Pminecraft_version=' + version
+            }
+        }
+        
+        println "所有版本构建完成！"
+    }
+}
+
+task testAllVersions {
+    group = 'verification'
+    description = '测试所有支持的Minecraft版本'
+    
+    doLast {
+        println "开始测试所有支持的版本..."
+        
+        supportedVersions.each { version ->
+            println "测试版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行测试
+            exec {
+                commandLine './gradlew', 'test', '-Pminecraft_version=' + version
+            }
+        }
+        
+        println "所有版本测试完成！"
+    }
+}
+
+// 为每个版本创建单独的构建任务
+supportedVersions.each { version ->
+    task "build${version.replace('.', '')}" {
+        group = 'build'
+        description = "构建Minecraft ${version}版本"
+        
+        doLast {
+            println "构建版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行构建
+            exec {
+                commandLine './gradlew', 'build', '-Pminecraft_version=' + version
+            }
+        }
+    }
+}

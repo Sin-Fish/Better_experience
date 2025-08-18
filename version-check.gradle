@@ -1,0 +1,141 @@
+// 版本验证脚本
+// Version validation script
+
+def supportedVersions = [
+    "1.21.0", "1.21.1", "1.21.2", "1.21.3", "1.21.4", 
+    "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10"
+]
+
+def minVersion = "1.21.0"
+def maxVersion = "1.21.10"
+
+// 版本比较函数
+def compareVersions(String version1, String version2) {
+    def parts1 = version1.split("\\.").collect { it.toInteger() }
+    def parts2 = version2.split("\\.").collect { it.toInteger() }
+    
+    for (int i = 0; i < Math.max(parts1.size(), parts2.size()); i++) {
+        def v1 = i < parts1.size() ? parts1[i] : 0
+        def v2 = i < parts2.size() ? parts2[i] : 0
+        
+        if (v1 != v2) {
+            return v1 <=> v2
+        }
+    }
+    return 0
+}
+
+// 检查版本是否在范围内
+def isVersionInRange(String version) {
+    def current = compareVersions(version, minVersion)
+    def max = compareVersions(version, maxVersion)
+    return current >= 0 && max <= 0
+}
+
+// 主验证任务
+task checkVersionCompatibility {
+    group = 'verification'
+    description = '检查版本兼容性（不依赖Minecraft运行时）'
+    
+    doLast {
+        println "=== 构建时版本兼容性检查 ==="
+        println "支持范围: ${minVersion} - ${maxVersion}"
+        println "支持的版本: ${supportedVersions.join(', ')}"
+        println ""
+        
+        // 检查当前构建版本
+        def currentVersion = project.hasProperty('minecraft_version') ? 
+            project.minecraft_version : project.findProperty('minecraft_version')
+        
+        if (currentVersion) {
+            println "当前构建版本: ${currentVersion}"
+            
+            if (isVersionInRange(currentVersion)) {
+                println "✅ 版本兼容性检查通过"
+            } else {
+                println "❌ 版本不兼容！"
+                println "   当前版本: ${currentVersion}"
+                println "   支持范围: ${minVersion} - ${maxVersion}"
+                throw new GradleException("版本不兼容！请使用 ${minVersion} - ${maxVersion} 范围内的版本。")
+            }
+        } else {
+            println "⚠️  无法确定当前构建版本，跳过版本检查"
+        }
+        
+        // 检查依赖版本
+        println ""
+        println "=== 依赖版本检查 ==="
+        
+        def fabricVersion = project.hasProperty('fabric_version') ? 
+            project.fabric_version : project.findProperty('fabric_version')
+        if (fabricVersion) {
+            println "Fabric API: ${fabricVersion}"
+        }
+        
+        def yarnVersion = project.hasProperty('yarn_mappings') ? 
+            project.yarn_mappings : project.findProperty('yarn_mappings')
+        if (yarnVersion) {
+            println "Yarn Mappings: ${yarnVersion}"
+        }
+        
+        def loaderVersion = project.hasProperty('loader_version') ? 
+            project.loader_version : project.findProperty('loader_version')
+        if (loaderVersion) {
+            println "Fabric Loader: ${loaderVersion}"
+        }
+        
+        println ""
+        println "=== 验证完成 ==="
+    }
+}
+
+// 生成版本报告
+task generateVersionReport {
+    group = 'documentation'
+    description = '生成版本兼容性报告'
+    
+    doLast {
+        def reportFile = new File("version-compatibility-report.txt")
+        reportFile.text = """版本兼容性报告
+================
+
+生成时间: ${new Date()}
+支持范围: ${minVersion} - ${maxVersion}
+
+支持的版本列表:
+${supportedVersions.collect { "  - ${it}" }.join('\n')}
+
+构建配置:
+  Minecraft版本: ${project.findProperty('minecraft_version') ?: '未设置'}
+  Fabric API: ${project.findProperty('fabric_version') ?: '未设置'}
+  Yarn Mappings: ${project.findProperty('yarn_mappings') ?: '未设置'}
+  Fabric Loader: ${project.findProperty('loader_version') ?: '未设置'}
+
+验证结果: ${project.findProperty('minecraft_version') && isVersionInRange(project.findProperty('minecraft_version')) ? '✅ 兼容' : '❌ 不兼容'}
+"""
+        
+        println "版本报告已生成: ${reportFile.absolutePath}"
+    }
+}
+
+// 验证所有支持版本
+task validateAllVersions {
+    group = 'verification'
+    description = '验证所有支持版本的配置'
+    
+    doLast {
+        println "=== 验证所有支持版本 ==="
+        
+        supportedVersions.each { version ->
+            println "检查版本: ${version}"
+            
+            if (isVersionInRange(version)) {
+                println "  ✅ 兼容"
+            } else {
+                println "  ❌ 不兼容"
+            }
+        }
+        
+        println "=== 验证完成 ==="
+    }
+}

@@ -1,6 +1,7 @@
 package com.aeolyn.better_experience;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.util.VersionCompatibilityUtil;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.text.Text;
@@ -16,6 +17,17 @@ public class BetterExperienceMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // 版本兼容性检查
+        VersionCompatibilityUtil.logVersionInfo();
+        
+        if (!VersionCompatibilityUtil.isVersionCompatible()) {
+            LOGGER.error("❌ 当前Minecraft版本不兼容！Better Experience mod可能无法正常工作。");
+            LOGGER.error("请使用Minecraft 1.21.0-1.21.10版本以获得最佳体验。");
+            // 继续初始化，但记录警告
+        } else {
+            LOGGER.info("✅ 版本兼容性检查通过！");
+        }
+        
         // 初始化配置管理器
         ConfigManager.initialize();
         
@@ -43,8 +55,9 @@ public class BetterExperienceMod implements ModInitializer {
                     // 向所有在线玩家发送消息
                     var playerList = server.getPlayerManager().getPlayerList();
                     if (playerList != null && !playerList.isEmpty()) {
+                        String versionInfo = VersionCompatibilityUtil.getCompatibilityInfo();
                         playerList.get(0).sendMessage(
-                            Text.literal("[Better Experience] 通用3D渲染和副手限制mod已成功加载!"), false
+                            Text.literal("[Better Experience] 通用3D渲染和副手限制mod已成功加载! " + versionInfo), false
                         );
                     }
                 } catch (InterruptedException e) {

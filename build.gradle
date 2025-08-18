@@ -83,3 +83,371 @@ publishing {
         // retrieving dependencies.
     }
 }
+
+// 多版本构建脚本
+// Multi-version build script
+
+def supportedVersions = [
+    "1.21.0",
+    "1.21.1", 
+    "1.21.2",
+    "1.21.3",
+    "1.21.4",
+    "1.21.5",
+    "1.21.6",
+    "1.21.7",
+    "1.21.8",
+    "1.21.9",
+    "1.21.10"
+]
+
+// 改进的版本验证任务
+task validateVersions {
+    group = 'verification'
+    description = '验证所有支持的Minecraft版本'
+    
+    doLast {
+        println "=== 版本兼容性验证 ==="
+        println "支持的版本范围: 1.21.0 - 1.21.10"
+        println "当前构建版本: ${project.minecraft_version}"
+        
+        // 检查当前构建版本是否在支持范围内
+        def currentVersion = project.minecraft_version
+        def isSupported = supportedVersions.contains(currentVersion)
+        
+        if (isSupported) {
+            println "✅ 当前版本 ${currentVersion} 在支持范围内"
+        } else {
+            println "❌ 当前版本 ${currentVersion} 不在支持范围内"
+            println "支持的版本: ${supportedVersions.join(', ')}"
+            throw new GradleException("版本不兼容！请使用支持的版本。")
+        }
+        
+        // 检查Fabric API版本兼容性
+        def fabricVersion = project.fabric_version
+        println "Fabric API版本: ${fabricVersion}"
+        
+        // 检查Yarn mappings版本
+        def yarnVersion = project.yarn_mappings
+        println "Yarn mappings版本: ${yarnVersion}"
+        
+        // 检查Java版本
+        def javaVersion = System.getProperty('java.version')
+        println "Java版本: ${javaVersion}"
+        
+        // 检查Gradle版本
+        def gradleVersion = project.gradle.gradleVersion
+        println "Gradle版本: ${gradleVersion}"
+        
+        // 检查项目结构
+        println ""
+        println "=== 项目结构检查 ==="
+        
+        def requiredFiles = [
+            'src/main/java/com/aeolyn/better_experience/BetterExperienceMod.java',
+            'src/main/resources/fabric.mod.json',
+            'src/main/resources/better_experience.mixins.json'
+        ]
+        
+        requiredFiles.each { file ->
+            if (new File(file).exists()) {
+                println "✅ ${file}"
+            } else {
+                println "❌ ${file} (缺失)"
+            }
+        }
+        
+        // 检查配置文件
+        println ""
+        println "=== 配置文件检查 ==="
+        
+        def configFiles = [
+            'src/main/resources/assets/better_experience/render3d/items.json',
+            'src/main/resources/assets/better_experience/offhand/offhand_restrictions.json'
+        ]
+        
+        configFiles.each { file ->
+            if (new File(file).exists()) {
+                println "✅ ${file}"
+            } else {
+                println "❌ ${file} (缺失)"
+            }
+        }
+        
+        println ""
+        println "=== 验证完成 ==="
+        println "⚠️  注意：这只是配置检查，实际兼容性需要在Minecraft中测试"
+    }
+}
+
+// 在构建前执行版本验证
+build.dependsOn validateVersions
+
+task buildAllVersions {
+    group = 'build'
+    description = '构建所有支持的Minecraft版本'
+    
+    doLast {
+        println "开始构建所有支持的版本..."
+        
+        supportedVersions.each { version ->
+            println "构建版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行构建
+            exec {
+                commandLine './gradlew', 'build', '-Pminecraft_version=' + version
+            }
+        }
+        
+        println "所有版本构建完成！"
+    }
+}
+
+task testAllVersions {
+    group = 'verification'
+    description = '测试所有支持的Minecraft版本'
+    
+    doLast {
+        println "开始测试所有支持的版本..."
+        
+        supportedVersions.each { version ->
+            println "测试版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行测试
+            exec {
+                commandLine './gradlew', 'test', '-Pminecraft_version=' + version
+            }
+        }
+        
+        println "所有版本测试完成！"
+    }
+}
+
+// 为每个版本创建单独的构建任务
+supportedVersions.each { version ->
+    task "build${version.replace('.', '')}" {
+        group = 'build'
+        description = "构建Minecraft ${version}版本"
+        
+        doLast {
+            println "构建版本: $version"
+            
+            // 设置版本特定的属性
+            project.ext.minecraft_version = version
+            project.ext.yarn_mappings = "${version}+build.1"
+            project.ext.fabric_version = "0.128.1+${version}"
+            
+            // 执行构建
+            exec {
+                commandLine './gradlew', 'build', '-Pminecraft_version=' + version
+            }
+        }
+    }
+}
+
+// 实用的测试任务
+task testModCompatibility {
+    group = 'verification'
+    description = '测试mod兼容性（需要Minecraft运行环境）'
+    
+    doLast {
+        println "=== Mod兼容性测试 ==="
+        println "⚠️  这个测试需要Minecraft运行环境"
+        println ""
+        println "测试步骤："
+        println "1. 运行 ./gradlew runClient"
+        println "2. 检查启动日志中的版本兼容性信息"
+        println "3. 测试mod功能是否正常工作"
+        println "4. 检查是否有错误或警告信息"
+        println ""
+        println "预期输出："
+        println "✅ 版本兼容性检查通过"
+        println "✅ Better Experience mod 初始化完成"
+        println "✅ 通用3D渲染系统和副手限制系统已启用"
+        println ""
+        println "如果看到错误信息，请检查："
+        println "- Minecraft版本是否在支持范围内"
+        println "- Fabric API版本是否正确"
+        println "- 是否有其他mod冲突"
+    }
+}
+
+// 清理和简化测试任务
+// Clean and simplified testing tasks
+
+// 快速检查任务
+task quickCheck {
+    group = 'testing'
+    description = '快速检查项目配置和文件完整性'
+    
+    doLast {
+        println "=== 快速项目检查 ==="
+        
+        // 检查基本配置
+        def checks = [
+            "Minecraft版本": project.minecraft_version,
+            "Fabric API": project.fabric_version,
+            "Fabric Loader": project.loader_version,
+            "Mod版本": project.mod_version
+        ]
+        
+        checks.each { name, value ->
+            if (value) {
+                println "✅ ${name}: ${value}"
+            } else {
+                println "❌ ${name}: 未设置"
+            }
+        }
+        
+        // 检查关键文件
+        def keyFiles = [
+            "主mod类": "src/main/java/com/aeolyn/better_experience/BetterExperienceMod.java",
+            "Mod配置": "src/main/resources/fabric.mod.json",
+            "Mixin配置": "src/main/resources/better_experience.mixins.json",
+            "3D渲染配置": "src/main/resources/assets/better_experience/render3d/items.json",
+            "副手限制配置": "src/main/resources/assets/better_experience/offhand/offhand_restrictions.json"
+        ]
+        
+        println ""
+        keyFiles.each { name, path ->
+            if (new File(path).exists()) {
+                println "✅ ${name}: 存在"
+            } else {
+                println "❌ ${name}: 缺失"
+            }
+        }
+        
+        println ""
+        println "=== 检查完成 ==="
+        println "💡 下一步：运行 ./gradlew runClient 进行实际测试"
+    }
+}
+
+// 兼容性分析任务
+task compatibilityAnalysis {
+    group = 'testing'
+    description = '分析当前版本的兼容性'
+    
+    doLast {
+        println "=== 兼容性分析 ==="
+        println "分析目标: Minecraft ${project.minecraft_version}"
+        println ""
+        
+        // 检查Mixin文件
+        def mixinFiles = [
+            'src/main/java/com/aeolyn/better_experience/mixin/render3d/GenericItemRendererMixin.java',
+            'src/main/java/com/aeolyn/better_experience/mixin/offhand/OffHandRestrictionMixin.java'
+        ]
+        
+        mixinFiles.each { file ->
+            if (new File(file).exists()) {
+                println "✅ ${file}"
+            } else {
+                println "❌ ${file} (缺失)"
+            }
+        }
+        
+        // 检查依赖版本
+        println ""
+        def fabricVersion = project.fabric_version
+        if (fabricVersion.contains("0.128.1")) {
+            println "✅ Fabric API版本兼容: ${fabricVersion}"
+        } else {
+            println "⚠️  Fabric API版本可能不兼容: ${fabricVersion}"
+        }
+        
+        def javaVersion = System.getProperty('java.version')
+        if (javaVersion.startsWith('17') || javaVersion.startsWith('21')) {
+            println "✅ Java版本兼容: ${javaVersion}"
+        } else {
+            println "⚠️  Java版本可能不兼容: ${javaVersion}"
+        }
+        
+        println ""
+        println "=== 分析完成 ==="
+        println "⚠️  注意：这只是静态分析，实际兼容性需要运行测试"
+    }
+}
+
+// 一键测试任务
+task runTests {
+    group = 'testing'
+    description = '运行所有测试（推荐）'
+    
+    dependsOn quickCheck, compatibilityAnalysis
+    
+    doLast {
+        println ""
+        println "=== 测试完成 ==="
+        println "💡 下一步：运行 ./gradlew runClient 进行实际游戏测试"
+        println "📋 查看生成的测试报告"
+    }
+}
+
+// 生成测试报告
+task generateReport {
+    group = 'documentation'
+    description = '生成测试报告'
+    
+    doLast {
+        def reportFile = new File("docs/reports/test-report.md")
+        reportFile.text = """# Better Experience Mod 测试报告
+
+## 测试环境
+- Minecraft版本: ${project.minecraft_version}
+- Fabric API: ${project.fabric_version}
+- Fabric Loader: ${project.loader_version}
+- 测试日期: ${new Date()}
+
+## 测试结果
+
+### ✅ 通过的项目
+- [ ] 项目配置检查
+- [ ] 文件完整性检查
+- [ ] 依赖版本检查
+- [ ] 启动测试
+- [ ] 3D渲染功能测试
+- [ ] 副手限制功能测试
+- [ ] 配置界面测试
+
+### ❌ 失败的项目
+- [ ] 启动错误
+- [ ] 功能异常
+- [ ] 性能问题
+
+## 游戏内测试清单
+
+### 启动测试
+- [ ] 游戏正常启动
+- [ ] 无错误信息
+- [ ] 版本兼容性检查通过
+
+### 功能测试
+- [ ] 手持火把显示3D效果
+- [ ] 副手限制功能正常
+- [ ] 按B键打开配置界面
+- [ ] 配置保存正常
+
+## 问题记录
+请在此处记录遇到的问题
+
+## 解决方案
+请记录解决方案或建议
+
+---
+*此报告由Better Experience Mod自动生成*
+"""
+        
+        println "测试报告已生成: ${reportFile.absolutePath}"
+    }
+}
