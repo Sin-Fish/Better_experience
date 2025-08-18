@@ -1,9 +1,10 @@
-package com.aeolyn.better_experience.client.gui;
+package com.aeolyn.better_experience.render3d.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.render3d.gui.AddItemConfigScreen;
 import com.aeolyn.better_experience.render3d.gui.ItemDetailConfigScreen;
+import com.aeolyn.better_experience.client.gui.BaseConfigScreen;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;

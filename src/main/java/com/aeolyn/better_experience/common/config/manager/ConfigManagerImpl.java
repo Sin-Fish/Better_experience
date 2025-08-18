@@ -9,13 +9,12 @@ import com.aeolyn.better_experience.common.config.exception.ConfigLoadException;
 import com.aeolyn.better_experience.common.config.exception.ConfigSaveException;
 import com.aeolyn.better_experience.common.config.factory.ConfigFactory;
 import com.aeolyn.better_experience.common.config.factory.DefaultConfigFactory;
-import com.aeolyn.better_experience.common.config.loader.ConfigLoader;
-import com.aeolyn.better_experience.common.config.loader.FileConfigLoader;
-import com.aeolyn.better_experience.common.config.saver.ConfigSaver;
-import com.aeolyn.better_experience.common.config.saver.FileConfigSaver;
-import com.aeolyn.better_experience.common.config.validator.ConfigValidator;
-import com.aeolyn.better_experience.common.config.validator.ItemConfigValidator;
+import com.aeolyn.better_experience.render3d.loader.Render3DConfigLoader;
+import com.aeolyn.better_experience.render3d.saver.Render3DConfigSaver;
+import com.aeolyn.better_experience.offhand.loader.OffHandConfigLoader;
+import com.aeolyn.better_experience.offhand.saver.OffHandConfigSaver;
 import com.aeolyn.better_experience.common.config.validator.ValidationResult;
+import com.aeolyn.better_experience.common.config.validator.impl.ItemConfigValidator;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.common.util.ConfigValidationUtil;
 
@@ -29,9 +28,11 @@ public class ConfigManagerImpl {
     
     // 使用统一日志工具
     
-    private final ConfigLoader loader;
-    private final ConfigSaver saver;
-    private final ConfigValidator validator;
+    private final Render3DConfigLoader render3DLoader;
+    private final Render3DConfigSaver render3DSaver;
+    private final OffHandConfigLoader offHandLoader;
+    private final OffHandConfigSaver offHandSaver;
+    private final ItemConfigValidator validator;
     private final ConfigFactory factory;
     private final ConfigCache cache;
     
@@ -39,17 +40,22 @@ public class ConfigManagerImpl {
     
     public ConfigManagerImpl() {
         this.factory = new DefaultConfigFactory();
-        this.loader = new FileConfigLoader(factory);
-        this.saver = new FileConfigSaver();
+        this.render3DLoader = new Render3DConfigLoader(factory);
+        this.render3DSaver = new Render3DConfigSaver();
+        this.offHandLoader = new OffHandConfigLoader();
+        this.offHandSaver = new OffHandConfigSaver();
         this.validator = new ItemConfigValidator();
         this.cache = new MemoryConfigCache();
     }
     
-    public ConfigManagerImpl(ConfigLoader loader, ConfigSaver saver, 
-                           ConfigValidator validator, ConfigFactory factory,
+    public ConfigManagerImpl(Render3DConfigLoader render3DLoader, Render3DConfigSaver render3DSaver,
+                           OffHandConfigLoader offHandLoader, OffHandConfigSaver offHandSaver,
+                           ItemConfigValidator validator, ConfigFactory factory,
                            ConfigCache cache) {
-        this.loader = loader;
-        this.saver = saver;
+        this.render3DLoader = render3DLoader;
+        this.render3DSaver = render3DSaver;
+        this.offHandLoader = offHandLoader;
+        this.offHandSaver = offHandSaver;
         this.validator = validator;
         this.factory = factory;
         this.cache = cache;
@@ -68,7 +74,7 @@ public class ConfigManagerImpl {
             LogUtil.logInitialization(LogUtil.MODULE_CONFIG, "配置管理器");
             
             // 加载主配置
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
             
             // 验证主配置
             ValidationResult mainValidation = ConfigValidationUtil.validate(itemsConfig);
@@ -102,7 +108,7 @@ public class ConfigManagerImpl {
             // 加载所有启用的物品配置
             for (String itemId : itemsConfig.getEnabledItems()) {
                 try {
-                    ItemConfig itemConfig = loader.loadItemConfig(itemId);
+                    ItemConfig itemConfig = render3DLoader.loadItemConfig(itemId);
                     
                     // 验证物品配置
                     ValidationResult itemValidation = ConfigValidationUtil.validate(itemConfig);
@@ -153,7 +159,7 @@ public class ConfigManagerImpl {
     public ItemsConfig getItemsConfig() {
         ensureInitialized();
         try {
-            return loader.loadItemsConfig();
+            return render3DLoader.loadItemsConfig();
                  } catch (ConfigLoadException e) {
              LogUtil.error(LogUtil.MODULE_CONFIG, "获取主配置失败: {}", e.getMessage(), e);
              return factory.createDefaultItemsConfig();
@@ -174,8 +180,8 @@ public class ConfigManagerImpl {
                  throw new IllegalArgumentException("Invalid main config: " + ConfigValidationUtil.formatValidationErrors(validation));
              }
              
-             // 保存主配置
-             saver.saveItemsConfig(itemsConfig);
+                         // 保存主配置
+            render3DSaver.saveItemsConfig(itemsConfig);
              
              // 重新初始化缓存
              initializeCache(itemsConfig);
@@ -202,14 +208,14 @@ public class ConfigManagerImpl {
                  throw new IllegalArgumentException("Invalid config: " + ConfigValidationUtil.formatValidationErrors(validation));
              }
              
-             // 保存配置
-             saver.saveItemConfig(itemId, config);
-             
-             // 更新缓存
-             cache.put(itemId, config);
-             cache.putEnabled(itemId, config.isEnabled());
-             
-             LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置更新成功");
+                         // 保存配置
+            render3DSaver.saveItemConfig(itemId, config);
+            
+            // 更新缓存
+            cache.put(itemId, config);
+            cache.putEnabled(itemId, config.isEnabled());
+            
+            LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "物品配置更新成功");
              
          } catch (Exception e) {
              LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新物品配置: " + itemId, e);
@@ -231,15 +237,15 @@ public class ConfigManagerImpl {
                  return false;
              }
              
-             // 保存配置
-             saver.saveItemConfig(itemId, config);
-             
-             // 更新主配置
-             ItemsConfig itemsConfig = loader.loadItemsConfig();
-             if (!itemsConfig.getEnabledItems().contains(itemId)) {
-                 itemsConfig.getEnabledItems().add(itemId);
-                 saver.saveItemsConfig(itemsConfig);
-             }
+                         // 保存配置
+            render3DSaver.saveItemConfig(itemId, config);
+            
+            // 更新主配置
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
+            if (!itemsConfig.getEnabledItems().contains(itemId)) {
+                itemsConfig.getEnabledItems().add(itemId);
+                render3DSaver.saveItemsConfig(itemsConfig);
+            }
              
              // 更新缓存
              cache.put(itemId, config);
@@ -268,8 +274,8 @@ public class ConfigManagerImpl {
                  return false;
              }
              
-             // 保存配置（不更新主配置）
-             saver.saveItemConfig(itemId, config);
+                         // 保存配置（不更新主配置）
+            render3DSaver.saveItemConfig(itemId, config);
              
              // 更新缓存
              cache.put(itemId, config);
@@ -291,13 +297,13 @@ public class ConfigManagerImpl {
         ensureInitialized();
         
         try {
-                         // 删除配置文件
-             saver.deleteItemConfig(itemId);
-             
-             // 更新主配置
-             ItemsConfig itemsConfig = loader.loadItemsConfig();
-             itemsConfig.getEnabledItems().remove(itemId);
-             saver.saveItemsConfig(itemsConfig);
+                                     // 删除配置文件
+            render3DSaver.deleteItemConfig(itemId);
+            
+            // 更新主配置
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
+            itemsConfig.getEnabledItems().remove(itemId);
+            render3DSaver.saveItemsConfig(itemsConfig);
              
              // 更新缓存
              cache.remove(itemId);
@@ -317,8 +323,8 @@ public class ConfigManagerImpl {
                  try {
              LogUtil.logInitialization(LogUtil.MODULE_CONFIG, "配置重新加载");
              
-             // 重新加载主配置
-             ItemsConfig itemsConfig = loader.loadItemsConfig();
+                         // 重新加载主配置
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
              
              // 重新初始化缓存
              initializeCache(itemsConfig);
@@ -344,7 +350,7 @@ public class ConfigManagerImpl {
     public boolean isDebugEnabled() {
         ensureInitialized();
         try {
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
             return itemsConfig.getSettings() != null && itemsConfig.getSettings().isEnableDebugLogs();
                  } catch (Exception e) {
              LogUtil.error(LogUtil.MODULE_CONFIG, "检查调试模式失败: {}", e.getMessage(), e);
@@ -358,7 +364,7 @@ public class ConfigManagerImpl {
     public boolean isRenderLogsEnabled() {
         ensureInitialized();
         try {
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableRenderLogs();
                  } catch (Exception e) {
              LogUtil.error(LogUtil.MODULE_CONFIG, "检查渲染日志失败: {}", e.getMessage(), e);
@@ -372,7 +378,7 @@ public class ConfigManagerImpl {
     public boolean isConfigLogsEnabled() {
         ensureInitialized();
         try {
-            ItemsConfig itemsConfig = loader.loadItemsConfig();
+            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
             return itemsConfig.getLogConfig() != null && itemsConfig.getLogConfig().isEnableConfigLogs();
                  } catch (Exception e) {
              LogUtil.error(LogUtil.MODULE_CONFIG, "检查配置日志失败: {}", e.getMessage(), e);
@@ -402,7 +408,7 @@ public class ConfigManagerImpl {
     public OffHandRestrictionConfig getOffHandRestrictionConfig() {
         ensureInitialized();
         try {
-            return loader.loadOffHandRestrictionConfig();
+            return offHandLoader.loadOffHandRestrictionConfig();
                  } catch (Exception e) {
              LogUtil.error(LogUtil.MODULE_CONFIG, "加载副手限制配置失败: {}", e.getMessage(), e);
              return new OffHandRestrictionConfig(); // 返回默认配置
@@ -416,7 +422,7 @@ public class ConfigManagerImpl {
         ensureInitialized();
         try {
             OffHandRestrictionConfig config = getOffHandRestrictionConfig();
-                         saver.saveOffHandRestrictionConfig(config);
+                         offHandSaver.saveOffHandRestrictionConfig(config);
              LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "副手限制配置保存");
          } catch (Exception e) {
              LogUtil.logFailure(LogUtil.MODULE_CONFIG, "保存副手限制配置", e);
@@ -430,7 +436,7 @@ public class ConfigManagerImpl {
     public void updateOffHandRestrictionConfig(OffHandRestrictionConfig config) {
         ensureInitialized();
         try {
-                         saver.saveOffHandRestrictionConfig(config);
+                         offHandSaver.saveOffHandRestrictionConfig(config);
              LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "副手限制配置更新");
          } catch (Exception e) {
              LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新副手限制配置", e);

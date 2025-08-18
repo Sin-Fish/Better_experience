@@ -1,8 +1,9 @@
-package com.aeolyn.better_experience.common.config.manager;
+package com.aeolyn.better_experience.importexport.core;
 
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.render3d.config.ItemsConfig;
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -212,12 +213,12 @@ public class ConfigImportExportManager {
      * @param importPath 导入路径
      * @return 验证结果
      */
-    public static ValidationResult validateImportConfigs(String importPath) {
-        ValidationResult result = new ValidationResult();
+    public static ImportValidationResult validateImportConfigs(String importPath) {
+        ImportValidationResult result = new ImportValidationResult();
         
         try {
             // 首先进行文件结构验证
-            ValidationResult structureResult = validateFileStructure(importPath);
+            ImportValidationResult structureResult = validateFileStructure(importPath);
             if (!structureResult.isValid()) {
                 // 如果文件结构验证失败，直接返回结果
                 return structureResult;
@@ -315,8 +316,8 @@ public class ConfigImportExportManager {
      * @param importPath 导入路径
      * @return 验证结果
      */
-    public static ValidationResult validateFileStructure(String importPath) {
-        ValidationResult result = new ValidationResult();
+    public static ImportValidationResult validateFileStructure(String importPath) {
+        ImportValidationResult result = new ImportValidationResult();
         
         try {
             Path importDir = Paths.get(importPath);
@@ -521,9 +522,9 @@ public class ConfigImportExportManager {
     }
     
     /**
-     * 验证结果类
+     * 导入验证结果类
      */
-    public static class ValidationResult {
+    public static class ImportValidationResult {
         private boolean valid = true;
         private String message = "";
         private boolean mainConfigValid = false;

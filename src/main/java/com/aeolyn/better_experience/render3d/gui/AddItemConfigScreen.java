@@ -3,7 +3,7 @@ package com.aeolyn.better_experience.render3d.gui;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.client.gui.ModConfigScreen;
-import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
+import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;

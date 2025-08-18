@@ -1,4 +1,4 @@
-package com.aeolyn.better_experience.mixin.offhand.mixin;
+package com.aeolyn.better_experience.mixin.offhand;
 
 import com.aeolyn.better_experience.offhand.core.OffHandRestrictionController;
 import net.minecraft.client.MinecraftClient;

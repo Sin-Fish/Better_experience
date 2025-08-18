@@ -3,8 +3,8 @@ package com.aeolyn.better_experience.client.gui;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
-import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
-import com.aeolyn.better_experience.client.gui.ConfigImportExportScreen;
+import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
+import com.aeolyn.better_experience.importexport.gui.ConfigImportExportScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -69,7 +69,7 @@ public class ModConfigScreen extends BaseConfigScreen {
         
         // 3D渲染配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("🎨 3D渲染配置"),
+            Text.literal("3D渲染配置"),
             button -> {
                 this.client.setScreen(new Render3DConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_3d_config", getScreenName(), "打开3D渲染配置界面");
@@ -78,7 +78,7 @@ public class ModConfigScreen extends BaseConfigScreen {
         
         // 副手限制配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("🛡️ 副手限制配置"),
+            Text.literal("副手限制配置"),
             button -> {
                 this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_offhand_config", getScreenName(), "打开副手限制配置界面");
@@ -87,7 +87,7 @@ public class ModConfigScreen extends BaseConfigScreen {
         
         // 导入导出配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("📁 导入导出配置"),
+            Text.literal("导入导出配置"),
             button -> {
                 this.client.setScreen(new ConfigImportExportScreen(this, configManager));
                 LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
@@ -105,9 +105,9 @@ public class ModConfigScreen extends BaseConfigScreen {
     private void renderDescription(DrawContext context) {
         renderCenteredText(context, "Better Experience Mod 配置中心", 40, 0xFFFFFF);
         renderCenteredText(context, "选择要配置的功能模块", 60, 0xCCCCCC);
-        renderCenteredText(context, "🎨 3D渲染配置 - 管理物品的3D渲染效果", 80, 0xAAAAAA);
-        renderCenteredText(context, "🛡️ 副手限制配置 - 管理副手物品使用限制", 100, 0xAAAAAA);
-        renderCenteredText(context, "📁 导入导出配置 - 备份和恢复配置", 120, 0xAAAAAA);
+        renderCenteredText(context, "3D渲染配置 - 管理物品的3D渲染效果", 80, 0xAAAAAA);
+        renderCenteredText(context, "副手限制配置 - 管理副手物品使用限制", 100, 0xAAAAAA);
+        renderCenteredText(context, "导入导出配置 - 备份和恢复配置", 120, 0xAAAAAA);
     }
     
     // ==================== 公共方法 ====================

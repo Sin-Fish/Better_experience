@@ -1,4 +1,4 @@
-package com.aeolyn.better_experience.mixin.render3d.mixin;
+package com.aeolyn.better_experience.mixin.render3d;
 
 import com.aeolyn.better_experience.BetterExperienceMod;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;

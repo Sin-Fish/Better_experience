@@ -1,8 +1,9 @@
-package com.aeolyn.better_experience.client.gui;
+package com.aeolyn.better_experience.importexport.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
-import com.aeolyn.better_experience.common.config.manager.ConfigImportExportManager;
-import com.aeolyn.better_experience.client.gui.Render3DConfigScreen;
+import com.aeolyn.better_experience.importexport.core.ConfigImportExportManager;
+import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
+import com.aeolyn.better_experience.client.gui.ModConfigScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -35,7 +36,7 @@ public class ConfigImportExportScreen extends Screen {
     private boolean isStatusError = false;
     
     // 导入验证结果
-    private ConfigImportExportManager.ValidationResult validationResult = null;
+    private ConfigImportExportManager.ImportValidationResult validationResult = null;
     private boolean showValidationDetails = false;
     
     // 验证状态枚举
@@ -157,10 +158,10 @@ public class ConfigImportExportScreen extends Screen {
         
         try {
             // 先验证文件结构
-            ConfigImportExportManager.ValidationResult structureResult = ConfigImportExportManager.validateFileStructure(importPath);
+            ConfigImportExportManager.ImportValidationResult structureResult = ConfigImportExportManager.validateFileStructure(importPath);
             
             // 再验证配置内容
-            ConfigImportExportManager.ValidationResult contentResult = ConfigImportExportManager.validateImportConfigs(importPath);
+            ConfigImportExportManager.ImportValidationResult contentResult = ConfigImportExportManager.validateImportConfigs(importPath);
             
             // 合并结果
             validationResult = contentResult; // 使用内容验证结果作为主要结果，因为它包含了结构验证的信息

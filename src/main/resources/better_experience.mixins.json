@@ -6,8 +6,8 @@
   "mixins": [
   ],
   "client": [
-    "render3d.mixin.GenericItemRendererMixin",
-    "offhand.mixin.OffHandRestrictionMixin"
+    "render3d.GenericItemRendererMixin",
+    "offhand.OffHandRestrictionMixin"
   ],
   "injectors": {
     "defaultRequire": 1
