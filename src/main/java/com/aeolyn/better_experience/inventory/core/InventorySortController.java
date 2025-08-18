@@ -694,149 +694,62 @@ public class InventorySortController {
                 LogUtil.info("Inventory", "执行按数量排序，降序: " + config.getSortSettings().isQuantityDescending());
                 sortByQuantity(items, config.getSortSettings().isQuantityDescending());
                 break;
-            case CATEGORY:
-                LogUtil.info("Inventory", "执行按分类排序");
-                sortByCategory(items, config.getSortSettings().getCategoryOrder());
-                break;
-            case TYPE:
-                LogUtil.info("Inventory", "执行按类型排序");
-                sortByType(items, config.getSortSettings().getTypeOrder());
-                break;
         }
         
         LogUtil.info("Inventory", "排序完成");
     }
     
     /**
-     * 按名称排序
+     * 按名称排序（复合排序：第一级按名称，第二级按数量）
      */
     private void sortByName(List<ItemStack> items, boolean ascending) {
-        LogUtil.info("Inventory", "开始按名称排序，升序: " + ascending + "，物品数量: " + items.size());
-        
-        // 记录排序前的物品名称
-        List<String> beforeNames = items.stream()
-            .map(item -> item.getName().getString())
-            .collect(Collectors.toList());
-        LogUtil.info("Inventory", "排序前物品名称: " + beforeNames);
+        LogUtil.info("Inventory", "开始复合排序（名称+数量），名称升序: " + ascending + "，物品数量: " + items.size());
         
         items.sort((a, b) -> {
             String nameA = a.getName().getString();
             String nameB = b.getName().getString();
-            return ascending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+            
+            // 第一级：按名称排序
+            int nameCompare = ascending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+            
+            // 第二级：如果名称相同，按数量降序排序（数量多的在前）
+            if (nameCompare == 0) {
+                return Integer.compare(b.getCount(), a.getCount());
+            }
+            
+            return nameCompare;
         });
         
-        // 记录排序后的物品名称
-        List<String> afterNames = items.stream()
-            .map(item -> item.getName().getString())
-            .collect(Collectors.toList());
-        LogUtil.info("Inventory", "排序后物品名称: " + afterNames);
+        LogUtil.info("Inventory", "复合排序完成");
     }
     
     /**
-     * 按数量排序
+     * 按数量排序（复合排序：第一级按数量，第二级按名称）
      */
     private void sortByQuantity(List<ItemStack> items, boolean descending) {
+        LogUtil.info("Inventory", "开始复合排序（数量+名称），数量降序: " + descending + "，物品数量: " + items.size());
+        
         items.sort((a, b) -> {
             int countA = a.getCount();
             int countB = b.getCount();
-            return descending ? Integer.compare(countB, countA) : Integer.compare(countA, countB);
+            
+            // 第一级：按数量排序
+            int countCompare = descending ? Integer.compare(countB, countA) : Integer.compare(countA, countB);
+            
+            // 第二级：如果数量相同，按名称排序（保持一致性）
+            if (countCompare == 0) {
+                String nameA = a.getName().getString();
+                String nameB = b.getName().getString();
+                return nameA.compareTo(nameB);
+            }
+            
+            return countCompare;
         });
+        
+        LogUtil.info("Inventory", "复合排序完成");
     }
     
-    /**
-     * 按分类排序
-     */
-    private void sortByCategory(List<ItemStack> items, String[] categoryOrder) {
-        Map<String, Integer> categoryPriority = new HashMap<>();
-        for (int i = 0; i < categoryOrder.length; i++) {
-            categoryPriority.put(categoryOrder[i], i);
-        }
-        
-        items.sort((a, b) -> {
-            String categoryA = getItemCategory(a);
-            String categoryB = getItemCategory(b);
-            
-            int priorityA = categoryPriority.getOrDefault(categoryA, Integer.MAX_VALUE);
-            int priorityB = categoryPriority.getOrDefault(categoryB, Integer.MAX_VALUE);
-            
-            return Integer.compare(priorityA, priorityB);
-        });
-    }
-    
-    /**
-     * 按类型排序
-     */
-    private void sortByType(List<ItemStack> items, String[] typeOrder) {
-        Map<String, Integer> typePriority = new HashMap<>();
-        for (int i = 0; i < typeOrder.length; i++) {
-            typePriority.put(typeOrder[i], i);
-        }
-        
-        items.sort((a, b) -> {
-            String typeA = getItemType(a);
-            String typeB = getItemType(b);
-            
-            int priorityA = typePriority.getOrDefault(typeA, Integer.MAX_VALUE);
-            int priorityB = typePriority.getOrDefault(typeB, Integer.MAX_VALUE);
-            
-            return Integer.compare(priorityA, priorityB);
-        });
-    }
-    
-    /**
-     * 获取物品分类
-     */
-    private String getItemCategory(ItemStack stack) {
-        Item item = stack.getItem();
-        String itemId = Registries.ITEM.getId(item).toString();
-        
-        if (itemId.contains("sword") || itemId.contains("axe") || itemId.contains("pickaxe") || 
-            itemId.contains("shovel") || itemId.contains("hoe") || itemId.contains("bow") || 
-            itemId.contains("crossbow") || itemId.contains("trident")) {
-            return "武器";
-        } else if (itemId.contains("helmet") || itemId.contains("chestplate") || 
-                   itemId.contains("leggings") || itemId.contains("boots")) {
-            return "防具";
-        } else if (itemId.contains("apple") || itemId.contains("bread") || itemId.contains("meat") || 
-                   itemId.contains("fish") || itemId.contains("potion")) {
-            return "食物";
-        } else if (itemId.contains("diamond") || itemId.contains("iron") || itemId.contains("gold") || 
-                   itemId.contains("emerald") || itemId.contains("coal") || itemId.contains("stone")) {
-            return "材料";
-        } else if (itemId.contains("flower") || itemId.contains("sapling") || itemId.contains("torch") || 
-                   itemId.contains("lantern")) {
-            return "装饰";
-        } else {
-            return "其他";
-        }
-    }
-    
-    /**
-     * 获取物品类型
-     */
-    private String getItemType(ItemStack stack) {
-        Item item = stack.getItem();
-        String itemId = Registries.ITEM.getId(item).toString();
-        
-        if (itemId.contains("block") || itemId.contains("stone") || itemId.contains("dirt") || 
-            itemId.contains("wood") || itemId.contains("log")) {
-            return "方块";
-        } else if (itemId.contains("sword") || itemId.contains("axe") || itemId.contains("pickaxe") || 
-                   itemId.contains("shovel") || itemId.contains("hoe")) {
-            return "工具";
-        } else if (itemId.contains("sword") || itemId.contains("bow") || itemId.contains("crossbow")) {
-            return "武器";
-        } else if (itemId.contains("helmet") || itemId.contains("chestplate") || 
-                   itemId.contains("leggings") || itemId.contains("boots")) {
-            return "防具";
-        } else if (itemId.contains("apple") || itemId.contains("bread") || itemId.contains("meat")) {
-            return "食物";
-        } else if (itemId.contains("potion")) {
-            return "药水";
-        } else {
-            return "物品";
-        }
-    }
+
     
          /**
       * 检查两个物品是否可以堆叠
@@ -930,18 +843,7 @@ public class InventorySortController {
         return true;
     }
     
-    /**
-     * 测试合并逻辑（用于调试）
-     */
-    public void testMergeLogic() {
-        LogUtil.info("Inventory", "开始测试合并逻辑");
-        
-        // 创建测试数据
-        List<ItemStack> testItems = new ArrayList<>();
-        // 这里可以添加一些测试物品来验证合并逻辑
-        
-        LogUtil.info("Inventory", "测试合并逻辑完成");
-    }
+
      
      /**
       * 比较两个物品是否相同类型（不考虑数量）
@@ -996,85 +898,83 @@ public class InventorySortController {
          
          LogUtil.info("Inventory", "开始背包重排，当前物品数: " + current.stream().filter(s -> !s.isEmpty()).count());
          
+         // 修复：使用更稳定的重排算法
+         // 首先清空所有槽位，然后按顺序填充
+         List<ItemStack> tempStorage = new ArrayList<>();
+         
+         // 第一步：将所有物品收集到临时存储
+         for (int i = 0; i < 27; i++) {
+             if (!current.get(i).isEmpty()) {
+                 tempStorage.add(current.get(i).copy());
+             }
+         }
+         
+         // 第二步：按目标顺序重新排列临时存储
+         tempStorage.sort((a, b) -> {
+             int indexA = desired.indexOf(a);
+             int indexB = desired.indexOf(b);
+             if (indexA == -1) indexA = Integer.MAX_VALUE;
+             if (indexB == -1) indexB = Integer.MAX_VALUE;
+             return Integer.compare(indexA, indexB);
+         });
+         
+         // 第三步：将物品按顺序放回背包
          for (int i = 0; i < 27; i++) {
              ItemStack want = desired.get(i);
              ItemStack have = current.get(i);
              
-             // Skip if already correct
              if (areStacksEqualExact(have, want)) {
-                 continue;
+                 continue; // 已经正确
              }
              
-             // Find the item we want at this position
-             int j = -1;
-             
-             // First, try to find exact match
-             for (int k = i + 1; k < 27; k++) {
-                 if (areStacksEqualExact(current.get(k), want)) {
-                     j = k;
+             // 找到目标物品在临时存储中的位置
+             int targetIndex = -1;
+             for (int j = 0; j < tempStorage.size(); j++) {
+                 if (areStacksEqualExact(tempStorage.get(j), want)) {
+                     targetIndex = j;
                      break;
                  }
              }
              
-             // If no exact match and we want an empty slot, find an empty slot
-             if (j == -1 && want.isEmpty() && !have.isEmpty()) {
-                 for (int k = 26; k > i; k--) {
-                     if (current.get(k).isEmpty()) {
-                         j = k;
-                         break;
-                     }
-                 }
-             }
-             
-             // If we want a non-empty item but don't have exact match, try to find items that can satisfy the desired stack
-             if (j == -1 && !want.isEmpty()) {
-                 // Look for items that can satisfy what we want
-                 for (int k = i + 1; k < 27; k++) {
-                     ItemStack candidate = current.get(k);
-                     if (!candidate.isEmpty() && areStacksEqualType(candidate, want)) {
-                         // Check if this candidate can satisfy our desired stack
-                         if (candidate.getCount() >= want.getCount()) {
-                             j = k;
+             if (targetIndex != -1) {
+                 // 将目标物品移动到当前位置
+                 ItemStack targetItem = tempStorage.get(targetIndex);
+                 
+                 // 如果当前位置有物品，先移动到临时位置
+                 if (!have.isEmpty()) {
+                     // 找到临时存储中的空位
+                     for (int k = 0; k < tempStorage.size(); k++) {
+                         if (tempStorage.get(k).isEmpty()) {
+                             tempStorage.set(k, have.copy());
                              break;
                          }
                      }
                  }
                  
-                 // If still not found, look for multiple stacks that can be combined
-                 if (j == -1) {
-                     int neededCount = want.getCount();
-                     int availableCount = 0;
-                     List<Integer> candidates = new ArrayList<>();
-                     
-                     for (int k = i + 1; k < 27; k++) {
-                         ItemStack candidate = current.get(k);
-                         if (!candidate.isEmpty() && areStacksEqualType(candidate, want)) {
-                             availableCount += candidate.getCount();
-                             candidates.add(k);
-                             if (availableCount >= neededCount) {
-                                 // Use the first candidate that gives us enough
-                                 j = candidates.get(0);
-                                 break;
-                             }
+                 // 执行交换
+                 int slotId = mainSlotIds.get(i);
+                 
+                 // 如果目标物品在临时存储中，需要先找到它在背包中的实际位置
+                 for (int j = 0; j < 27; j++) {
+                     if (areStacksEqualExact(current.get(j), targetItem)) {
+                         int sourceSlotId = mainSlotIds.get(j);
+                         if (sourceSlotId != slotId) {
+                             clickSwap(client, syncId, sourceSlotId, slotId, player);
+                             
+                             // 更新跟踪状态
+                             current.set(i, targetItem.copy());
+                             current.set(j, have.copy());
+                             
+                             LogUtil.info("Inventory", "交换槽位: " + sourceSlotId + " <-> " + slotId + " (物品: " + 
+                                 (current.get(i).isEmpty() ? "空" : current.get(i).getName().getString()) + " <-> " +
+                                 (current.get(j).isEmpty() ? "空" : current.get(j).getName().getString()) + ")");
                          }
+                         break;
                      }
                  }
-             }
-             
-             // Perform the swap if we found a suitable item
-             if (j != -1 && j != i) {
-                 int slotA = mainSlotIds.get(i);
-                 int slotB = mainSlotIds.get(j);
-                 clickSwap(client, syncId, slotA, slotB, player);
                  
-                 // Update our tracking list
-                 ItemStack tmp = current.get(i);
-                 current.set(i, current.get(j));
-                 current.set(j, tmp);
-                 
-                 LogUtil.info("Inventory", "交换槽位: " + slotA + " <-> " + slotB + " (物品: " + 
-                     (current.get(i).isEmpty() ? "空" : current.get(i).getName().getString()) + " <-> " +
-                     (current.get(j).isEmpty() ? "空" : current.get(j).getName().getString()) + ")");
+                 // 从临时存储中移除已使用的物品
+                 tempStorage.set(targetIndex, ItemStack.EMPTY);
              }
          }
          
@@ -1203,10 +1103,25 @@ public class InventorySortController {
     public void smartSortByMousePosition() {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            if (client == null) {
+                LogUtil.info("Inventory", "客户端不存在，跳过智能排序");
+                return;
+            }
+            
+            // 检查是否在背包界面
+            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+                LogUtil.info("Inventory", "在背包界面，执行背包排序");
+                // 启用合并模式：先用PICKUP堆叠再排序
+                sortInventory(InventorySortConfig.SortMode.NAME, true);
+                return;
+            }
+            
+            // 检查是否在容器界面
+            if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
                 LogUtil.info("Inventory", "R键按下，但没有打开库存界面，跳过智能排序");
                 return;
             }
+            
             // 添加调试输出
             LogUtil.info("Inventory", "R键按下，当前屏幕类: " + client.currentScreen.getClass().getName());
             
@@ -1257,9 +1172,9 @@ public class InventorySortController {
             if (isPlayerInventory) {
                 // 检查是否是主背包槽位（9-35），排除工具栏（0-8）
                 if (slot.getIndex() >= 9 && slot.getIndex() < 36) {
-                    LogUtil.info("Inventory", "鼠标在主背包槽位上，执行背包排序（使用本地排序，避免跨容器问题）");
-                    // 背包界面使用本地排序，不使用 QUICK_MOVE
-                    sortInventory(InventorySortConfig.SortMode.NAME, true); // 合并模式，但使用本地实现
+                    LogUtil.info("Inventory", "鼠标在主背包槽位上，执行背包排序");
+                    // 启用合并模式：先用PICKUP堆叠再排序
+                    sortInventory(InventorySortConfig.SortMode.NAME, true);
                 } else {
                     LogUtil.info("Inventory", "鼠标在工具栏槽位上，跳过排序");
                 }
@@ -1268,8 +1183,8 @@ public class InventorySortController {
                 // 获取整个容器库存，而不是单个槽位的库存
                 net.minecraft.inventory.Inventory containerInventory = getContainerInventory(handledScreen);
                 if (containerInventory != null) {
-                    // 容器界面可以使用 QUICK_MOVE，因为不会跨容器
-                    sortContainer(containerInventory, InventorySortConfig.SortMode.NAME, true); // 合并模式
+                    // 容器界面使用 clickSlot 交换，合并后排序
+                    sortContainer(containerInventory, InventorySortConfig.SortMode.NAME, true);
                 } else {
                     LogUtil.warn("Inventory", "无法获取容器库存，跳过排序");
                 }
@@ -1280,61 +1195,7 @@ public class InventorySortController {
         }
     }
      
-     /**
-      * 检查鼠标是否在背包区域
-      */
-     private boolean isMouseInInventoryArea(double mouseX, double mouseY) {
-         MinecraftClient client = MinecraftClient.getInstance();
-         if (client.currentScreen == null) return false;
-         
-         int screenWidth = client.getWindow().getScaledWidth();
-         int screenHeight = client.getWindow().getScaledHeight();
-         
-         int centerX = screenWidth / 2;
-         int centerY = screenHeight / 2;
-         
-         // 扩大背包区域范围
-         return mouseX > centerX - 176 && mouseX < centerX && 
-                mouseY > centerY - 83 && mouseY < centerY + 75;
-     }
      
-     /**
-      * 检查鼠标是否在容器区域
-      */
-     private boolean isMouseInContainerArea(double mouseX, double mouseY) {
-         MinecraftClient client = MinecraftClient.getInstance();
-         if (client.currentScreen == null) return false;
-         
-         int screenWidth = client.getWindow().getScaledWidth();
-         int screenHeight = client.getWindow().getScaledHeight();
-         
-         int centerX = screenWidth / 2;
-         int centerY = screenHeight / 2;
-         
-         // 扩大容器区域范围
-         return mouseX > centerX && mouseX < centerX + 176 && 
-                mouseY > centerY - 83 && mouseY < centerY + 75;
-     }
-     
-     /**
-      * 根据鼠标位置排序容器
-      */
-     private void sortContainerByMousePosition(double mouseX, double mouseY, boolean mergeFirst) {
-         try {
-             MinecraftClient client = MinecraftClient.getInstance();
-             if (client.currentScreen == null) return;
-             
-             // 尝试获取当前容器的Inventory
-             net.minecraft.inventory.Inventory container = getCurrentContainer();
-             if (container != null) {
-                 sortContainer(container, InventorySortConfig.SortMode.NAME, mergeFirst);
-             } else {
-                 LogUtil.warn("Inventory", "无法获取当前容器");
-             }
-         } catch (Exception e) {
-             LogUtil.error("Inventory", "容器排序失败", e);
-         }
-     }
      
      /**
       * 获取当前容器的Inventory
@@ -1573,52 +1434,7 @@ public class InventorySortController {
         LogUtil.info("Inventory", "QUICK_MOVE 目标状态实现完成");
     }
 
-    /**
-     * 本地合并排序（背包界面专用，避免跨容器问题）
-     */
-    private void performLocalMergeAndSort(ClientPlayerEntity player, List<ItemStack> current, List<ItemStack> desired) {
-        try {
-            LogUtil.info("Inventory", "开始本地合并排序，避免跨容器问题");
-            
-            // 直接应用合并后的结果到背包
-            Inventory inventory = player.getInventory();
-            
-            // 清空背包栏
-            for (int i = 9; i < 36; i++) {
-                inventory.setStack(i, ItemStack.EMPTY);
-            }
-            
-            // 将合并后的物品重新放入背包
-            int slotIndex = 9;
-            for (ItemStack item : desired) {
-                if (slotIndex >= 36) break;
-                if (!item.isEmpty()) {
-                    inventory.setStack(slotIndex, item.copy());
-                }
-                slotIndex++;
-            }
-            
-            // 强制刷新客户端UI
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && client.player != null) {
-                client.player.getInventory().markDirty();
-                
-                if (client.currentScreen != null) {
-                    try {
-                        client.currentScreen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
-                        LogUtil.info("Inventory", "本地合并排序完成，UI已刷新");
-                    } catch (Exception e) {
-                        LogUtil.warn("Inventory", "UI刷新失败: " + e.getMessage());
-                    }
-                }
-            }
-            
-            LogUtil.info("Inventory", "本地合并排序完成");
-            
-        } catch (Exception e) {
-            LogUtil.error("Inventory", "本地合并排序失败", e);
-        }
-    }
+
     
     /**
      * Add similar method for containers

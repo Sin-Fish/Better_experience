@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 背包界面Mixin
  * 在背包界面添加整理按钮和按键处理
  */
-@Mixin(net.minecraft.client.gui.screen.Screen.class)
+@Mixin(net.minecraft.client.gui.screen.ingame.InventoryScreen.class)
 public class InventoryScreenMixin {
     
     private ButtonWidget sortButton;
@@ -34,13 +34,13 @@ public class InventoryScreenMixin {
             ConfigManager configManager = ConfigManager.getInstance();
             InventorySortConfig config = new InventorySortConfig(); // 暂时使用默认配置
             
-            if (config != null && config.isShowSortButtons()) {
+            if (config != null) {
                 // 在背包右侧添加整理按钮
                 sortButton = ButtonWidget.builder(
                     Text.literal("整理背包"),
                     button -> {
                         InventorySortController controller = InventorySortController.getInstance();
-                        controller.sortInventory(config.getDefaultSortMode(), false); // 普通模式
+                        controller.sortInventory(config.getDefaultSortMode(), true); // 合并模式，启用PICKUP堆叠
                     }
                 ).dimensions(screen.width - 100, 10, 80, 20).build();
                 
@@ -89,7 +89,7 @@ public class InventoryScreenMixin {
      * 处理按键输入，在物品栏界面中检测R键和Shift+R键
      * 使用完整的方法签名
      */
-    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true, require = 0)
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         net.minecraft.client.gui.screen.Screen screen = (net.minecraft.client.gui.screen.Screen) (Object) this;
 
@@ -107,8 +107,9 @@ public class InventoryScreenMixin {
                     LogUtil.info("InventoryScreenMixin", "在背包界面检测到 智能转移 快捷键，执行智能转移");
                     controller.smartTransferItems();
                 } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
-                    LogUtil.info("InventoryScreenMixin", "在背包界面检测到 一键整理 快捷键，执行一键整理");
-                    controller.smartSortByMousePosition();
+                    LogUtil.info("InventoryScreenMixin", "在背包界面检测到 一键整理 快捷键，执行背包排序");
+                    // 修复：在背包界面直接调用背包排序，不使用智能排序避免问题
+                    controller.sortInventory(InventorySortConfig.SortMode.NAME, true);
                 }
 
                 cir.setReturnValue(true);

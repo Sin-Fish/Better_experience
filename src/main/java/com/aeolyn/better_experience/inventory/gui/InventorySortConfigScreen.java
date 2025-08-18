@@ -20,15 +20,9 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     
     // 输入框
     private TextFieldWidget sortKeyField;
-    private TextFieldWidget depositKeyField;
-    private TextFieldWidget withdrawKeyField;
-    private TextFieldWidget sortContainerKeyField;
     
     // 按钮
     private ButtonWidget sortModeButton;
-    private ButtonWidget autoSortButton;
-    private ButtonWidget showButtonsButton;
-    private ButtonWidget showContainerButtonsButton;
     
     public InventorySortConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.literal("便捷背包配置"), parentScreen, configManager);
@@ -80,20 +74,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         sortKeyField.setChangedListener(text -> config.setSortKey(text));
         this.addDrawableChild(sortKeyField);
         
-        depositKeyField = new TextFieldWidget(this.textRenderer, centerX - 80, startY, 60, buttonHeight, Text.literal("存入键"));
-        depositKeyField.setText(config.getDepositKey());
-        depositKeyField.setChangedListener(text -> config.setDepositKey(text));
-        this.addDrawableChild(depositKeyField);
-        
-        withdrawKeyField = new TextFieldWidget(this.textRenderer, centerX - 10, startY, 60, buttonHeight, Text.literal("拿取键"));
-        withdrawKeyField.setText(config.getWithdrawKey());
-        withdrawKeyField.setChangedListener(text -> config.setWithdrawKey(text));
-        this.addDrawableChild(withdrawKeyField);
-        
-        sortContainerKeyField = new TextFieldWidget(this.textRenderer, centerX + 60, startY, 60, buttonHeight, Text.literal("整理容器键"));
-        sortContainerKeyField.setText(config.getSortContainerKey());
-        sortContainerKeyField.setChangedListener(text -> config.setSortContainerKey(text));
-        this.addDrawableChild(sortContainerKeyField);
+
         
         // 排序模式按钮
         sortModeButton = ButtonWidget.builder(
@@ -102,25 +83,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         ).dimensions(centerX - 150, startY + spacing, buttonWidth, buttonHeight).build();
         this.addDrawableChild(sortModeButton);
         
-        // 自动整理按钮
-        autoSortButton = ButtonWidget.builder(
-            Text.literal("自动整理: " + (config.isAutoSortOnOpen() ? "开启" : "关闭")),
-            button -> toggleAutoSort()
-        ).dimensions(centerX - 20, startY + spacing, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(autoSortButton);
-        
-        // 显示按钮设置
-        showButtonsButton = ButtonWidget.builder(
-            Text.literal("显示按钮: " + (config.isShowSortButtons() ? "开启" : "关闭")),
-            button -> toggleShowButtons()
-        ).dimensions(centerX - 150, startY + spacing * 2, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(showButtonsButton);
-        
-        showContainerButtonsButton = ButtonWidget.builder(
-            Text.literal("容器按钮: " + (config.isShowContainerButtons() ? "开启" : "关闭")),
-            button -> toggleShowContainerButtons()
-        ).dimensions(centerX - 20, startY + spacing * 2, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(showContainerButtonsButton);
+
         
         // 测试按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -149,20 +112,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         sortModeButton.setMessage(Text.literal("排序模式: " + config.getDefaultSortMode().getDisplayName()));
     }
     
-    private void toggleAutoSort() {
-        config.setAutoSortOnOpen(!config.isAutoSortOnOpen());
-        autoSortButton.setMessage(Text.literal("自动整理: " + (config.isAutoSortOnOpen() ? "开启" : "关闭")));
-    }
-    
-    private void toggleShowButtons() {
-        config.setShowSortButtons(!config.isShowSortButtons());
-        showButtonsButton.setMessage(Text.literal("显示按钮: " + (config.isShowSortButtons() ? "开启" : "关闭")));
-    }
-    
-    private void toggleShowContainerButtons() {
-        config.setShowContainerButtons(!config.isShowContainerButtons());
-        showContainerButtonsButton.setMessage(Text.literal("容器按钮: " + (config.isShowContainerButtons() ? "开启" : "关闭")));
-    }
+
     
     private void testSort() {
         // 测试排序功能
@@ -178,13 +128,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     
     private void updateUI() {
         sortKeyField.setText(config.getSortKey());
-        depositKeyField.setText(config.getDepositKey());
-        withdrawKeyField.setText(config.getWithdrawKey());
-        sortContainerKeyField.setText(config.getSortContainerKey());
         sortModeButton.setMessage(Text.literal("排序模式: " + config.getDefaultSortMode().getDisplayName()));
-        autoSortButton.setMessage(Text.literal("自动整理: " + (config.isAutoSortOnOpen() ? "开启" : "关闭")));
-        showButtonsButton.setMessage(Text.literal("显示按钮: " + (config.isShowSortButtons() ? "开启" : "关闭")));
-        showContainerButtonsButton.setMessage(Text.literal("容器按钮: " + (config.isShowContainerButtons() ? "开启" : "关闭")));
     }
     
     private void saveConfig() {
