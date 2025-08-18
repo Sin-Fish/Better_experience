@@ -728,17 +728,17 @@ public class InventorySortController {
                  for (int j = 0; j < 27; j++) {
                      if (areStacksEqualExact(current.get(j), targetItem)) {
                          int sourceSlotId = mainSlotIds.get(j);
-                         if (sourceSlotId != slotId) {
-                             clickSwap(client, syncId, sourceSlotId, slotId, player);
-                             
-                             // 更新跟踪状态
-                             current.set(i, targetItem.copy());
-                             current.set(j, have.copy());
-                             
-                             LogUtil.info("Inventory", "交换槽位: " + sourceSlotId + " <-> " + slotId + " (物品: " + 
-                                 (current.get(i).isEmpty() ? "空" : current.get(i).getName().getString()) + " <-> " +
-                                 (current.get(j).isEmpty() ? "空" : current.get(j).getName().getString()) + ")");
-                         }
+                                                      if (sourceSlotId != slotId) {
+                                 swapSlots(player, sourceSlotId, slotId);
+                                 
+                                 // 更新跟踪状态
+                                 current.set(i, targetItem.copy());
+                                 current.set(j, have.copy());
+                                 
+                                 LogUtil.info("Inventory", "交换槽位: " + sourceSlotId + " <-> " + slotId + " (物品: " + 
+                                     (current.get(i).isEmpty() ? "空" : current.get(i).getName().getString()) + " <-> " +
+                                     (current.get(j).isEmpty() ? "空" : current.get(j).getName().getString()) + ")");
+                             }
                          break;
                      }
                  }
@@ -840,7 +840,7 @@ public class InventorySortController {
              if (j != -1 && j != i) {
                  int slotA = slotIndices.get(i);
                  int slotB = slotIndices.get(j);
-                 clickSwap(client, syncId, slotA, slotB, player);
+                 swapSlots(player, slotA, slotB);
                  
                  // Update our tracking list
                  ItemStack tmp = current.get(i);
@@ -856,15 +856,36 @@ public class InventorySortController {
          LogUtil.info("Inventory", "容器重排完成");
      }
      
-     /**
-      * 用三次 PICKUP 点击完成两个槽位的交换
-      */
-     private void clickSwap(MinecraftClient client, int syncId, int slotA, int slotB, ClientPlayerEntity player) {
-         client.interactionManager.clickSlot(syncId, slotA, 0, SlotActionType.PICKUP, player);
-         client.interactionManager.clickSlot(syncId, slotB, 0, SlotActionType.PICKUP, player);
-         client.interactionManager.clickSlot(syncId, slotA, 0, SlotActionType.PICKUP, player);
-         LogUtil.info("Inventory", "交换槽位: " + slotA + " <-> " + slotB);
-     }
+         /**
+     * 使用策略模式交换两个槽位的物品
+     */
+    private void swapSlots(ClientPlayerEntity player, int slotA, int slotB) {
+        // 获取合适的移动策略
+        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+        
+        // 找到对应的Slot对象
+        Slot slotAObj = null;
+        Slot slotBObj = null;
+        
+        for (Slot slot : player.currentScreenHandler.slots) {
+            if (slot.id == slotA) slotAObj = slot;
+            if (slot.id == slotB) slotBObj = slot;
+        }
+        
+        if (slotAObj != null && slotBObj != null) {
+            strategy.swapSlots(player, slotAObj, slotBObj);
+        } else {
+            LogUtil.warn("Inventory", "无法找到槽位对象，回退到传统方法");
+            // 回退到传统方法
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.interactionManager != null) {
+                int syncId = player.currentScreenHandler.syncId;
+                client.interactionManager.clickSlot(syncId, slotA, 0, SlotActionType.PICKUP, player);
+                client.interactionManager.clickSlot(syncId, slotB, 0, SlotActionType.PICKUP, player);
+                client.interactionManager.clickSlot(syncId, slotA, 0, SlotActionType.PICKUP, player);
+            }
+        }
+    }
      
          /**
      * 智能排序：根据鼠标位置决定排序背包还是容器
@@ -1372,49 +1393,48 @@ public class InventorySortController {
                 Slot targetSlot = playerSlots.get(currentFillSlot);
                 int toFill = Math.min(remainingToFill, maxStackSize);
                 
-                // 如果目标槽位不是空的且不是相同物品，需要先清空
-                if (!targetSlot.getStack().isEmpty() && 
-                    !canMergeStacks(targetSlot.getStack(), firstStack)) {
-                    // 找到后面的空槽位来临时存放
-                    for (int k = currentFillSlot + 1; k < playerSlots.size(); k++) {
-                        Slot emptySlot = playerSlots.get(k);
-                        if (emptySlot.getStack().isEmpty()) {
-                            // 移动目标槽位的物品到空槽位
-                            client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
-                            client.interactionManager.clickSlot(syncId, emptySlot.id, 0, SlotActionType.PICKUP, player);
-                            break;
-                        }
-                    }
-                }
+                                 // 如果目标槽位不是空的且不是相同物品，需要先清空
+                 if (!targetSlot.getStack().isEmpty() && 
+                     !canMergeStacks(targetSlot.getStack(), firstStack)) {
+                     // 找到后面的空槽位来临时存放
+                     for (int k = currentFillSlot + 1; k < playerSlots.size(); k++) {
+                         Slot emptySlot = playerSlots.get(k);
+                         if (emptySlot.getStack().isEmpty()) {
+                             // 移动目标槽位的物品到空槽位
+                             ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+                             strategy.moveItem(player, targetSlot, emptySlot);
+                             break;
+                         }
+                     }
+                 }
                 
-                // 现在目标槽位应该是空的或包含相同物品，开始填充
-                boolean firstItemPlaced = false;
-                for (Slot sourceSlot : sameTypeSlots) {
-                    if (sourceSlot.getStack().isEmpty()) continue;
-                    
-                    if (!firstItemPlaced) {
-                        // 第一个物品直接放到目标槽位
-                        client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
-                        client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
-                        firstItemPlaced = true;
-                    } else {
-                        // 后续物品尝试堆叠到目标槽位
-                        client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
-                        client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
-                        
-                        // 如果鼠标上还有剩余，放回源槽位
-                        ItemStack cursor = handler.getCursorStack();
-                        if (!cursor.isEmpty()) {
-                            client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
-                        }
-                    }
-                    
-                    // 检查目标槽位是否已满
-                    ItemStack targetStack = targetSlot.getStack();
-                    if (!targetStack.isEmpty() && targetStack.getCount() >= maxStackSize) {
-                        break;
-                    }
-                }
+                                 // 现在目标槽位应该是空的或包含相同物品，开始填充
+                 ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
+                 boolean firstItemPlaced = false;
+                 for (Slot sourceSlot : sameTypeSlots) {
+                     if (sourceSlot.getStack().isEmpty()) continue;
+                     
+                     if (!firstItemPlaced) {
+                         // 第一个物品直接放到目标槽位
+                         strategy.moveItem(player, sourceSlot, targetSlot);
+                         firstItemPlaced = true;
+                     } else {
+                         // 后续物品尝试堆叠到目标槽位
+                         if (!strategy.stackItem(player, sourceSlot, targetSlot)) {
+                             // 如果堆叠失败，放回源槽位
+                             ItemStack cursor = handler.getCursorStack();
+                             if (!cursor.isEmpty()) {
+                                 strategy.moveItem(player, sourceSlot, sourceSlot);
+                             }
+                         }
+                     }
+                     
+                     // 检查目标槽位是否已满
+                     ItemStack targetStack = targetSlot.getStack();
+                     if (!targetStack.isEmpty() && targetStack.getCount() >= maxStackSize) {
+                         break;
+                     }
+                 }
                 
                 filledSlots++;
                 remainingToFill -= toFill;
