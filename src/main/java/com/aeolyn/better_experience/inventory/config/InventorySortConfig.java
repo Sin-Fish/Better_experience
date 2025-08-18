@@ -19,6 +19,9 @@ public class InventorySortConfig {
     @SerializedName("default_sort_mode")
     private SortMode defaultSortMode = SortMode.NAME;
     
+    @SerializedName("smart_transfer_logic")
+    private SmartTransferLogic smartTransferLogic = SmartTransferLogic.MOUSE_POSITION;
+    
     @SerializedName("sort_settings")
     private SortSettings sortSettings = new SortSettings();
     
@@ -58,6 +61,14 @@ public class InventorySortConfig {
         this.defaultSortMode = defaultSortMode;
     }
     
+    public SmartTransferLogic getSmartTransferLogic() {
+        return smartTransferLogic;
+    }
+    
+    public void setSmartTransferLogic(SmartTransferLogic smartTransferLogic) {
+        this.smartTransferLogic = smartTransferLogic;
+    }
+    
     public SortSettings getSortSettings() {
         return sortSettings;
     }
@@ -76,11 +87,35 @@ public class InventorySortConfig {
         NAME("按名称"),
         
         @SerializedName("quantity")
-        QUANTITY("按数量");
+        QUANTITY("按数量"),
+        
+        @SerializedName("type")
+        TYPE("按类型");
         
         private final String displayName;
         
         SortMode(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+    
+    /**
+     * 智能转移逻辑枚举
+     */
+    public enum SmartTransferLogic {
+        @SerializedName("mouse_position")
+        MOUSE_POSITION("根据鼠标位置"),
+        
+        @SerializedName("heuristic")
+        HEURISTIC("根据空位数量");
+        
+        private final String displayName;
+        
+        SmartTransferLogic(String displayName) {
             this.displayName = displayName;
         }
         

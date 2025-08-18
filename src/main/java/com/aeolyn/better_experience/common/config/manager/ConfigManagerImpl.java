@@ -3,6 +3,7 @@ package com.aeolyn.better_experience.common.config.manager;
 import com.aeolyn.better_experience.render3d.config.ItemsConfig;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
+import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.common.config.cache.ConfigCache;
 import com.aeolyn.better_experience.common.config.cache.MemoryConfigCache;
 import com.aeolyn.better_experience.common.config.exception.ConfigLoadException;
@@ -13,6 +14,8 @@ import com.aeolyn.better_experience.render3d.loader.Render3DConfigLoader;
 import com.aeolyn.better_experience.render3d.saver.Render3DConfigSaver;
 import com.aeolyn.better_experience.offhand.loader.OffHandConfigLoader;
 import com.aeolyn.better_experience.offhand.saver.OffHandConfigSaver;
+import com.aeolyn.better_experience.inventory.loader.InventoryConfigLoader;
+import com.aeolyn.better_experience.inventory.saver.InventoryConfigSaver;
 import com.aeolyn.better_experience.common.config.validator.ValidationResult;
 import com.aeolyn.better_experience.common.config.validator.impl.ItemConfigValidator;
 import com.aeolyn.better_experience.common.util.LogUtil;
@@ -32,6 +35,8 @@ public class ConfigManagerImpl {
     private final Render3DConfigSaver render3DSaver;
     private final OffHandConfigLoader offHandLoader;
     private final OffHandConfigSaver offHandSaver;
+    private final InventoryConfigLoader inventoryLoader;
+    private final InventoryConfigSaver inventorySaver;
     private final ItemConfigValidator validator;
     private final ConfigFactory factory;
     private final ConfigCache cache;
@@ -44,18 +49,23 @@ public class ConfigManagerImpl {
         this.render3DSaver = new Render3DConfigSaver();
         this.offHandLoader = new OffHandConfigLoader();
         this.offHandSaver = new OffHandConfigSaver();
+        this.inventoryLoader = new InventoryConfigLoader();
+        this.inventorySaver = new InventoryConfigSaver();
         this.validator = new ItemConfigValidator();
         this.cache = new MemoryConfigCache();
     }
     
     public ConfigManagerImpl(Render3DConfigLoader render3DLoader, Render3DConfigSaver render3DSaver,
                            OffHandConfigLoader offHandLoader, OffHandConfigSaver offHandSaver,
+                           InventoryConfigLoader inventoryLoader, InventoryConfigSaver inventorySaver,
                            ItemConfigValidator validator, ConfigFactory factory,
                            ConfigCache cache) {
         this.render3DLoader = render3DLoader;
         this.render3DSaver = render3DSaver;
         this.offHandLoader = offHandLoader;
         this.offHandSaver = offHandSaver;
+        this.inventoryLoader = inventoryLoader;
+        this.inventorySaver = inventorySaver;
         this.validator = validator;
         this.factory = factory;
         this.cache = cache;
@@ -442,5 +452,47 @@ public class ConfigManagerImpl {
              LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新副手限制配置", e);
              throw new RuntimeException("Failed to update offhand restriction config", e);
          }
+    }
+
+    /**
+     * 获取背包排序配置
+     */
+    public InventorySortConfig getInventorySortConfig() {
+        ensureInitialized();
+        try {
+            return inventoryLoader.loadInventorySortConfig();
+        } catch (Exception e) {
+            LogUtil.error(LogUtil.MODULE_CONFIG, "加载背包排序配置失败: {}", e.getMessage(), e);
+            return new InventorySortConfig(); // 返回默认配置
+        }
+    }
+
+    /**
+     * 保存背包排序配置
+     */
+    public void saveInventorySortConfig() {
+        ensureInitialized();
+        try {
+            InventorySortConfig config = getInventorySortConfig();
+            inventorySaver.saveInventorySortConfig(config);
+            LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "背包排序配置保存");
+        } catch (Exception e) {
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "保存背包排序配置", e);
+            throw new RuntimeException("Failed to save inventory sort config", e);
+        }
+    }
+
+    /**
+     * 更新背包排序配置
+     */
+    public void updateInventorySortConfig(InventorySortConfig config) {
+        ensureInitialized();
+        try {
+            inventorySaver.saveInventorySortConfig(config);
+            LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "背包排序配置更新");
+        } catch (Exception e) {
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新背包排序配置", e);
+            throw new RuntimeException("Failed to update inventory sort config", e);
+        }
     }
 }

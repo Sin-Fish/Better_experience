@@ -23,6 +23,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     
     // 按钮
     private ButtonWidget sortModeButton;
+    private ButtonWidget smartTransferLogicButton;
     
     public InventorySortConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.literal("便捷背包配置"), parentScreen, configManager);
@@ -32,8 +33,16 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void loadData() {
-        // 暂时使用默认配置，后续会从ConfigManager获取
-        config = new InventorySortConfig();
+        // 从ConfigManager获取配置
+        try {
+            config = configManager.getConfig(InventorySortConfig.class);
+            if (config == null) {
+                config = new InventorySortConfig();
+            }
+        } catch (Exception e) {
+            LogUtil.warn(LogUtil.MODULE_GUI, "加载配置失败，使用默认配置: " + e.getMessage());
+            config = new InventorySortConfig();
+        }
         LogUtil.info(LogUtil.MODULE_GUI, "加载背包整理配置");
     }
     
@@ -47,8 +56,9 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         
         // 渲染说明
         context.drawTextWithShadow(this.textRenderer, "快捷键设置（留空表示不设置）:", centerX - 150, startY + 30, 0xCCCCCC);
-        context.drawTextWithShadow(this.textRenderer, "排序模式: 按名称、按数量、按分类、按类型", centerX - 150, startY + 120, 0xCCCCCC);
-        context.drawTextWithShadow(this.textRenderer, "其他设置: 自动整理、显示按钮等", centerX - 150, startY + 180, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, "排序模式: 按名称、按数量、按类型", centerX - 150, startY + 120, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, "智能转移逻辑: 根据鼠标位置或空位数量", centerX - 150, startY + 150, 0xCCCCCC);
+        context.drawTextWithShadow(this.textRenderer, "其他设置: 自动整理、显示按钮等", centerX - 150, startY + 210, 0xCCCCCC);
     }
     
     @Override
@@ -74,8 +84,6 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         sortKeyField.setChangedListener(text -> config.setSortKey(text));
         this.addDrawableChild(sortKeyField);
         
-
-        
         // 排序模式按钮
         sortModeButton = ButtonWidget.builder(
             Text.literal("排序模式: " + config.getDefaultSortMode().getDisplayName()),
@@ -83,18 +91,23 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         ).dimensions(centerX - 150, startY + spacing, buttonWidth, buttonHeight).build();
         this.addDrawableChild(sortModeButton);
         
-
+        // 智能转移逻辑按钮
+        smartTransferLogicButton = ButtonWidget.builder(
+            Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()),
+            button -> cycleSmartTransferLogic()
+        ).dimensions(centerX - 150, startY + spacing * 2, buttonWidth, buttonHeight).build();
+        this.addDrawableChild(smartTransferLogicButton);
         
         // 测试按钮
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("测试排序"),
             button -> testSort()
-        ).dimensions(centerX - 150, startY + spacing * 3, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - 150, startY + spacing * 4, buttonWidth, buttonHeight).build());
         
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("重置配置"),
             button -> resetConfig()
-        ).dimensions(centerX - 20, startY + spacing * 3, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - 20, startY + spacing * 4, buttonWidth, buttonHeight).build());
     }
     
     @Override
@@ -112,7 +125,13 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         sortModeButton.setMessage(Text.literal("排序模式: " + config.getDefaultSortMode().getDisplayName()));
     }
     
-
+    private void cycleSmartTransferLogic() {
+        InventorySortConfig.SmartTransferLogic[] logics = InventorySortConfig.SmartTransferLogic.values();
+        int currentIndex = config.getSmartTransferLogic().ordinal();
+        int nextIndex = (currentIndex + 1) % logics.length;
+        config.setSmartTransferLogic(logics[nextIndex]);
+        smartTransferLogicButton.setMessage(Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()));
+    }
     
     private void testSort() {
         // 测试排序功能
@@ -129,12 +148,17 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     private void updateUI() {
         sortKeyField.setText(config.getSortKey());
         sortModeButton.setMessage(Text.literal("排序模式: " + config.getDefaultSortMode().getDisplayName()));
+        smartTransferLogicButton.setMessage(Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()));
     }
     
     private void saveConfig() {
         // 保存配置到ConfigManager
-        LogUtil.info(LogUtil.MODULE_GUI, "保存背包整理配置");
-        // 这里会调用ConfigManager的保存方法
+        try {
+            configManager.saveConfig(config);
+            LogUtil.info(LogUtil.MODULE_GUI, "保存背包整理配置成功");
+        } catch (Exception e) {
+            LogUtil.error(LogUtil.MODULE_GUI, "保存背包整理配置失败: " + e.getMessage());
+        }
     }
     
     @Override

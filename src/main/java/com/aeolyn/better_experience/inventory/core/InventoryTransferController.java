@@ -49,7 +49,7 @@ public class InventoryTransferController {
     
     /**
      * 智能一键存入/取出功能（Shift+R）
-     * 自动判断是存入还是取出，并修复堆叠bug
+     * 根据配置选择判断逻辑
      */
     public void smartTransferItems() {
         try {
@@ -75,8 +75,28 @@ public class InventoryTransferController {
                 return;
             }
             
-            // 判断是存入还是取出
-            boolean shouldDeposit = shouldDepositToContainer(containerInventory);
+            // 根据配置选择判断逻辑
+            boolean shouldDeposit;
+            try {
+                // 从配置管理器获取配置
+                com.aeolyn.better_experience.inventory.config.InventorySortConfig config = 
+                    com.aeolyn.better_experience.common.config.manager.ConfigManager.getInstance()
+                        .getConfig(com.aeolyn.better_experience.inventory.config.InventorySortConfig.class);
+                
+                if (config.getSmartTransferLogic() == com.aeolyn.better_experience.inventory.config.InventorySortConfig.SmartTransferLogic.MOUSE_POSITION) {
+                    // 根据鼠标位置判断
+                    shouldDeposit = isMouseOverPlayerInventory(handledScreen);
+                    LogUtil.info("Transfer", "使用鼠标位置判断逻辑");
+                } else {
+                    // 使用启发式判断
+                    shouldDeposit = shouldDepositToContainer(containerInventory);
+                    LogUtil.info("Transfer", "使用启发式判断逻辑");
+                }
+            } catch (Exception e) {
+                // 如果获取配置失败，默认使用鼠标位置判断
+                LogUtil.warn("Transfer", "获取配置失败，使用默认鼠标位置判断: " + e.getMessage());
+                shouldDeposit = isMouseOverPlayerInventory(handledScreen);
+            }
             
             if (shouldDeposit) {
                 LogUtil.info("Transfer", "执行智能存入操作");
@@ -88,6 +108,58 @@ public class InventoryTransferController {
             
         } catch (Exception e) {
             LogUtil.error("Transfer", "智能转移失败", e);
+        }
+    }
+    
+    /**
+     * 判断鼠标是否在玩家背包区域
+     */
+    private boolean isMouseOverPlayerInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+        try {
+            // 获取缩放后的鼠标位置
+            MinecraftClient client = MinecraftClient.getInstance();
+            double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
+            double mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
+            
+            LogUtil.info("Transfer", "鼠标位置: ({}, {})", mouseX, mouseY);
+            
+            // 尝试获取鼠标下的槽位
+            net.minecraft.screen.slot.Slot slot = null;
+            Class<?> currentClass = handledScreen.getClass();
+            while (currentClass != null && slot == null) {
+                String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542", "method_64240", "method_2383", "method_64241", "method_2381", "method_2378"};
+                for (String methodName : possibleMethodNames) {
+                    try {
+                        java.lang.reflect.Method getSlotAtMethod = currentClass.getDeclaredMethod(methodName, double.class, double.class);
+                        getSlotAtMethod.setAccessible(true);
+                        slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
+                        if (slot != null) {
+                            LogUtil.info("Transfer", "成功调用 " + methodName + "，找到槽位: " + slot.id);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // 继续尝试下一个方法
+                    }
+                }
+                if (slot == null) {
+                    currentClass = currentClass.getSuperclass();
+                }
+            }
+            
+            if (slot == null) {
+                LogUtil.warn("Transfer", "无法获取鼠标下的槽位，默认执行取出操作");
+                return false; // 默认取出
+            }
+            
+            // 判断槽位是否属于玩家背包
+            boolean isPlayerInventory = slot.inventory == client.player.getInventory();
+            LogUtil.info("Transfer", "鼠标下的槽位: " + slot.id + ", 是否玩家背包: " + isPlayerInventory);
+            
+            return isPlayerInventory;
+            
+        } catch (Exception e) {
+            LogUtil.error("Transfer", "判断鼠标位置失败", e);
+            return false; // 默认取出
         }
     }
     

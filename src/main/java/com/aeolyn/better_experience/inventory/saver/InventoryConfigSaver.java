@@ -1,4 +1,4 @@
-package com.aeolyn.better_experience.inventory.loader;
+package com.aeolyn.better_experience.inventory.saver;
 
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
@@ -6,53 +6,21 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * 背包配置加载器
+ * 背包配置保存器
  */
-public class InventoryConfigLoader {
+public class InventoryConfigSaver {
     
     private static final String CONFIG_FILE_NAME = "inventory_sort.json";
     private final Gson gson;
     
-    public InventoryConfigLoader() {
+    public InventoryConfigSaver() {
         this.gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
-    }
-    
-    /**
-     * 加载背包排序配置
-     */
-    public InventorySortConfig loadInventorySortConfig() {
-        try {
-            Path configPath = getConfigPath();
-            
-            if (!Files.exists(configPath)) {
-                LogUtil.info("Inventory", "配置文件不存在，创建默认配置");
-                InventorySortConfig defaultConfig = new InventorySortConfig();
-                saveInventorySortConfig(defaultConfig);
-                return defaultConfig;
-            }
-            
-            String jsonContent = Files.readString(configPath);
-            InventorySortConfig config = gson.fromJson(jsonContent, InventorySortConfig.class);
-            
-            if (config == null) {
-                LogUtil.warn("Inventory", "配置文件解析失败，使用默认配置");
-                return new InventorySortConfig();
-            }
-            
-            LogUtil.info("Inventory", "成功加载背包排序配置");
-            return config;
-            
-        } catch (Exception e) {
-            LogUtil.error("Inventory", "加载背包排序配置失败", e);
-            return new InventorySortConfig();
-        }
     }
     
     /**

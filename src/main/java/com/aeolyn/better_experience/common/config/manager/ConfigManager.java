@@ -3,6 +3,7 @@ package com.aeolyn.better_experience.common.config.manager;
 import com.aeolyn.better_experience.render3d.config.ItemsConfig;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
+import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.common.config.cache.CacheStats;
 import com.aeolyn.better_experience.common.util.LogUtil;
 
@@ -320,5 +321,48 @@ public class ConfigManager {
      */
     public void updateOffHandRestrictionConfig(OffHandRestrictionConfig config) {
         impl.updateOffHandRestrictionConfig(config);
+    }
+    
+    /**
+     * 通用配置获取方法
+     */
+    public <T> T getConfig(Class<T> configClass) {
+        if (configClass == InventorySortConfig.class) {
+            return (T) getInventorySortConfig();
+        } else if (configClass == OffHandRestrictionConfig.class) {
+            return (T) getOffHandRestrictionConfig();
+        } else if (configClass == ItemsConfig.class) {
+            return (T) getItemsConfig();
+        }
+        throw new IllegalArgumentException("不支持的配置类型: " + configClass.getName());
+    }
+    
+    /**
+     * 通用配置保存方法
+     */
+    public <T> void saveConfig(T config) {
+        if (config instanceof InventorySortConfig) {
+            updateInventorySortConfig((InventorySortConfig) config);
+        } else if (config instanceof OffHandRestrictionConfig) {
+            updateOffHandRestrictionConfig((OffHandRestrictionConfig) config);
+        } else if (config instanceof ItemsConfig) {
+            updateItemsConfig((ItemsConfig) config);
+        } else {
+            throw new IllegalArgumentException("不支持的配置类型: " + config.getClass().getName());
+        }
+    }
+    
+    /**
+     * 获取背包排序配置
+     */
+    public InventorySortConfig getInventorySortConfig() {
+        return impl.getInventorySortConfig();
+    }
+    
+    /**
+     * 更新背包排序配置
+     */
+    public void updateInventorySortConfig(InventorySortConfig config) {
+        impl.updateInventorySortConfig(config);
     }
 }
