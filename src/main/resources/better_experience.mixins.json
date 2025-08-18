@@ -8,7 +8,8 @@
   "client": [
     "render3d.GenericItemRendererMixin",
     "offhand.OffHandRestrictionMixin",
-    "inventory.InventoryScreenMixin"
+    "inventory.InventoryScreenMixin",
+    "inventory.ContainerScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

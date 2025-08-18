@@ -34,45 +34,53 @@ public class InventoryScreenMixin {
             InventorySortConfig config = new InventorySortConfig(); // 暂时使用默认配置
             
             if (config != null && config.isShowSortButtons()) {
-            // 在背包右侧添加整理按钮
-            sortButton = ButtonWidget.builder(
-                Text.literal("整理背包"),
-                button -> {
-                    InventorySortController controller = InventorySortController.getInstance();
-                    controller.sortInventory(config.getDefaultSortMode());
-                }
-            ).dimensions(screen.width - 100, 10, 80, 20).build();
-            
-            // 暂时注释掉按钮添加逻辑，专注于解决UI刷新问题
-            // 使用反射添加按钮到界面
-            /*
-            try {
-                // 尝试不同的字段名
-                java.lang.reflect.Field childrenField = null;
-                try {
-                    childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("children");
-                } catch (NoSuchFieldException e1) {
-                    try {
-                        childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("field_22787"); // 混淆后的字段名
-                    } catch (NoSuchFieldException e2) {
-                        childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("drawables"); // 可能的字段名
+                // 在背包右侧添加整理按钮
+                sortButton = ButtonWidget.builder(
+                    Text.literal("整理背包"),
+                    button -> {
+                        InventorySortController controller = InventorySortController.getInstance();
+                        controller.sortInventory(config.getDefaultSortMode(), false); // 普通模式
                     }
-                }
+                ).dimensions(screen.width - 100, 10, 80, 20).build();
                 
-                if (childrenField != null) {
-                    childrenField.setAccessible(true);
-                    Object childrenObj = childrenField.get(screen);
-                    if (childrenObj instanceof java.util.List) {
-                        java.util.List<net.minecraft.client.gui.Element> children = (java.util.List<net.minecraft.client.gui.Element>) childrenObj;
-                        children.add(sortButton);
+                // 添加合并模式按钮
+                ButtonWidget mergeButton = ButtonWidget.builder(
+                    Text.literal("合并整理"),
+                    button -> {
+                        InventorySortController controller = InventorySortController.getInstance();
+                        controller.sortInventory(config.getDefaultSortMode(), true); // 合并模式
                     }
+                ).dimensions(screen.width - 100, 35, 80, 20).build();
+                
+                // 使用反射添加按钮到界面
+                try {
+                    // 尝试不同的字段名
+                    java.lang.reflect.Field childrenField = null;
+                    try {
+                        childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("children");
+                    } catch (NoSuchFieldException e1) {
+                        try {
+                            childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("field_22787"); // 混淆后的字段名
+                        } catch (NoSuchFieldException e2) {
+                            childrenField = net.minecraft.client.gui.screen.Screen.class.getDeclaredField("drawables"); // 可能的字段名
+                        }
+                    }
+                    
+                    if (childrenField != null) {
+                        childrenField.setAccessible(true);
+                        Object childrenObj = childrenField.get(screen);
+                        if (childrenObj instanceof java.util.List) {
+                            java.util.List<net.minecraft.client.gui.Element> children = (java.util.List<net.minecraft.client.gui.Element>) childrenObj;
+                            children.add(sortButton);
+                            children.add(mergeButton);
+                            LogUtil.info("InventoryScreenMixin", "成功添加整理按钮到背包界面");
+                        }
+                    }
+                } catch (Exception e) {
+                    // 如果反射失败，记录错误但不崩溃
+                    LogUtil.warn("InventoryScreenMixin", "无法添加整理按钮到背包界面: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                // 如果反射失败，记录错误但不崩溃
-                com.aeolyn.better_experience.BetterExperienceMod.LOGGER.warn("无法添加整理按钮到背包界面", e);
             }
-            */
-        }
         }
     }
     
@@ -88,9 +96,9 @@ public class InventoryScreenMixin {
         if (screen instanceof InventoryScreen && keyCode == GLFW.GLFW_KEY_R) {
             LogUtil.info("InventoryScreenMixin", "在物品栏界面检测到R键按下");
             
-            // 执行背包整理
+            // 执行智能排序
             InventorySortController controller = InventorySortController.getInstance();
-            controller.sortInventory(InventorySortConfig.SortMode.NAME);
+            controller.smartSortByMousePosition();
             
             // 阻止按键继续传播
             cir.setReturnValue(true);

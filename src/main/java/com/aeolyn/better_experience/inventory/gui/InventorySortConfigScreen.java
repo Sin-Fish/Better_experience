@@ -31,7 +31,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     private ButtonWidget showContainerButtonsButton;
     
     public InventorySortConfigScreen(Screen parentScreen, ConfigManager configManager) {
-        super(Text.literal("背包整理配置"), parentScreen, configManager);
+        super(Text.literal("便捷背包配置"), parentScreen, configManager);
     }
     
     // ==================== 抽象方法实现 ====================

@@ -88,7 +88,7 @@ public class ModConfigScreen extends BaseConfigScreen {
         
         // 背包整理配置按钮
         this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("背包整理配置"),
+            Text.literal("便捷背包配置"),
             button -> {
                 this.client.setScreen(new InventorySortConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_inventory_config", getScreenName(), "打开背包整理配置界面");

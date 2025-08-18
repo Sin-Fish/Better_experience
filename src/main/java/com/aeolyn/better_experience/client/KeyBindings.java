@@ -80,22 +80,18 @@ public class KeyBindings {
         
         // 检查背包整理按键是否被按下
         if (sortInventoryKey.wasPressed()) {
-            LogUtil.info("KeyBindings", "检测到R键按下，开始执行背包整理");
+            LogUtil.info("KeyBindings", "检测到R键按下，开始执行智能排序");
+            LogUtil.info("KeyBindings", "当前线程: {}", Thread.currentThread().getName());
             
-            // 检查当前是否在物品栏界面
             MinecraftClient client = MinecraftClient.getInstance();
             if (client != null) {
                 String screenName = client.currentScreen != null ? client.currentScreen.getClass().getSimpleName() : "null";
                 LogUtil.info("KeyBindings", "当前界面: {}", screenName);
                 
-                // 只有在非物品栏界面才执行排序，避免与Mixin冲突
-                if (screenName == null || (!screenName.contains("InventoryScreen") && !screenName.contains("CreativeInventoryScreen"))) {
-                    InventorySortController controller = InventorySortController.getInstance();
-                    controller.sortInventory(InventorySortConfig.SortMode.NAME); // 默认按名称排序
-                    LogUtil.info("KeyBindings", "背包整理执行完成");
-                } else {
-                    LogUtil.info("KeyBindings", "当前在物品栏界面，由Mixin处理R键");
-                }
+                // 使用智能排序，根据鼠标位置决定排序哪个区域
+                InventorySortController controller = InventorySortController.getInstance();
+                controller.smartSortByMousePosition();
+                LogUtil.info("KeyBindings", "智能排序执行完成");
             } else {
                 LogUtil.info("KeyBindings", "客户端不存在，跳过排序");
             }
