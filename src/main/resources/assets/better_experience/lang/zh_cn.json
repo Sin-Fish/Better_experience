@@ -64,6 +64,7 @@
   "better_experience.config.inventory_sort.reset_config": "重置配置",
   
   "key.better_experience.sort_inventory": "整理背包",
+  "key.better_experience.smart_transfer": "智能转移",
   "key.better_experience.deposit_to_container": "存入容器",
   "key.better_experience.withdraw_from_container": "从容器拿取",
   "key.better_experience.sort_container": "整理容器",

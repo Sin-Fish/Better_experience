@@ -47,5 +47,26 @@
   "better_experience.config.scroll": "Scroll",
 
   "key.better_experience.open_config": "Open Config Interface",
-  "category.better_experience.general": "Better Experience"
+  "category.better_experience.general": "Better Experience",
+  
+  "better_experience.config.inventory_sort": "Inventory Sort Config",
+  "better_experience.config.inventory_sort.title": "Inventory Sort Configuration",
+  "better_experience.config.inventory_sort.description": "Configure inventory sorting features",
+  "better_experience.config.inventory_sort.sort_key": "Sort Hotkey",
+  "better_experience.config.inventory_sort.deposit_key": "Deposit Hotkey",
+  "better_experience.config.inventory_sort.withdraw_key": "Withdraw Hotkey",
+  "better_experience.config.inventory_sort.sort_container_key": "Sort Container Hotkey",
+  "better_experience.config.inventory_sort.sort_mode": "Sort Mode",
+  "better_experience.config.inventory_sort.auto_sort": "Auto Sort",
+  "better_experience.config.inventory_sort.show_buttons": "Show Buttons",
+  "better_experience.config.inventory_sort.show_container_buttons": "Show Container Buttons",
+  "better_experience.config.inventory_sort.test_sort": "Test Sort",
+  "better_experience.config.inventory_sort.reset_config": "Reset Config",
+  
+  "key.better_experience.sort_inventory": "Sort Inventory",
+  "key.better_experience.smart_transfer": "Smart Transfer",
+  "key.better_experience.deposit_to_container": "Deposit to Container",
+  "key.better_experience.withdraw_from_container": "Withdraw from Container",
+  "key.better_experience.sort_container": "Sort Container",
+  "category.better_experience.inventory": "Better Experience - Inventory Sort"
 }
