@@ -1,0 +1,44 @@
+{
+  "debug_enabled": true,
+  "modules": {
+    "inventory": {
+      "enabled": true,
+      "level": "INFO"
+    },
+    "render3d": {
+      "enabled": false,
+      "level": "INFO"
+    },
+    "offhand": {
+      "enabled": false,
+      "level": "INFO"
+    },
+    "importexport": {
+      "enabled": false,
+      "level": "INFO"
+    },
+    "config": {
+      "enabled": false,
+      "level": "INFO"
+    },
+    "keybindings": {
+      "enabled": true,
+      "level": "INFO"
+    },
+    "gui": {
+      "enabled": false,
+      "level": "INFO"
+    },
+    "general": {
+      "enabled": true,
+      "level": "INFO"
+    }
+  },
+  "log_levels": {
+    "TRACE": 0,
+    "DEBUG": 1,
+    "INFO": 2,
+    "WARN": 3,
+    "ERROR": 4
+  }
+}

@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.offhand.loader;
 
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.common.config.exception.ConfigLoadException;
+import com.aeolyn.better_experience.common.util.LogUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
@@ -51,11 +52,11 @@ public class OffHandConfigLoader {
                 // 执行配置迁移（从旧格式到新格式）
                 config.migrateFromLegacyFormat();
                 
-                LOGGER.info("副手限制配置文件加载成功: {}", configPath);
+                LogUtil.info("Offhand", "副手限制配置文件加载成功: {}", configPath);
                 return config;
             }
         } catch (Exception e) {
-            LOGGER.error("加载副手限制配置文件失败: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "加载副手限制配置文件失败: " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to load offhand restriction config from " + configPath, e);
         }
     }
@@ -75,18 +76,18 @@ public class OffHandConfigLoader {
                 if (resourceStream != null) {
                     // 复制默认配置到配置文件
                     Files.copy(resourceStream, configPath);
-                    LOGGER.info("创建默认副手限制配置文件: {}", configPath);
+                    LogUtil.info("Offhand", "创建默认副手限制配置文件: {}", configPath);
                 } else {
                     // 创建空的默认配置
                     OffHandRestrictionConfig defaultConfig = new OffHandRestrictionConfig();
                     try (Writer writer = Files.newBufferedWriter(configPath)) {
                         GSON.toJson(defaultConfig, writer);
                     }
-                    LOGGER.info("创建默认副手限制配置文件: {}", configPath);
+                    LogUtil.info("Offhand", "创建默认副手限制配置文件: {}", configPath);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("创建默认副手限制配置文件失败: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "创建默认副手限制配置文件失败: " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to create default offhand restriction config", e);
         }
     }

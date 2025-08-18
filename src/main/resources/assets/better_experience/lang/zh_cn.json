@@ -47,5 +47,25 @@
   "better_experience.config.scroll": "滚动",
 
   "key.better_experience.open_config": "打开配置界面",
-  "category.better_experience.general": "Better Experience"
+  "category.better_experience.general": "Better Experience",
+  
+  "better_experience.config.inventory_sort": "背包整理配置",
+  "better_experience.config.inventory_sort.title": "背包整理配置",
+  "better_experience.config.inventory_sort.description": "配置背包整理功能",
+  "better_experience.config.inventory_sort.sort_key": "排序快捷键",
+  "better_experience.config.inventory_sort.deposit_key": "存入快捷键",
+  "better_experience.config.inventory_sort.withdraw_key": "拿取快捷键",
+  "better_experience.config.inventory_sort.sort_container_key": "整理容器快捷键",
+  "better_experience.config.inventory_sort.sort_mode": "排序模式",
+  "better_experience.config.inventory_sort.auto_sort": "自动整理",
+  "better_experience.config.inventory_sort.show_buttons": "显示按钮",
+  "better_experience.config.inventory_sort.show_container_buttons": "显示容器按钮",
+  "better_experience.config.inventory_sort.test_sort": "测试排序",
+  "better_experience.config.inventory_sort.reset_config": "重置配置",
+  
+  "key.better_experience.sort_inventory": "整理背包",
+  "key.better_experience.deposit_to_container": "存入容器",
+  "key.better_experience.withdraw_from_container": "从容器拿取",
+  "key.better_experience.sort_container": "整理容器",
+  "category.better_experience.inventory": "Better Experience - 背包整理"
 }

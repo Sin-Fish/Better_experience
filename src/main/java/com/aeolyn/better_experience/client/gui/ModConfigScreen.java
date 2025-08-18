@@ -5,6 +5,7 @@ import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
 import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
 import com.aeolyn.better_experience.importexport.gui.ConfigImportExportScreen;
+import com.aeolyn.better_experience.inventory.gui.InventorySortConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -85,6 +86,15 @@ public class ModConfigScreen extends BaseConfigScreen {
             }
         ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
         
+        // 背包整理配置按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("背包整理配置"),
+            button -> {
+                this.client.setScreen(new InventorySortConfigScreen(this, configManager));
+                LogUtil.logGuiAction("open_inventory_config", getScreenName(), "打开背包整理配置界面");
+            }
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
+        
         // 导入导出配置按钮
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("导入导出配置"),
@@ -92,7 +102,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new ConfigImportExportScreen(this, configManager));
                 LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight).build());
     }
     
     @Override

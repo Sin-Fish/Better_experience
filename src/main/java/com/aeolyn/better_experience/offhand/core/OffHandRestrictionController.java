@@ -2,6 +2,7 @@ package com.aeolyn.better_experience.offhand.core;
 
 import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class OffHandRestrictionController {
      * 初始化副手限制控制器
      */
     public static void initialize() {
-        LOGGER.info("初始化副手限制控制器");
+        LogUtil.info("Offhand", "初始化副手限制控制器");
         // 确保单例实例已创建
         getInstance();
         // 这里可以添加任何需要的初始化逻辑
@@ -67,12 +68,12 @@ public class OffHandRestrictionController {
             boolean isAllowed = config.isBlockPlacementAllowed(itemId);
             
             if (!isAllowed) {
-                LOGGER.debug("副手方块放置被阻止: {}", itemId);
+                LogUtil.debug("Offhand", "副手方块放置被阻止: {}", itemId);
             }
             
             return isAllowed;
         } catch (Exception e) {
-            LOGGER.error("检查副手方块放置权限时发生错误: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "检查副手方块放置权限时发生错误: " + e.getMessage(), e);
             return true; // 发生错误时默认允许
         }
     }
@@ -100,12 +101,12 @@ public class OffHandRestrictionController {
             boolean isAllowed = config.isItemUsageAllowed(itemId);
             
             if (!isAllowed) {
-                LOGGER.debug("副手道具使用被阻止: {}", itemId);
+                LogUtil.debug("Offhand", "副手道具使用被阻止: {}", itemId);
             }
             
             return isAllowed;
         } catch (Exception e) {
-            LOGGER.error("检查副手道具使用权限时发生错误: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "检查副手道具使用权限时发生错误: " + e.getMessage(), e);
             return true; // 发生错误时默认允许
         }
     }
@@ -122,10 +123,10 @@ public class OffHandRestrictionController {
             if (config != null) {
                 config.addAllowedItem(itemId);
                 configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已添加允许的副手物品: {}", itemId);
+                LogUtil.info("Offhand", "已添加允许的副手物品: {}", itemId);
             }
         } catch (Exception e) {
-            LOGGER.error("添加允许的副手物品时发生错误: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "添加允许的副手物品时发生错误: " + e.getMessage(), e);
         }
     }
     
@@ -141,10 +142,10 @@ public class OffHandRestrictionController {
             if (config != null) {
                 config.removeAllowedItem(itemId);
                 configManager.saveOffHandRestrictionConfig();
-                LOGGER.info("已移除允许的副手物品: {}", itemId);
+                LogUtil.info("Offhand", "已移除允许的副手物品: {}", itemId);
             }
         } catch (Exception e) {
-            LOGGER.error("移除允许的副手物品时发生错误: " + e.getMessage(), e);
+            LogUtil.error("Offhand", "移除允许的副手物品时发生错误: " + e.getMessage(), e);
         }
     }
     

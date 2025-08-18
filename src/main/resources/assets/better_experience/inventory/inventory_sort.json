@@ -1,0 +1,34 @@
+{
+  "enabled": true,
+  "sort_key": "R",
+  "deposit_key": "",
+  "withdraw_key": "",
+  "sort_container_key": "",
+  "default_sort_mode": "name",
+  "auto_sort_on_open": false,
+  "show_sort_buttons": true,
+  "show_container_buttons": true,
+  "sort_settings": {
+    "name_ascending": true,
+    "quantity_descending": true,
+    "category_order": [
+      "工具",
+      "武器",
+      "防具",
+      "食物",
+      "材料",
+      "装饰",
+      "其他"
+    ],
+    "type_order": [
+      "方块",
+      "物品",
+      "工具",
+      "武器",
+      "防具",
+      "食物",
+      "药水",
+      "其他"
+    ]
+  }
+}

@@ -1,9 +1,12 @@
 package com.aeolyn.better_experience;
 
+import com.aeolyn.better_experience.common.config.DebugConfig;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.common.util.VersionCompatibilityUtil;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +34,9 @@ public class BetterExperienceMod implements ModInitializer {
         // 初始化配置管理器
         ConfigManager.initialize();
         
+        // 初始化调试配置
+        DebugConfig.getInstance();
+        
         // 初始化各个模块
         try {
             // 初始化3D渲染模块
@@ -39,7 +45,10 @@ public class BetterExperienceMod implements ModInitializer {
             // 初始化副手限制模块
             com.aeolyn.better_experience.offhand.core.OffHandRestrictionController.initialize();
             
-            LOGGER.info("Better Experience mod 初始化完成! 通用3D渲染系统和副手限制系统已启用!");
+            // 初始化背包整理模块
+            com.aeolyn.better_experience.inventory.core.InventorySortController.initialize();
+            
+            LogUtil.info("General", "Better Experience mod 初始化完成! 通用3D渲染系统、副手限制系统和背包整理系统已启用!");
         } catch (Exception e) {
             LOGGER.error("模块初始化失败", e);
         }

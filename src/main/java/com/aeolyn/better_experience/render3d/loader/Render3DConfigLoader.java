@@ -4,6 +4,7 @@ import com.aeolyn.better_experience.render3d.config.ItemsConfig;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import com.aeolyn.better_experience.common.config.exception.ConfigLoadException;
 import com.aeolyn.better_experience.common.config.factory.ConfigFactory;
+import com.aeolyn.better_experience.common.util.LogUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
@@ -55,11 +56,11 @@ public class Render3DConfigLoader {
                 if (config == null) {
                     config = configFactory.createDefaultItemsConfig();
                 }
-                LOGGER.info("3D渲染主配置文件加载成功: {}", configPath);
+                LogUtil.info("Render3D", "3D渲染主配置文件加载成功: {}", configPath);
                 return config;
             }
         } catch (Exception e) {
-            LOGGER.error("加载3D渲染主配置文件失败: " + e.getMessage(), e);
+            LogUtil.error("Render3D", "加载3D渲染主配置文件失败: " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to load items config from " + configPath, e);
         }
     }
@@ -78,15 +79,15 @@ public class Render3DConfigLoader {
             try (Reader reader = Files.newBufferedReader(configPath)) {
                 ItemConfig config = GSON.fromJson(reader, ItemConfig.class);
                 if (config != null) {
-                    LOGGER.debug("3D渲染物品配置加载成功: {}", itemId);
+                    LogUtil.debug("Render3D", "3D渲染物品配置加载成功: {}", itemId);
                     return config;
                 } else {
-                    LOGGER.warn("3D渲染物品配置文件为空: {}", itemId);
+                    LogUtil.warn("Render3D", "3D渲染物品配置文件为空: {}", itemId);
                     return configFactory.createDefaultItemConfig(itemId);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("加载3D渲染物品配置失败 " + itemId + ": " + e.getMessage(), e);
+            LogUtil.error("Render3D", "加载3D渲染物品配置失败 " + itemId + ": " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to load item config for " + itemId, e);
         }
     }
@@ -111,7 +112,7 @@ public class Render3DConfigLoader {
                         availableConfigs.add(itemId);
                     });
             } catch (IOException e) {
-                LOGGER.error("获取可用3D渲染配置列表失败: " + e.getMessage(), e);
+                LogUtil.error("Render3D", "获取可用3D渲染配置列表失败: " + e.getMessage(), e);
             }
         }
         
@@ -133,18 +134,18 @@ public class Render3DConfigLoader {
                 if (resourceStream != null) {
                     // 复制默认配置到配置文件
                     Files.copy(resourceStream, configPath);
-                    LOGGER.info("创建默认3D渲染主配置文件: {}", configPath);
+                    LogUtil.info("Render3D", "创建默认3D渲染主配置文件: {}", configPath);
                 } else {
                     // 创建空的默认配置
                     ItemsConfig defaultConfig = configFactory.createDefaultItemsConfig();
                     try (Writer writer = Files.newBufferedWriter(configPath)) {
                         GSON.toJson(defaultConfig, writer);
                     }
-                    LOGGER.info("创建默认3D渲染主配置文件: {}", configPath);
+                    LogUtil.info("Render3D", "创建默认3D渲染主配置文件: {}", configPath);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("创建默认3D渲染主配置文件失败: " + e.getMessage(), e);
+            LogUtil.error("Render3D", "创建默认3D渲染主配置文件失败: " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to create default items config", e);
         }
     }
@@ -164,18 +165,18 @@ public class Render3DConfigLoader {
                 if (resourceStream != null) {
                     // 复制默认配置到配置文件
                     Files.copy(resourceStream, configPath);
-                    LOGGER.info("创建默认3D渲染物品配置文件: {}", configPath);
+                    LogUtil.info("Render3D", "创建默认3D渲染物品配置文件: {}", configPath);
                 } else {
                     // 创建空的默认配置
                     ItemConfig defaultConfig = configFactory.createDefaultItemConfig(itemId);
                     try (Writer writer = Files.newBufferedWriter(configPath)) {
                         GSON.toJson(defaultConfig, writer);
                     }
-                    LOGGER.info("创建默认3D渲染物品配置文件: {}", configPath);
+                    LogUtil.info("Render3D", "创建默认3D渲染物品配置文件: {}", configPath);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("创建默认3D渲染物品配置文件失败 " + itemId + ": " + e.getMessage(), e);
+            LogUtil.error("Render3D", "创建默认3D渲染物品配置文件失败 " + itemId + ": " + e.getMessage(), e);
             throw new ConfigLoadException("Failed to create default item config for " + itemId, e);
         }
     }

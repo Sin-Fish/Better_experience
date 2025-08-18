@@ -1,6 +1,7 @@
 package com.aeolyn.better_experience.render3d.core;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
+import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.render3d.config.ItemConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -39,7 +40,7 @@ public class ItemRenderer3D {
      * 初始化3D渲染器
      */
     public static void initialize() {
-        LOGGER.info("初始化3D物品渲染器");
+        LogUtil.info("Render3D", "初始化3D物品渲染器");
         // 这里可以添加任何需要的初始化逻辑
         // 比如注册事件监听器、初始化缓存等
     }
@@ -52,24 +53,24 @@ public class ItemRenderer3D {
                            int light, int overlay) {
         
         try {
-            LOGGER.debug("开始3D渲染物品: {}", Registries.ITEM.getId(item));
+            LogUtil.debug("Render3D", "开始3D渲染物品: {}", Registries.ITEM.getId(item));
             
             // 检查物品是否启用3D渲染
             if (!configManager.isItemEnabled(Registries.ITEM.getId(item).toString())) {
-                LOGGER.debug("物品未启用3D渲染，回退到原版渲染");
+                LogUtil.debug("Render3D", "物品未启用3D渲染，回退到原版渲染");
                 return;
             }
             
             // 获取渲染配置
             ItemConfig config = configManager.getItemConfig(Registries.ITEM.getId(item).toString());
             if (config == null || !config.isEnabled()) {
-                LOGGER.debug("渲染配置无效，回退到原版渲染");
+                LogUtil.debug("Render3D", "渲染配置无效，回退到原版渲染");
                 return;
             }
             
             // 判断是否为手持模式
             if (!isHandheldMode(displayContext)) {
-                LOGGER.debug("不是手持模式，回退到原版渲染");
+                LogUtil.debug("Render3D", "不是手持模式，回退到原版渲染");
                 return;
             }
             
@@ -82,30 +83,30 @@ public class ItemRenderer3D {
                     applyEntityMatrixTransform(matrices, displayContext, config);
                     renderEntityModel(entity, matrices, vertexConsumers, light, overlay);
                 } else {
-                    LOGGER.debug("无法获取实体，回退到原版渲染");
-                    LOGGER.warn("无法为物品 {} 找到对应的实体", Registries.ITEM.getId(item));
+                    LogUtil.debug("Render3D", "无法获取实体，回退到原版渲染");
+                    LogUtil.warn("Render3D", "无法为物品 {} 找到对应的实体", Registries.ITEM.getId(item));
                     return;
                 }
             } else if (config.isRenderAsBlock()) {
                 // 渲染方块模型
                 BlockState blockState = getBlockStateForItem(item, config);
                 if (blockState == null) {
-                    LOGGER.debug("无法获取方块状态，回退到原版渲染");
-                    LOGGER.warn("无法为物品 {} 找到对应的方块状态", Registries.ITEM.getId(item));
+                    LogUtil.debug("Render3D", "无法获取方块状态，回退到原版渲染");
+                    LogUtil.warn("Render3D", "无法为物品 {} 找到对应的方块状态", Registries.ITEM.getId(item));
                     return;
                 }
                 // 应用方块专用矩阵变换
                 applyBlockMatrixTransform(matrices, displayContext, config);
                 renderBlockModel(blockState, matrices, vertexConsumers, light, overlay);
             } else {
-                LOGGER.debug("未指定渲染方式，回退到原版渲染");
+                LogUtil.debug("Render3D", "未指定渲染方式，回退到原版渲染");
                 return;
             }
             
-            LOGGER.debug("3D渲染完成: {}", Registries.ITEM.getId(item));
+            LogUtil.debug("Render3D", "3D渲染完成: {}", Registries.ITEM.getId(item));
             
         } catch (Exception e) {
-            LOGGER.error("渲染3D物品时发生错误: {}", e.getMessage(), e);
+            LogUtil.error("Render3D", "渲染3D物品时发生错误: {}", e.getMessage(), e);
         }
     }
     
@@ -124,24 +125,24 @@ public class ItemRenderer3D {
      * 根据物品获取对应的实体
      */
     private Entity getEntityForItem(Item item, ItemConfig config) {
-        LOGGER.debug("获取实体，物品: {}", Registries.ITEM.getId(item));
+        LogUtil.debug("Render3D", "获取实体，物品: {}", Registries.ITEM.getId(item));
         
         if (!config.isRenderAsEntity()) {
-            LOGGER.debug("物品配置为不渲染为实体");
+            LogUtil.debug("Render3D", "物品配置为不渲染为实体");
             return null;
         }
         
         String entityTypeId = config.getEntityType();
-        LOGGER.debug("配置中的entityType: '{}', 配置是否启用: {}", entityTypeId, config.isEnabled());
+        LogUtil.debug("Render3D", "配置中的entityType: '{}', 配置是否启用: {}", entityTypeId, config.isEnabled());
         
         if (entityTypeId == null || entityTypeId.isEmpty()) {
-            LOGGER.debug("entityType为空或空字符串，回退到原版渲染");
-            LOGGER.warn("物品配置中entityType为空或空字符串: {}", Registries.ITEM.getId(item));
+            LogUtil.debug("Render3D", "entityType为空或空字符串，回退到原版渲染");
+            LogUtil.warn("Render3D", "物品配置中entityType为空或空字符串: {}", Registries.ITEM.getId(item));
             return null;
         }
         
-        LOGGER.debug("使用实体类型: {}", entityTypeId);
-        LOGGER.info("渲染物品 {} 使用实体: {}", Registries.ITEM.getId(item), entityTypeId);
+        LogUtil.debug("Render3D", "使用实体类型: {}", entityTypeId);
+        LogUtil.info("Render3D", "渲染物品 {} 使用实体: {}", Registries.ITEM.getId(item), entityTypeId);
         
         try {
             // 通过实体类型ID获取实体类型
@@ -149,21 +150,21 @@ public class ItemRenderer3D {
             EntityType<?> entityType = Registries.ENTITY_TYPE.get(identifier);
             
             if (entityType == null) {
-                LOGGER.debug("无法找到实体类型: {}", entityTypeId);
+                LogUtil.debug("Render3D", "无法找到实体类型: {}", entityTypeId);
                 return null;
             }
             
             // 创建实体实例
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.world == null) {
-                LOGGER.debug("世界未加载，无法创建实体");
+                LogUtil.debug("Render3D", "世界未加载，无法创建实体");
                 return null;
             }
             
             // 使用简单的create方法创建实体
             Entity entity = entityType.create(client.world, SpawnReason.NATURAL);
             if (entity == null) {
-                LOGGER.debug("无法创建实体实例: {}", entityTypeId);
+                LogUtil.debug("Render3D", "无法创建实体实例: {}", entityTypeId);
                 return null;
             }
             
@@ -171,11 +172,11 @@ public class ItemRenderer3D {
             entity.setPosition(0, 0, 0);
             entity.setVelocity(0, 0, 0);
             
-            LOGGER.debug("成功创建实体: {}", entity);
+            LogUtil.debug("Render3D", "成功创建实体: {}", entity);
             return entity;
         } catch (Exception e) {
-            LOGGER.debug("无法找到实体类型: {}, 错误: {}", entityTypeId, e.getMessage());
-            LOGGER.warn("无法找到实体类型: {}", entityTypeId);
+            LogUtil.debug("Render3D", "无法找到实体类型: {}, 错误: {}", entityTypeId, e.getMessage());
+            LogUtil.warn("Render3D", "无法找到实体类型: {}", entityTypeId);
             return null;
         }
     }
@@ -184,35 +185,35 @@ public class ItemRenderer3D {
      * 根据物品获取对应的方块状态
      */
     private BlockState getBlockStateForItem(Item item, ItemConfig config) {
-        LOGGER.debug("获取方块状态，物品: {}", Registries.ITEM.getId(item));
+        LogUtil.debug("Render3D", "获取方块状态，物品: {}", Registries.ITEM.getId(item));
         
         if (!config.isRenderAsBlock()) {
-            LOGGER.debug("物品配置为不渲染为方块");
+            LogUtil.debug("Render3D", "物品配置为不渲染为方块");
             return null;
         }
         
         String blockId = config.getBlockId();
-        LOGGER.debug("配置中的blockId: '{}', 配置是否启用: {}", blockId, config.isEnabled());
+        LogUtil.debug("Render3D", "配置中的blockId: '{}', 配置是否启用: {}", blockId, config.isEnabled());
         
         if (blockId == null || blockId.isEmpty()) {
-            LOGGER.debug("blockId为空或空字符串，回退到原版渲染");
-            LOGGER.warn("物品配置中blockId为空或空字符串: {}", Registries.ITEM.getId(item));
+            LogUtil.debug("Render3D", "blockId为空或空字符串，回退到原版渲染");
+            LogUtil.warn("Render3D", "物品配置中blockId为空或空字符串: {}", Registries.ITEM.getId(item));
             return null;
         }
         
-        LOGGER.debug("使用方块: {}", blockId);
-        LOGGER.info("渲染物品 {} 使用方块: {}", Registries.ITEM.getId(item), blockId);
+        LogUtil.debug("Render3D", "使用方块: {}", blockId);
+        LogUtil.info("Render3D", "渲染物品 {} 使用方块: {}", Registries.ITEM.getId(item), blockId);
         
         try {
             // 通过方块ID获取方块状态
             Identifier identifier = Identifier.of(blockId);
             Block block = Registries.BLOCK.get(identifier);
             BlockState state = block.getDefaultState();
-            LOGGER.debug("成功获取方块状态: {}", state);
+            LogUtil.debug("Render3D", "成功获取方块状态: {}", state);
             return state;
         } catch (Exception e) {
-            LOGGER.debug("无法找到方块: {}, 错误: {}", blockId, e.getMessage());
-            LOGGER.warn("无法找到方块: {}", blockId);
+            LogUtil.debug("Render3D", "无法找到方块: {}, 错误: {}", blockId, e.getMessage());
+            LogUtil.warn("Render3D", "无法找到方块: {}", blockId);
             return null;
         }
     }
@@ -328,28 +329,28 @@ public class ItemRenderer3D {
      * 检查物品是否应该被3D渲染
      */
     public boolean shouldRender3D(Item item, ItemDisplayContext displayContext) {
-        LOGGER.debug("检查是否应该3D渲染: {}", Registries.ITEM.getId(item));
+        LogUtil.debug("Render3D", "检查是否应该3D渲染: {}", Registries.ITEM.getId(item));
         
         // 检查是否为手持模式
         if (!isHandheldMode(displayContext)) {
-            LOGGER.debug("不是手持模式");
+            LogUtil.debug("Render3D", "不是手持模式");
             return false;
         }
         
         // 检查物品是否启用3D渲染
         if (!configManager.isItemEnabled(Registries.ITEM.getId(item).toString())) {
-            LOGGER.debug("物品未启用3D渲染");
+            LogUtil.debug("Render3D", "物品未启用3D渲染");
             return false;
         }
         
         // 检查渲染配置
         ItemConfig config = configManager.getItemConfig(Registries.ITEM.getId(item).toString());
         if (config == null || !config.isEnabled()) {
-            LOGGER.debug("渲染配置无效");
+            LogUtil.debug("Render3D", "渲染配置无效");
             return false;
         }
         
-        LOGGER.debug("应该进行3D渲染");
+        LogUtil.debug("Render3D", "应该进行3D渲染");
         return true;
     }
 }

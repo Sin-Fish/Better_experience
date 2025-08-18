@@ -1,5 +1,6 @@
 package com.aeolyn.better_experience.common.util;
 
+import com.aeolyn.better_experience.common.config.DebugConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,51 +49,82 @@ public class LogUtil {
     public static Logger getValidationLogger() { return VALIDATION_LOGGER; }
     public static Logger getPerformanceLogger() { return PERFORMANCE_LOGGER; }
     
+    /**
+     * 检查是否应该记录日志
+     */
+    private static boolean shouldLog(String module, String level) {
+        try {
+            DebugConfig debugConfig = DebugConfig.getInstance();
+            return debugConfig.shouldLog(module.toLowerCase(), level);
+        } catch (Exception e) {
+            // 如果调试配置不可用，默认记录所有日志
+            return true;
+        }
+    }
+    
     // ==================== 基础日志方法 ====================
     
     /**
      * 信息日志
      */
     public static void info(String module, String message) {
-        getLogger(module).info(message);
+        if (shouldLog(module, "INFO")) {
+            getLogger(module).info(message);
+        }
     }
     
     public static void info(String module, String message, Object... args) {
-        getLogger(module).info(message, args);
+        if (shouldLog(module, "INFO")) {
+            getLogger(module).info(message, args);
+        }
     }
     
     public static void info(String module, String message, Throwable throwable) {
-        getLogger(module).info(message, throwable);
+        if (shouldLog(module, "INFO")) {
+            getLogger(module).info(message, throwable);
+        }
     }
     
     /**
      * 警告日志
      */
     public static void warn(String module, String message) {
-        getLogger(module).warn(message);
+        if (shouldLog(module, "WARN")) {
+            getLogger(module).warn(message);
+        }
     }
     
     public static void warn(String module, String message, Object... args) {
-        getLogger(module).warn(message, args);
+        if (shouldLog(module, "WARN")) {
+            getLogger(module).warn(message, args);
+        }
     }
     
     public static void warn(String module, String message, Throwable throwable) {
-        getLogger(module).warn(message, throwable);
+        if (shouldLog(module, "WARN")) {
+            getLogger(module).warn(message, throwable);
+        }
     }
     
     /**
      * 错误日志
      */
     public static void error(String module, String message) {
-        getLogger(module).error(message);
+        if (shouldLog(module, "ERROR")) {
+            getLogger(module).error(message);
+        }
     }
     
     public static void error(String module, String message, Object... args) {
-        getLogger(module).error(message, args);
+        if (shouldLog(module, "ERROR")) {
+            getLogger(module).error(message, args);
+        }
     }
     
     public static void error(String module, String message, Throwable throwable) {
-        getLogger(module).error(message, throwable);
+        if (shouldLog(module, "ERROR")) {
+            getLogger(module).error(message, throwable);
+        }
     }
     
     /**
