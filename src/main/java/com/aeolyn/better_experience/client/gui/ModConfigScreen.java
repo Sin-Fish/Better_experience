@@ -119,7 +119,7 @@ public class ModConfigScreen extends BaseConfigScreen {
         moduleItems.add(new ModuleItem("通用配置", () -> this.client.setScreen(new GeneralConfigScreen(this, configManager))));
         moduleItems.add(new ModuleItem("3D渲染配置", () -> this.client.setScreen(new Render3DConfigScreen(this, configManager))));
         moduleItems.add(new ModuleItem("副手限制配置", () -> this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager))));
-        moduleItems.add(new ModuleItem("背包排序配置", () -> this.client.setScreen(new InventorySortConfigScreen(this, configManager))));
+        moduleItems.add(new ModuleItem("背包增强配置", () -> this.client.setScreen(new InventorySortConfigScreen(this, configManager))));
         moduleItems.add(new ModuleItem("配置导入导出", () -> this.client.setScreen(new ConfigImportExportScreen(this, configManager))));
         
         // 添加可见的模块控件
