@@ -38,7 +38,7 @@ public class InventoryScreenMixin {
                 InventoryTransferController.getInstance().smartTransferItems();
             } else if (sortMatch && (!smartMatch || !isShiftPressed)) {
                 LogUtil.info("InventoryScreenMixin", "在背包界面检测到 一键整理 快捷键，执行背包排序");
-                // 直接调用背包排序，启用合并模式
+                // 使用新的简化架构，启用合并模式
                 controller.sortInventory(com.aeolyn.better_experience.inventory.config.InventorySortConfig.SortMode.NAME, true);
             }
 

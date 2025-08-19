@@ -1,7 +1,8 @@
 package com.aeolyn.better_experience.inventory.core;
 
 import com.aeolyn.better_experience.common.util.LogUtil;
-import com.aeolyn.better_experience.inventory.controller.InventoryController;
+import com.aeolyn.better_experience.inventory.service.InventoryTransferService;
+import com.aeolyn.better_experience.inventory.service.InventoryTransferServiceImpl;
 import net.minecraft.inventory.Inventory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,11 @@ public class InventoryTransferController {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Transfer");
     private static volatile InventoryTransferController instance;
     
-    private InventoryTransferController() {}
+    private final InventoryTransferService transferService;
+    
+    private InventoryTransferController() {
+        this.transferService = new InventoryTransferServiceImpl();
+    }
     
     /**
      * 获取单例实例
@@ -44,20 +49,20 @@ public class InventoryTransferController {
      * 根据配置选择判断逻辑
      */
     public void smartTransferItems() {
-        InventoryController.getInstance().getTransferService().smartTransferItems();
+        transferService.smartTransferItems();
     }
     
     /**
      * 一键存入容器（兼容旧版本调用）
      */
     public void depositToContainer(Inventory container) {
-        InventoryController.getInstance().getTransferService().depositToContainer(container);
+        transferService.depositToContainer(container);
     }
     
     /**
      * 一键从容器取出（兼容旧版本调用）
      */
     public void withdrawFromContainer(Inventory container) {
-        InventoryController.getInstance().getTransferService().withdrawFromContainer(container);
+        transferService.withdrawFromContainer(container);
     }
 }

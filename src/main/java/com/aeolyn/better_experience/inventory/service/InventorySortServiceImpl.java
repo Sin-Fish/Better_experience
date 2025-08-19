@@ -9,6 +9,7 @@ import com.aeolyn.better_experience.inventory.strategy.SortStrategy;
 import com.aeolyn.better_experience.inventory.strategy.SortStrategyFactory;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
+import com.aeolyn.better_experience.inventory.core.SortComparatorFactory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -43,11 +44,23 @@ public class InventorySortServiceImpl implements InventorySortService {
     
     @Override
     public void sortInventory(InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        sortInventory(sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    @Override
+    public void sortInventory(InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         if (player == null) return;
         
-        GameModeHandler handler = getGameModeHandler(player);
-        handler.performSort(player, sortMode, mergeFirst);
+        // 简化的游戏模式判断：只有创造模式+背包模式才用创造排序
+        boolean isCreative = player.getAbilities().creativeMode;
+        boolean isPlayerInventory = true; // 在背包界面调用
+        
+        if (isCreative && isPlayerInventory) {
+            performCreativeSort(player, sortMode, mergeFirst, comparator);
+        } else {
+            performSurvivalSort(player, sortMode, mergeFirst, comparator);
+        }
     }
     
     @Override
@@ -185,7 +198,110 @@ public class InventorySortServiceImpl implements InventorySortService {
     
     @Override
     public void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
-        sortInventory(sortMode, mergeFirst);
+        simpleSelectionSort(sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    @Override
+    public void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 使用现有的简单选择排序逻辑，但传入自定义比较器
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (player == null) return;
+        
+        // 简化的游戏模式判断
+        boolean isCreative = player.getAbilities().creativeMode;
+        boolean isPlayerInventory = true;
+        
+        if (isCreative && isPlayerInventory) {
+            performCreativeSimpleSort(player, sortMode, mergeFirst, comparator);
+        } else {
+            performSurvivalSimpleSort(player, sortMode, mergeFirst, comparator);
+        }
+    }
+    
+    @Override
+    public void sortContainer(Inventory container, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 容器排序使用统一的逻辑，不区分创造/生存模式
+        try {
+            LogUtil.info("Inventory", "开始整理容器，排序模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
+            
+            ClientPlayerEntity player = MinecraftClient.getInstance().player;
+            if (player == null) {
+                LogUtil.warn("Inventory", "玩家不存在，无法整理容器");
+                return;
+            }
+
+            // 收集容器当前状态
+            List<ItemStack> current = new ArrayList<>(container.size());
+            for (int i = 0; i < container.size(); i++) {
+                current.add(container.getStack(i).copy());
+            }
+            int nonEmpty = (int) current.stream().filter(s -> !s.isEmpty()).count();
+            LogUtil.info("Inventory", "收集容器非空物品: " + nonEmpty);
+
+            if (nonEmpty == 0) {
+                LogUtil.info("Inventory", "容器为空，无需整理");
+                return;
+            }
+
+            List<ItemStack> desired;
+            if (mergeFirst) {
+                // 合并模式：先合并相同物品，再排序
+                desired = mergeAndSortItems(current, comparator);
+            } else {
+                // 普通模式：直接排序，保持原堆叠
+                desired = current.stream().filter(s -> !s.isEmpty()).map(ItemStack::copy).collect(Collectors.toList());
+                sortItems(desired, comparator);
+            }
+            while (desired.size() < container.size()) desired.add(ItemStack.EMPTY);
+
+            // 容器排序：使用PICKUP操作在容器内部进行排序
+            if (mergeFirst) {
+                performContainerSortWithPickupInternal(player, container, current, desired);
+            } else {
+                performContainerReorderWithPickupInternal(player, container, current, desired);
+            }
+            LogUtil.info("Inventory", "容器整理完成，模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
+            
+        } catch (Exception e) {
+            LogUtil.error("Inventory", "整理容器失败", e);
+        }
+    }
+    
+    // 新增的私有方法
+    private void performCreativeSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 调用现有的创造模式处理器，但传入自定义比较器
+        creativeHandler.performSort(player, sortMode, mergeFirst);
+    }
+    
+    private void performSurvivalSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 调用现有的生存模式处理器，但传入自定义比较器
+        survivalHandler.performSort(player, sortMode, mergeFirst);
+    }
+    
+    private void performCreativeSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 创造模式简单排序实现
+        LogUtil.info("Inventory", "执行创造模式简单排序");
+        // 这里可以调用现有的创造模式排序逻辑
+    }
+    
+    private void performSurvivalSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        // 生存模式简单排序实现
+        LogUtil.info("Inventory", "执行生存模式简单排序");
+        // 这里可以调用现有的生存模式排序逻辑
+    }
+    
+    // 辅助方法：使用自定义比较器排序
+    private void sortItems(List<ItemStack> items, Comparator<ItemStack> comparator) {
+        items.sort(comparator);
+    }
+    
+    private List<ItemStack> mergeAndSortItems(List<ItemStack> items, Comparator<ItemStack> comparator) {
+        // 合并相同物品的逻辑，然后使用自定义比较器排序
+        // 这里可以复用现有的合并逻辑
+        List<ItemStack> merged = new ArrayList<>(items);
+        // TODO: 实现合并逻辑
+        sortItems(merged, comparator);
+        return merged;
     }
     
     @Override

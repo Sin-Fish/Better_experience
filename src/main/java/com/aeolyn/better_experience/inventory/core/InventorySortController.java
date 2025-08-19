@@ -2,21 +2,29 @@ package com.aeolyn.better_experience.inventory.core;
 
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
-import com.aeolyn.better_experience.inventory.controller.InventoryController;
+import com.aeolyn.better_experience.inventory.service.InventorySortService;
+import com.aeolyn.better_experience.inventory.service.InventorySortServiceImpl;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
+
 /**
  * 背包排序控制器
- * 使用新的服务架构，提供统一的排序接口
+ * 简化架构，直接使用服务层，支持自定义比较器
  */
 public class InventorySortController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-Inventory");
     private static volatile InventorySortController instance;
     
-    private InventorySortController() {}
+    private final InventorySortService sortService;
+    
+    private InventorySortController() {
+        this.sortService = new InventorySortServiceImpl();
+    }
     
     /**
      * 获取单例实例
@@ -41,51 +49,72 @@ public class InventorySortController {
     }
     
     /**
-     * 整理背包
+     * 整理背包（使用默认比较器）
      */
     public void sortInventory(InventorySortConfig.SortMode sortMode) {
-        InventoryController.getInstance().getSortService().sortInventory(sortMode);
+        sortInventory(sortMode, false);
     }
     
     /**
-     * 整理背包（支持合并模式）
+     * 整理背包（使用默认比较器，支持合并模式）
      */
     public void sortInventory(InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
-        InventoryController.getInstance().getSortService().sortInventory(sortMode, mergeFirst);
+        sortInventory(sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
     }
     
     /**
-     * 整理容器（支持合并模式）
+     * 整理背包（支持自定义比较器）
      */
-    public void sortContainer(Inventory container, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
-        InventoryController.getInstance().getSortService().sortContainer(container, sortMode, mergeFirst);
+    public void sortInventory(InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        sortService.sortInventory(sortMode, mergeFirst, comparator);
     }
     
     /**
-     * 整理容器（默认不合并）
+     * 整理容器（使用默认比较器）
      */
     public void sortContainer(Inventory container) {
-        InventoryController.getInstance().getSortService().sortContainer(container);
+        sortContainer(container, InventorySortConfig.SortMode.NAME, false);
+    }
+    
+    /**
+     * 整理容器（使用默认比较器，支持合并模式）
+     */
+    public void sortContainer(Inventory container, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        sortContainer(container, sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    /**
+     * 整理容器（支持自定义比较器）
+     */
+    public void sortContainer(Inventory container, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        sortService.sortContainer(container, sortMode, mergeFirst, comparator);
     }
     
     /**
      * 智能排序：根据鼠标位置决定排序背包还是容器
      */
     public void smartSortByMousePosition() {
-        InventoryController.getInstance().getSortService().smartSortByMousePosition();
+        sortService.smartSortByMousePosition();
     }
     
     /**
-     * 简单的选择排序算法
+     * 简单的选择排序算法（使用默认比较器）
      */
     public void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
-        InventoryController.getInstance().getSortService().simpleSelectionSort(sortMode, mergeFirst);
+        simpleSelectionSort(sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    /**
+     * 简单的选择排序算法（支持自定义比较器）
+     */
+    public void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
+        sortService.simpleSelectionSort(sortMode, mergeFirst, comparator);
     }
     
     /**
      * 测试潜影盒支持
      */
     public void testShulkerBoxSupport() {
-        InventoryController.getInstance().getSortService().testShulkerBoxSupport();
+        sortService.testShulkerBoxSupport();
     }
 }
