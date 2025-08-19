@@ -1,5 +1,6 @@
 package com.aeolyn.better_experience.inventory.controller;
 
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.service.InventorySortService;
 import com.aeolyn.better_experience.inventory.service.InventoryTransferService;
@@ -19,10 +20,12 @@ public class InventoryController {
     
     private final InventorySortService sortService;
     private final InventoryTransferService transferService;
+    private final ConfigManager configManager;
     
     private InventoryController() {
+        this.configManager = ConfigManager.getInstance();
         this.sortService = new InventorySortServiceImpl();
-        this.transferService = new InventoryTransferServiceImpl();
+        this.transferService = new InventoryTransferServiceImpl(configManager);
     }
     
     /**

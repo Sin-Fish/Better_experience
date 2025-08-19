@@ -110,8 +110,11 @@ public class InventorySortConfig {
         @SerializedName("mouse_position")
         MOUSE_POSITION("根据鼠标位置"),
         
-        @SerializedName("heuristic")
-        HEURISTIC("根据空位数量");
+        @SerializedName("empty_slots")
+        EMPTY_SLOTS("根据空位数量"),
+        
+        @SerializedName("item_count")
+        ITEM_COUNT("根据物品数量");
         
         private final String displayName;
         

@@ -1,5 +1,6 @@
 package com.aeolyn.better_experience.inventory.core;
 
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.service.InventoryTransferService;
 import com.aeolyn.better_experience.inventory.service.InventoryTransferServiceImpl;
@@ -19,7 +20,8 @@ public class InventoryTransferController {
     private final InventoryTransferService transferService;
     
     private InventoryTransferController() {
-        this.transferService = new InventoryTransferServiceImpl();
+        ConfigManager configManager = ConfigManager.getInstance();
+        this.transferService = new InventoryTransferServiceImpl(configManager);
     }
     
     /**

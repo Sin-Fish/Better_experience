@@ -4,6 +4,7 @@ import com.aeolyn.better_experience.client.gui.BaseConfigScreen;
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
+import com.aeolyn.better_experience.inventory.config.InventorySortConfig.SmartTransferLogic;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -80,8 +81,13 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         this.addDrawableChild(sortModeButton);
         
         // 智能转移逻辑按钮（居中）
+        SmartTransferLogic currentLogic = config.getSmartTransferLogic();
+        if (currentLogic == null) {
+            currentLogic = SmartTransferLogic.MOUSE_POSITION; // 默认值
+            config.setSmartTransferLogic(currentLogic);
+        }
         smartTransferLogicButton = ButtonWidget.builder(
-            Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()),
+            Text.literal("智能转移: " + currentLogic.getDisplayName()),
             button -> cycleSmartTransferLogic()
         ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build();
         this.addDrawableChild(smartTransferLogicButton);
@@ -104,10 +110,15 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     
     private void cycleSmartTransferLogic() {
         InventorySortConfig.SmartTransferLogic[] logics = InventorySortConfig.SmartTransferLogic.values();
-        int currentIndex = config.getSmartTransferLogic().ordinal();
+        SmartTransferLogic currentLogic = config.getSmartTransferLogic();
+        if (currentLogic == null) {
+            currentLogic = SmartTransferLogic.MOUSE_POSITION; // 默认值
+        }
+        int currentIndex = currentLogic.ordinal();
         int nextIndex = (currentIndex + 1) % logics.length;
-        config.setSmartTransferLogic(logics[nextIndex]);
-        smartTransferLogicButton.setMessage(Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()));
+        SmartTransferLogic newLogic = logics[nextIndex];
+        config.setSmartTransferLogic(newLogic);
+        smartTransferLogicButton.setMessage(Text.literal("智能转移: " + newLogic.getDisplayName()));
     }
     
     @Override

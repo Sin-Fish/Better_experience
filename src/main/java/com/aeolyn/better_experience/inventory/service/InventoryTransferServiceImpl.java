@@ -1,6 +1,10 @@
 package com.aeolyn.better_experience.inventory.service;
 
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
+import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
+import com.aeolyn.better_experience.inventory.util.InventoryStatsUtil;
+import com.aeolyn.better_experience.inventory.util.MouseSlotUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -17,6 +21,12 @@ import java.util.List;
  * 实现物品转移功能
  */
 public class InventoryTransferServiceImpl implements InventoryTransferService {
+    
+    private final ConfigManager configManager;
+    
+    public InventoryTransferServiceImpl(ConfigManager configManager) {
+        this.configManager = configManager;
+    }
     
     @Override
     public void smartTransferItems() {
@@ -43,28 +53,56 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
             
             LogUtil.info("Transfer", "容器界面类型: " + handledScreen.getClass().getSimpleName());
             
-            // 获取鼠标下的槽位
-            Slot slot = getSlotAtMouse(handledScreen);
-            if (slot == null) {
-                LogUtil.warn("Transfer", "无法获取鼠标下的槽位");
-                return;
+            // 获取智能转移配置
+            InventorySortConfig.SmartTransferLogic transferLogic = getSmartTransferLogic();
+            LogUtil.info("Transfer", "智能转移逻辑: " + transferLogic.getDisplayName());
+            
+            boolean shouldDeposit;
+            Inventory containerInventory = InventoryStatsUtil.getContainerInventory(client.player);
+            
+            // 记录库存统计信息
+            InventoryStatsUtil.logInventoryStats(client.player, containerInventory, "Transfer");
+            
+            switch (transferLogic) {
+                case EMPTY_SLOTS:
+                    // 根据空位数量决定转移方向
+                    shouldDeposit = shouldDepositByEmptySlots(client.player, containerInventory);
+                    LogUtil.info("Transfer", "根据空位数量判断: " + (shouldDeposit ? "存入容器" : "取出到背包"));
+                    break;
+                    
+                case ITEM_COUNT:
+                    // 根据物品数量决定转移方向
+                    shouldDeposit = shouldDepositByItemCount(client.player, containerInventory);
+                    LogUtil.info("Transfer", "根据物品数量判断: " + (shouldDeposit ? "存入容器" : "取出到背包"));
+                    break;
+                    
+                default:
+                case MOUSE_POSITION:
+                    // 根据鼠标位置决定转移方向
+                    Slot slot = MouseSlotUtil.getSlotAtMouse(handledScreen);
+                    if (slot == null) {
+                        LogUtil.warn("Transfer", "无法获取鼠标下的槽位");
+                        return;
+                    }
+                    
+                    LogUtil.info("Transfer", "获取到槽位: ID=" + slot.id + ", Index=" + slot.getIndex() + 
+                        ", Inventory=" + slot.inventory.getClass().getSimpleName());
+                    
+                    // 判断鼠标在哪个区域
+                    boolean isPlayerInventory = slot.inventory == client.player.getInventory();
+                    shouldDeposit = isPlayerInventory;
+                    LogUtil.info("Transfer", "根据鼠标位置判断: 槽位ID=" + slot.id + ", 是否玩家背包=" + isPlayerInventory);
+                    break;
             }
             
-            LogUtil.info("Transfer", "获取到槽位: ID=" + slot.id + ", Index=" + slot.getIndex() + 
-                ", Inventory=" + slot.inventory.getClass().getSimpleName());
-            
-            // 判断鼠标在哪个区域
-            boolean isPlayerInventory = slot.inventory == client.player.getInventory();
-            LogUtil.info("Transfer", "鼠标位置检测: 槽位ID=" + slot.id + ", 是否玩家背包=" + isPlayerInventory);
-            
-            if (isPlayerInventory) {
-                // 鼠标在背包区域，执行存入操作（背包 -> 容器）
-                LogUtil.info("Transfer", "鼠标在背包区域，执行存入操作");
+            if (shouldDeposit) {
+                // 执行存入操作（背包 -> 容器）
+                LogUtil.info("Transfer", "执行存入操作：背包 -> 容器");
                 depositAllFromPlayerInventory();
             } else {
-                // 鼠标在容器区域，执行取出操作（容器 -> 背包）
-                LogUtil.info("Transfer", "鼠标在容器区域，执行取出操作");
-                withdrawAllFromContainer(slot.inventory);
+                // 执行取出操作（容器 -> 背包）
+                LogUtil.info("Transfer", "执行取出操作：容器 -> 背包");
+                withdrawAllFromContainer(containerInventory);
             }
             
             LogUtil.info("Transfer", "=== 智能转移完成 ===");
@@ -85,60 +123,62 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
     }
     
     /**
-     * 获取鼠标下的槽位
-     * 使用与背包排序相同的逻辑
+     * 获取智能转移配置逻辑
      */
-    private Slot getSlotAtMouse(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+    private InventorySortConfig.SmartTransferLogic getSmartTransferLogic() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null) {
-                return null;
+            InventorySortConfig config = configManager.getConfig(InventorySortConfig.class);
+            if (config != null && config.getSmartTransferLogic() != null) {
+                return config.getSmartTransferLogic();
             }
-            
-            // 获取缩放后的鼠标位置
-            double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
-            double mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
-            
-            // 使用与背包排序相同的槽位检测逻辑
-            return getSlotAtPosition(handledScreen, mouseX, mouseY);
         } catch (Exception e) {
-            LogUtil.warn("Transfer", "获取鼠标槽位失败", e);
-            return null;
+            LogUtil.warn("Transfer", "获取智能转移配置失败，使用默认值: " + e.getMessage());
         }
+        // 默认值
+        return InventorySortConfig.SmartTransferLogic.MOUSE_POSITION;
     }
     
     /**
-     * 获取指定位置的槽位
-     * 复制自 InventorySortServiceImpl 的 getSlotAtPosition 方法
+     * 根据空位数量决定是否应该存入容器
+     * @param player 玩家
+     * @param containerInventory 容器库存
+     * @return true 如果应该存入容器，false 如果应该取出到背包
      */
-    private net.minecraft.screen.slot.Slot getSlotAtPosition(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen, double mouseX, double mouseY) {
-        try {
-            // 尝试通过反射获取槽位
-            Class<?> currentClass = handledScreen.getClass();
-            while (currentClass != null) {
-                String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542", "method_64240", "method_2383", "method_64241", "method_2381", "method_2378"};
-                for (String methodName : possibleMethodNames) {
-                    try {
-                        java.lang.reflect.Method getSlotAtMethod = currentClass.getDeclaredMethod(methodName, double.class, double.class);
-                        getSlotAtMethod.setAccessible(true);
-                        net.minecraft.screen.slot.Slot slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
-                        if (slot != null) {
-                            LogUtil.info("Transfer", "成功调用 " + methodName + "，找到槽位: " + slot.id);
-                            return slot;
-                        }
-                    } catch (Exception e) {
-                        // 继续尝试下一个方法
-                    }
-                }
-                if (currentClass != null) {
-                    currentClass = currentClass.getSuperclass();
-                }
-            }
-        } catch (Exception e) {
-            LogUtil.warn("Transfer", "获取槽位失败: " + e.getMessage());
+    private boolean shouldDepositByEmptySlots(ClientPlayerEntity player, Inventory containerInventory) {
+        if (containerInventory == null) {
+            return false; // 没有容器，默认不存入
         }
-        return null;
+        
+        int playerEmptySlots = InventoryStatsUtil.countPlayerEmptySlots(player);
+        int containerEmptySlots = InventoryStatsUtil.countContainerEmptySlots(containerInventory);
+        
+        LogUtil.info("Transfer", "空位数量比较 - 背包空位: " + playerEmptySlots + ", 容器空位: " + containerEmptySlots);
+        
+        // 如果容器空位更多，存入容器；如果背包空位更多，取出到背包
+        return containerEmptySlots > playerEmptySlots;
     }
+    
+    /**
+     * 根据物品数量决定是否应该存入容器
+     * @param player 玩家
+     * @param containerInventory 容器库存
+     * @return true 如果应该存入容器，false 如果应该取出到背包
+     */
+    private boolean shouldDepositByItemCount(ClientPlayerEntity player, Inventory containerInventory) {
+        if (containerInventory == null) {
+            return false; // 没有容器，默认不存入
+        }
+        
+        int playerItemCount = InventoryStatsUtil.countPlayerItems(player);
+        int containerItemCount = InventoryStatsUtil.countContainerItems(containerInventory);
+        
+        LogUtil.info("Transfer", "物品数量比较 - 背包物品: " + playerItemCount + ", 容器物品: " + containerItemCount);
+        
+        // 如果背包物品更多，存入容器；如果容器物品更多，取出到背包
+        return playerItemCount > containerItemCount;
+    }
+    
+
     
     /**
      * 将背包中的所有物品存入容器

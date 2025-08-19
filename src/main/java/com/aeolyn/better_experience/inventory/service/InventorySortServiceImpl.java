@@ -9,6 +9,7 @@ import com.aeolyn.better_experience.inventory.handler.SurvivalModeHandler;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
 import com.aeolyn.better_experience.inventory.core.SortComparatorFactory;
+import com.aeolyn.better_experience.inventory.util.MouseSlotUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -155,7 +156,7 @@ public class InventorySortServiceImpl implements InventorySortService {
                 (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
             
             // 尝试获取槽位
-            net.minecraft.screen.slot.Slot slot = getSlotAtPosition(handledScreen, mouseX, mouseY);
+            net.minecraft.screen.slot.Slot slot = MouseSlotUtil.getSlotAtPosition(handledScreen, mouseX, mouseY);
             
             if (slot == null) {
                 LogUtil.warn("Inventory", "无法获取槽位，排序跳过");
@@ -688,37 +689,7 @@ public class InventorySortServiceImpl implements InventorySortService {
         return indices;
     }
     
-    /**
-     * 获取指定位置的槽位
-     */
-    private net.minecraft.screen.slot.Slot getSlotAtPosition(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen, double mouseX, double mouseY) {
-        try {
-            // 尝试通过反射获取槽位
-            Class<?> currentClass = handledScreen.getClass();
-            while (currentClass != null) {
-                String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542", "method_64240", "method_2383", "method_64241", "method_2381", "method_2378"};
-                for (String methodName : possibleMethodNames) {
-                    try {
-                        java.lang.reflect.Method getSlotAtMethod = currentClass.getDeclaredMethod(methodName, double.class, double.class);
-                        getSlotAtMethod.setAccessible(true);
-                        net.minecraft.screen.slot.Slot slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
-                        if (slot != null) {
-                            LogUtil.info("Inventory", "成功调用 " + methodName + "，找到槽位: " + slot.id);
-                            return slot;
-                        }
-                    } catch (Exception e) {
-                        // 继续尝试下一个方法
-                    }
-                }
-                if (currentClass != null) {
-                    currentClass = currentClass.getSuperclass();
-                }
-            }
-        } catch (Exception e) {
-            LogUtil.warn("Inventory", "获取槽位失败: " + e.getMessage());
-        }
-        return null;
-    }
+
 
     /**
      * 获取主背包槽位列表
