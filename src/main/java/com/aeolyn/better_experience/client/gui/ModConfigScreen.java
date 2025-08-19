@@ -2,45 +2,61 @@ package com.aeolyn.better_experience.client.gui;
 
 import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
-import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
-import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
 import com.aeolyn.better_experience.importexport.gui.ConfigImportExportScreen;
 import com.aeolyn.better_experience.inventory.gui.InventorySortConfigScreen;
+import com.aeolyn.better_experience.offhand.gui.OffHandRestrictionConfigScreen;
+import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 统一配置入口界面
- * 提供各个功能模块的配置入口
+ * 模组主配置界面
+ * 提供各个模块配置的入口
  */
 public class ModConfigScreen extends BaseConfigScreen {
     
+    private final List<ClickableWidget> moduleWidgets;
+    
+    // 滚动相关
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+    private static final int ITEM_HEIGHT = 30;
+    private static final int LIST_START_Y = 60;
+    private static final int LIST_END_Y = 180;
+    
     public ModConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.translatable("better_experience.config.title"), parentScreen, configManager);
+        this.moduleWidgets = new ArrayList<>();
     }
-    
-    // ==================== 抽象方法实现 ====================
     
     @Override
     protected void loadData() {
-        // 入口界面不需要加载数据
-        LogUtil.info(LogUtil.MODULE_GUI, "打开配置入口界面");
+        LogUtil.info(LogUtil.MODULE_GUI, "加载模组配置界面");
     }
     
     @Override
     protected void renderCustomContent(DrawContext context) {
-        // 渲染说明文字
-        renderDescription(context);
+        // 渲染列表背景
+        context.fill(getCenterX() - 160, LIST_START_Y - 5, getCenterX() + 180, LIST_END_Y + 5, 0x44000000);
+        
+        // 渲染滚动信息
+        if (maxScrollOffset > 0) {
+            String scrollInfo = String.format("滚动: %d/%d", scrollOffset + 1, maxScrollOffset + 1);
+            context.drawTextWithShadow(this.textRenderer, Text.literal(scrollInfo),
+                getCenterX() + 160, LIST_START_Y + 10, 0xFFFFFF);
+        }
     }
     
     @Override
     protected void onAddClicked() {
-        // 入口界面不需要添加功能
+        // 主界面不需要添加功能
     }
-    
-    // ==================== 自定义按钮 ====================
     
     @Override
     protected void addStandardButtons() {
@@ -49,90 +65,104 @@ public class ModConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addCustomButtons() {
-        int centerX = getCenterX();
-        int startY = 100;
-        int buttonWidth = 240;
-        int buttonHeight = 20;
-        int spacing = 28;
+        // 添加滚动按钮
+        addScrollButtons();
         
-        int listX = centerX - buttonWidth / 2;
-        
-        // 通用配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("通用配置"),
-            button -> {
-                this.client.setScreen(new GeneralConfigScreen(this, configManager));
-                LogUtil.logGuiAction("open_general_config", getScreenName(), "打开通用配置界面");
-            }
-        ).dimensions(listX, startY, buttonWidth, buttonHeight).build());
-        
-        // 3D渲染配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("3D渲染配置"),
-            button -> {
-                this.client.setScreen(new Render3DConfigScreen(this, configManager));
-                LogUtil.logGuiAction("open_3d_config", getScreenName(), "打开3D渲染配置界面");
-            }
-        ).dimensions(listX, startY + spacing, buttonWidth, buttonHeight).build());
-        
-        // 副手限制配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("副手限制配置"),
-            button -> {
-                this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager));
-                LogUtil.logGuiAction("open_offhand_config", getScreenName(), "打开副手限制配置界面");
-            }
-        ).dimensions(listX, startY + spacing * 2, buttonWidth, buttonHeight).build());
-        
-        // 背包整理配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("便捷背包配置"),
-            button -> {
-                this.client.setScreen(new InventorySortConfigScreen(this, configManager));
-                LogUtil.logGuiAction("open_inventory_config", getScreenName(), "打开背包整理配置界面");
-            }
-        ).dimensions(listX, startY + spacing * 3, buttonWidth, buttonHeight).build());
-        
-        // 导入导出配置按钮
-        this.addDrawableChild(ButtonWidget.builder(
-            Text.literal("导入导出配置"),
-            button -> {
-                this.client.setScreen(new ConfigImportExportScreen(this, configManager));
-                LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
-            }
-        ).dimensions(listX, startY + spacing * 4, buttonWidth, buttonHeight).build());
+        // 设置滚动列表
+        setupScrollableList();
     }
+    
+    // ==================== 滚动列表方法 ====================
     
     @Override
     protected void setupScrollableList() {
-        // 入口界面不需要滚动列表
+        // 计算最大滚动偏移量
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        maxScrollOffset = Math.max(0, 5 - visibleItems); // 5个模块
+        
+        updateModuleWidgets();
     }
     
-    // ==================== 渲染方法 ====================
-    
-    private void renderDescription(DrawContext context) {
-        renderCenteredText(context, "Better Experience Mod 配置中心", 40, 0xFFFFFF);
-        renderCenteredText(context, "选择要配置的功能模块", 60, 0xCCCCCC);
-        renderCenteredText(context, "3D渲染配置 - 管理物品的3D渲染效果", 80, 0xAAAAAA);
-        renderCenteredText(context, "副手限制配置 - 管理副手物品使用限制", 100, 0xAAAAAA);
-        renderCenteredText(context, "导入导出配置 - 备份和恢复配置", 120, 0xAAAAAA);
+    private void addScrollButtons() {
+        // 向上滚动按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↑"), 
+            button -> {
+                if (scrollOffset > 0) {
+                    scrollOffset--;
+                    updateModuleWidgets();
+                }
+            }
+        ).dimensions(getCenterX() + 160, LIST_START_Y, 20, 20).build());
+        
+        // 向下滚动按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↓"), 
+            button -> {
+                if (scrollOffset < maxScrollOffset) {
+                    scrollOffset++;
+                    updateModuleWidgets();
+                }
+            }
+        ).dimensions(getCenterX() + 160, LIST_END_Y - 20, 20, 20).build());
     }
     
-    // ==================== 公共方法 ====================
+    private void updateModuleWidgets() {
+        // 清除现有的模块控件
+        for (ClickableWidget widget : moduleWidgets) {
+            this.remove(widget);
+        }
+        moduleWidgets.clear();
+        
+        // 模块列表
+        List<ModuleItem> moduleItems = new ArrayList<>();
+        moduleItems.add(new ModuleItem("通用配置", () -> this.client.setScreen(new GeneralConfigScreen(this, configManager))));
+        moduleItems.add(new ModuleItem("3D渲染配置", () -> this.client.setScreen(new Render3DConfigScreen(this, configManager))));
+        moduleItems.add(new ModuleItem("副手限制配置", () -> this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager))));
+        moduleItems.add(new ModuleItem("背包排序配置", () -> this.client.setScreen(new InventorySortConfigScreen(this, configManager))));
+        moduleItems.add(new ModuleItem("配置导入导出", () -> this.client.setScreen(new ConfigImportExportScreen(this, configManager))));
+        
+        // 添加可见的模块控件
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        for (int i = 0; i < visibleItems && i + scrollOffset < moduleItems.size(); i++) {
+            ModuleItem item = moduleItems.get(i + scrollOffset);
+            int y = LIST_START_Y + i * ITEM_HEIGHT;
+            addModuleEntry(item, y);
+        }
+    }
     
-    /**
-     * 获取界面名称
-     */
+    private void addModuleEntry(ModuleItem item, int y) {
+        // 模块按钮
+        ButtonWidget moduleButton = ButtonWidget.builder(
+            Text.literal(item.name),
+            button -> {
+                LogUtil.logButtonClick(getScreenName(), "open_" + item.name.replaceAll("\\s+", "_").toLowerCase());
+                item.onClick.run();
+            }
+        ).dimensions(getCenterX() - 120, y, 240, 20).build();
+        
+        moduleWidgets.add(moduleButton);
+        this.addDrawableChild(moduleButton);
+    }
+    
+    // 模块项内部类
+    private static class ModuleItem {
+        final String name;
+        final Runnable onClick;
+        
+        ModuleItem(String name, Runnable onClick) {
+            this.name = name;
+            this.onClick = onClick;
+        }
+    }
+    
     @Override
-    protected String getScreenName() {
-        return "ModConfigScreen";
+    protected void saveConfig() {
+        // 主界面不需要保存配置
     }
     
-    /**
-     * 刷新物品列表（为了兼容性）
-     */
-    public void refreshItemList() {
-        // 入口界面不需要刷新物品列表
-        LogUtil.info(LogUtil.MODULE_GUI, "入口界面刷新物品列表（无操作）");
+    @Override
+    public String getScreenName() {
+        return "ModConfigScreen";
     }
 }

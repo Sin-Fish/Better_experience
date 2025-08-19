@@ -4,6 +4,7 @@ import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.importexport.core.ConfigImportExportManager;
 import com.aeolyn.better_experience.render3d.gui.Render3DConfigScreen;
 import com.aeolyn.better_experience.client.gui.ModConfigScreen;
+import com.aeolyn.better_experience.client.gui.BaseConfigScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -19,11 +20,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConfigImportExportScreen extends Screen {
+public class ConfigImportExportScreen extends BaseConfigScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger("BetterExperience-ImportExportScreen");
-    
-    private final Screen parentScreen;
-    private final ConfigManager configManager;
     
     private TextFieldWidget exportPathField;
     private TextFieldWidget importPathField;
@@ -49,15 +47,50 @@ public class ConfigImportExportScreen extends Screen {
     private ValidationStatus validationStatus = ValidationStatus.UNKNOWN;
     
     public ConfigImportExportScreen(Screen parentScreen, ConfigManager configManager) {
-        super(Text.literal("配置导入导出"));
-        this.parentScreen = parentScreen;
-        this.configManager = configManager;
+        super(Text.literal("配置导入导出"), parentScreen, configManager);
     }
     
     @Override
-    protected void init() {
-        super.init();
+    protected void loadData() {
+        // 导入导出界面不需要加载数据
+    }
+    
+    @Override
+    protected void renderCustomContent(DrawContext context) {
+        // 渲染状态消息
+        if (statusMessageTicks > 0) {
+            int color = isStatusError ? 0xFF0000 : 0x00FF00;
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(statusMessage), 
+                this.width / 2, 20, color);
+            statusMessageTicks--;
+        }
         
+        // 渲染验证状态指示器
+        if (validationStatus != ValidationStatus.UNKNOWN) {
+            String statusText = validationStatus == ValidationStatus.VALID ? "✓ 验证通过" : "✗ 验证失败";
+            int color = validationStatus == ValidationStatus.VALID ? 0x00FF00 : 0xFF0000;
+            context.drawTextWithShadow(this.textRenderer, Text.literal(statusText), 
+                this.width / 2 + 160, 80, color);
+        }
+        
+        // 渲染验证详情
+        if (showValidationDetails && validationResult != null) {
+            renderValidationDetails(context);
+        }
+    }
+    
+    @Override
+    protected void onAddClicked() {
+        // 导入导出界面不需要添加功能
+    }
+    
+    @Override
+    protected void addStandardButtons() {
+        super.addStandardButtons(); // 使用基类统一的并排返回/关闭按钮
+    }
+    
+    @Override
+    protected void addCustomButtons() {
         int centerX = this.width / 2;
         int startY = 80;
         int fieldWidth = 300;
@@ -100,19 +133,12 @@ public class ConfigImportExportScreen extends Screen {
             button -> importConfigs()
         ).dimensions(centerX - fieldWidth/2, separatorY + spacing * 2, fieldWidth, fieldHeight).build();
         
-        // 返回按钮放在导入按钮下方，避免与其他控件重叠
-        ButtonWidget backButton = ButtonWidget.builder(
-            Text.literal("返回"),
-            button -> this.close()
-        ).dimensions(centerX - fieldWidth/2, separatorY + spacing * 3, fieldWidth, fieldHeight).build();
-        
         // 添加所有控件
         this.addDrawableChild(exportPathField);
         this.addDrawableChild(exportButton);
         this.addDrawableChild(importPathField);
         this.addDrawableChild(validateButton);
         this.addDrawableChild(importButton);
-        this.addDrawableChild(backButton);
     }
     
     private void exportConfigs() {
@@ -207,12 +233,8 @@ public class ConfigImportExportScreen extends Screen {
                 showSuccess(message.toString());
                 
                 // 刷新父界面的物品列表
-                if (parentScreen != null) {
-                    if (parentScreen instanceof Render3DConfigScreen) {
-                        ((Render3DConfigScreen) parentScreen).refreshItemList();
-                    } else if (parentScreen instanceof ModConfigScreen) {
-                        ((ModConfigScreen) parentScreen).refreshItemList();
-                    }
+                if (parentScreen != null && parentScreen instanceof Render3DConfigScreen) {
+                    ((Render3DConfigScreen) parentScreen).refreshItemList();
                 }
                 
                 LOGGER.info("配置导入完成，成功: {}, 失败: {}", result.getTotalImported(), result.getTotalFailed());
@@ -247,80 +269,6 @@ public class ConfigImportExportScreen extends Screen {
         statusMessage = message;
         statusMessageTicks = 120; // 显示6秒
         isStatusError = true;
-    }
-    
-    @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // 绘制半透明背景
-        context.fill(0, 0, this.width, this.height, 0x88000000);
-        
-        // 绘制标题
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
-        
-        // 绘制说明文字
-        context.drawTextWithShadow(this.textRenderer, Text.literal("导出配置: 将当前所有配置导出到指定目录"), this.width / 2 - 150, 60, 0xCCCCCC);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("包括: 3D渲染配置 + 副手限制配置"), this.width / 2 - 150, 75, 0xCCCCCC);
-        context.drawTextWithShadow(this.textRenderer, Text.literal("导入配置: 从指定目录导入配置（会覆盖现有配置）"), this.width / 2 - 150, 200, 0xCCCCCC);
-        
-        // 显示状态消息
-        if (statusMessageTicks > 0) {
-            int color = isStatusError ? 0xFF5555 : 0x55FF55;
-            String[] lines = statusMessage.split("\n");
-            int y = 250;
-            for (String line : lines) {
-                context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(line), this.width / 2, y, color);
-                y += 12;
-            }
-            statusMessageTicks--;
-        }
-        
-        // 绘制验证状态指示点
-        renderValidationStatusDot(context);
-        
-        // 显示验证结果详情
-        if (showValidationDetails && validationResult != null) {
-            renderValidationDetails(context);
-        }
-        
-        super.render(context, mouseX, mouseY, delta);
-    }
-    
-    private void renderValidationStatusDot(DrawContext context) {
-        // 计算状态指示点的位置（在导入路径输入框左侧）
-        int centerX = this.width / 2;
-        int fieldWidth = 300;
-        int startY = 80;
-        int spacing = 30;
-        int separatorY = startY + spacing * 3;
-        
-        // 状态指示点的位置（在导入路径输入框左侧）
-        int dotX = centerX - fieldWidth/2 - 15;
-        int dotY = separatorY + 6; // 输入框中间位置
-        int dotSize = 8;
-        
-        // 根据验证状态选择颜色
-        int color;
-        switch (validationStatus) {
-            case VALID:
-                color = 0xFF55FF55; // 绿色
-                break;
-            case INVALID:
-                color = 0xFFFF5555; // 红色
-                break;
-            case UNKNOWN:
-            default:
-                color = 0xFFFFFF55; // 黄色
-                break;
-        }
-        
-        // 绘制状态指示点
-        context.fill(dotX, dotY, dotX + dotSize, dotY + dotSize, color);
-        
-        // 绘制边框（深色）
-        context.fill(dotX, dotY, dotX + dotSize, dotY + 1, 0xFF000000);
-        context.fill(dotX, dotY, dotX + 1, dotY + dotSize, 0xFF000000);
-        context.fill(dotX + dotSize - 1, dotY, dotX + dotSize, dotY + dotSize, 0xFF000000);
-        context.fill(dotX, dotY + dotSize - 1, dotX + dotSize, dotY + dotSize, 0xFF000000);
     }
     
     private void renderValidationDetails(DrawContext context) {
@@ -401,10 +349,5 @@ public class ConfigImportExportScreen extends Screen {
             context.drawTextWithShadow(this.textRenderer, Text.literal("(内容较多，请查看日志获取完整信息)"), 
                 this.width / 2 - 150, this.height - 80, 0xCCCCCC);
         }
-    }
-    
-    @Override
-    public void close() {
-        this.client.setScreen(parentScreen);
     }
 }

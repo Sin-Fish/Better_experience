@@ -6,8 +6,11 @@ import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 通用配置界面
@@ -15,16 +18,20 @@ import net.minecraft.text.Text;
  */
 public class GeneralConfigScreen extends BaseConfigScreen {
     
-    private ButtonWidget render3dToggleButton;
-    private ButtonWidget offhandToggleButton;
-    private ButtonWidget inventoryToggleButton;
-    private ButtonWidget debugToggleButton;
+    private final List<ClickableWidget> configWidgets;
     
+    // 滚动相关
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+    private static final int ITEM_HEIGHT = 30;
+    private static final int LIST_START_Y = 60;
+    private static final int LIST_END_Y = 180;
     
     private ModConfig modConfig;
     
     public GeneralConfigScreen(Screen parentScreen, ConfigManager configManager) {
         super(Text.translatable("better_experience.config.general.title"), parentScreen, configManager);
+        this.configWidgets = new ArrayList<>();
     }
     
     @Override
@@ -35,13 +42,15 @@ public class GeneralConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void renderCustomContent(DrawContext context) {
-        // 渲染标题
-        context.drawCenteredTextWithShadow(textRenderer, 
-            Text.literal("通用配置"), width / 2, 20, 0xFFFFFF);
+        // 渲染列表背景
+        context.fill(getCenterX() - 160, LIST_START_Y - 5, getCenterX() + 180, LIST_END_Y + 5, 0x44000000);
         
-        // 渲染说明
-        context.drawTextWithShadow(textRenderer, 
-            Text.literal("在这里可以管理各个模块的开关和通用设置"), 10, 40, 0xAAAAAA);
+        // 渲染滚动信息
+        if (maxScrollOffset > 0) {
+            String scrollInfo = String.format("滚动: %d/%d", scrollOffset + 1, maxScrollOffset + 1);
+            context.drawTextWithShadow(this.textRenderer, Text.literal(scrollInfo),
+                getCenterX() + 160, LIST_START_Y + 10, 0xFFFFFF);
+        }
     }
     
     @Override
@@ -56,60 +65,102 @@ public class GeneralConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addCustomButtons() {
-        int centerX = getCenterX();
-        int startY = 80;
-        int buttonWidth = 240;
-        int buttonHeight = 20;
-        int spacing = 28;
+        // 添加滚动按钮
+        addScrollButtons();
         
-        int listX = centerX - buttonWidth / 2;
-        
-        // 3D渲染模块开关
-        render3dToggleButton = ButtonWidget.builder(
-            Text.literal("3D渲染模块: " + (modConfig.isRender3dEnabled() ? "启用" : "禁用")),
-            button -> {
-                modConfig.setRender3dEnabled(!modConfig.isRender3dEnabled());
-                updateToggleButtonText(render3dToggleButton, "3D渲染模块", modConfig.isRender3dEnabled());
-                LogUtil.logButtonClick(getScreenName(), "toggle_render3d");
-            }
-        ).dimensions(listX, startY, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(render3dToggleButton);
-        
-        // 副手限制模块开关
-        offhandToggleButton = ButtonWidget.builder(
-            Text.literal("副手限制模块: " + (modConfig.isOffhandRestrictionEnabled() ? "启用" : "禁用")),
-            button -> {
-                modConfig.setOffhandRestrictionEnabled(!modConfig.isOffhandRestrictionEnabled());
-                updateToggleButtonText(offhandToggleButton, "副手限制模块", modConfig.isOffhandRestrictionEnabled());
-                LogUtil.logButtonClick(getScreenName(), "toggle_offhand");
-            }
-        ).dimensions(listX, startY + spacing, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(offhandToggleButton);
-        
-        // 背包排序模块开关
-        inventoryToggleButton = ButtonWidget.builder(
-            Text.literal("背包排序模块: " + (modConfig.isInventorySortEnabled() ? "启用" : "禁用")),
-            button -> {
-                modConfig.setInventorySortEnabled(!modConfig.isInventorySortEnabled());
-                updateToggleButtonText(inventoryToggleButton, "背包排序模块", modConfig.isInventorySortEnabled());
-                LogUtil.logButtonClick(getScreenName(), "toggle_inventory");
-            }
-        ).dimensions(listX, startY + spacing * 2, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(inventoryToggleButton);
-        
-        // 调试模式开关
-        debugToggleButton = ButtonWidget.builder(
-            Text.literal("调试模式: " + (modConfig.isDebugMode() ? "启用" : "禁用")),
-            button -> {
-                modConfig.setDebugMode(!modConfig.isDebugMode());
-                updateToggleButtonText(debugToggleButton, "调试模式", modConfig.isDebugMode());
-                LogUtil.logButtonClick(getScreenName(), "toggle_debug");
-            }
-        ).dimensions(listX, startY + spacing * 3, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(debugToggleButton);
+        // 设置滚动列表
+        setupScrollableList();
     }
-    private void updateToggleButtonText(ButtonWidget button, String prefix, boolean enabled) {
-        button.setMessage(Text.literal(prefix + ": " + (enabled ? "启用" : "禁用")));
+    
+    // ==================== 滚动列表方法 ====================
+    
+    @Override
+    protected void setupScrollableList() {
+        // 计算最大滚动偏移量
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        maxScrollOffset = Math.max(0, 4 - visibleItems); // 4个配置项
+        
+        updateConfigWidgets();
+    }
+    
+    private void addScrollButtons() {
+        // 向上滚动按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↑"), 
+            button -> {
+                if (scrollOffset > 0) {
+                    scrollOffset--;
+                    updateConfigWidgets();
+                }
+            }
+        ).dimensions(getCenterX() + 160, LIST_START_Y, 20, 20).build());
+        
+        // 向下滚动按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("↓"), 
+            button -> {
+                if (scrollOffset < maxScrollOffset) {
+                    scrollOffset++;
+                    updateConfigWidgets();
+                }
+            }
+        ).dimensions(getCenterX() + 160, LIST_END_Y - 20, 20, 20).build());
+    }
+    
+    private void updateConfigWidgets() {
+        // 清除现有的配置控件
+        for (ClickableWidget widget : configWidgets) {
+            this.remove(widget);
+        }
+        configWidgets.clear();
+        
+        // 配置项列表
+        List<ConfigItem> configItems = new ArrayList<>();
+        configItems.add(new ConfigItem("3D渲染模块", modConfig.isRender3dEnabled(), 
+            enabled -> modConfig.setRender3dEnabled(enabled)));
+        configItems.add(new ConfigItem("副手限制模块", modConfig.isOffhandRestrictionEnabled(), 
+            enabled -> modConfig.setOffhandRestrictionEnabled(enabled)));
+        configItems.add(new ConfigItem("背包排序模块", modConfig.isInventorySortEnabled(), 
+            enabled -> modConfig.setInventorySortEnabled(enabled)));
+        configItems.add(new ConfigItem("调试模式", modConfig.isDebugMode(), 
+            enabled -> modConfig.setDebugMode(enabled)));
+        
+        // 添加可见的配置控件
+        int visibleItems = (LIST_END_Y - LIST_START_Y) / ITEM_HEIGHT;
+        for (int i = 0; i < visibleItems && i + scrollOffset < configItems.size(); i++) {
+            ConfigItem item = configItems.get(i + scrollOffset);
+            int y = LIST_START_Y + i * ITEM_HEIGHT;
+            addConfigEntry(item, y);
+        }
+    }
+    
+    private void addConfigEntry(ConfigItem item, int y) {
+        // 配置名称按钮
+        ButtonWidget nameButton = ButtonWidget.builder(
+            Text.literal(item.name + ": " + (item.enabled ? "启用" : "禁用")),
+            button -> {
+                item.enabled = !item.enabled;
+                item.onToggle.accept(item.enabled);
+                button.setMessage(Text.literal(item.name + ": " + (item.enabled ? "启用" : "禁用")));
+                LogUtil.logButtonClick(getScreenName(), "toggle_" + item.name.replaceAll("\\s+", "_").toLowerCase());
+            }
+        ).dimensions(getCenterX() - 120, y, 240, 20).build();
+        
+        configWidgets.add(nameButton);
+        this.addDrawableChild(nameButton);
+    }
+    
+    // 配置项内部类
+    private static class ConfigItem {
+        final String name;
+        boolean enabled;
+        final java.util.function.Consumer<Boolean> onToggle;
+        
+        ConfigItem(String name, boolean enabled, java.util.function.Consumer<Boolean> onToggle) {
+            this.name = name;
+            this.enabled = enabled;
+            this.onToggle = onToggle;
+        }
     }
     
     @Override
@@ -117,11 +168,6 @@ public class GeneralConfigScreen extends BaseConfigScreen {
         try {
             // 保存通用配置
             configManager.updateModConfig(modConfig);
-            
-            // 显示保存成功消息
-            // if (client != null && client.player != null) {
-            //     client.player.sendMessage(Text.literal("[Better Experience] 通用配置保存成功！"), false);
-            // }
             
             LogUtil.logSuccess(LogUtil.MODULE_GUI, "通用配置保存成功");
             

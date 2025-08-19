@@ -254,8 +254,6 @@ public class AddItemConfigScreen extends Screen {
             this.close();
             if (parentScreen instanceof Render3DConfigScreen) {
                 ((Render3DConfigScreen) parentScreen).refreshItemList();
-            } else if (parentScreen instanceof ModConfigScreen) {
-                ((ModConfigScreen) parentScreen).refreshItemList();
             }
         } else {
             showError("创建配置失败，请检查输入是否正确");

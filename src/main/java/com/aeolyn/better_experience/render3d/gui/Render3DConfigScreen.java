@@ -103,30 +103,7 @@ public class Render3DConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addStandardButtons() {
-        // 子界面只显示返回和关闭按钮，不显示保存按钮（由主界面统一管理）
-        int centerX = getCenterX();
-        int buttonWidth = getButtonWidth();
-        int buttonHeight = getButtonHeight();
-        
-        // 返回按钮
-        backButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.back"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "back");
-                this.client.setScreen(parentScreen);
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 60, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(backButton);
-        
-        // 关闭按钮
-        closeButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.close"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "close");
-                this.close();
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(closeButton);
+        super.addStandardButtons(); // 使用基类统一的并排返回/关闭按钮
     }
     
     // ==================== 滚动按钮 ====================
