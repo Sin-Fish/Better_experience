@@ -111,10 +111,5 @@ public class InventorySortController {
         sortService.simpleSelectionSort(sortMode, mergeFirst, comparator);
     }
     
-    /**
-     * 测试潜影盒支持
-     */
-    public void testShulkerBoxSupport() {
-        sortService.testShulkerBoxSupport();
-    }
+
 }

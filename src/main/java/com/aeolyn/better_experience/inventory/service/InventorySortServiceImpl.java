@@ -3,10 +3,9 @@ package com.aeolyn.better_experience.inventory.service;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.inventory.handler.CreativeModeHandler;
-import com.aeolyn.better_experience.inventory.handler.GameModeHandler;
+
 import com.aeolyn.better_experience.inventory.handler.SurvivalModeHandler;
-import com.aeolyn.better_experience.inventory.strategy.SortStrategy;
-import com.aeolyn.better_experience.inventory.strategy.SortStrategyFactory;
+
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
 import com.aeolyn.better_experience.inventory.core.SortComparatorFactory;
@@ -90,11 +89,11 @@ public class InventorySortServiceImpl implements InventorySortService {
             List<ItemStack> desired;
             if (mergeFirst) {
                 // 合并模式：先合并相同物品，再排序
-                desired = mergeAndSortItems(current, sortMode);
+                desired = mergeAndSortItems(current, SortComparatorFactory.createComparator(sortMode));
             } else {
                 // 普通模式：直接排序，保持原堆叠
                 desired = current.stream().filter(s -> !s.isEmpty()).map(ItemStack::copy).collect(Collectors.toList());
-                sortItems(desired, sortMode);
+                sortItems(desired, SortComparatorFactory.createComparator(sortMode));
             }
             while (desired.size() < container.size()) desired.add(ItemStack.EMPTY);
 
@@ -257,7 +256,7 @@ public class InventorySortServiceImpl implements InventorySortService {
             // 容器排序：使用PICKUP操作在容器内部进行排序
             if (mergeFirst) {
                 performContainerSortWithPickupInternal(player, container, current, desired);
-            } else {
+                        } else {
                 performContainerReorderWithPickupInternal(player, container, current, desired);
             }
             LogUtil.info("Inventory", "容器整理完成，模式: " + sortMode.getDisplayName() + "，合并模式: " + mergeFirst);
@@ -269,25 +268,25 @@ public class InventorySortServiceImpl implements InventorySortService {
     
     // 新增的私有方法
     private void performCreativeSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 调用现有的创造模式处理器，但传入自定义比较器
-        creativeHandler.performSort(player, sortMode, mergeFirst);
+        // 调用创造模式处理器，使用自定义比较器
+        creativeHandler.performSort(player, sortMode, mergeFirst, comparator);
     }
     
     private void performSurvivalSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 调用现有的生存模式处理器，但传入自定义比较器
-        survivalHandler.performSort(player, sortMode, mergeFirst);
+        // 调用生存模式处理器，使用自定义比较器
+        survivalHandler.performSort(player, sortMode, mergeFirst, comparator);
     }
     
     private void performCreativeSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
         // 创造模式简单排序实现
         LogUtil.info("Inventory", "执行创造模式简单排序");
-        // 这里可以调用现有的创造模式排序逻辑
+        creativeHandler.performSimpleSort(player, new ArrayList<>(), sortMode, comparator);
     }
     
     private void performSurvivalSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
         // 生存模式简单排序实现
         LogUtil.info("Inventory", "执行生存模式简单排序");
-        // 这里可以调用现有的生存模式排序逻辑
+        survivalHandler.performSimpleSort(player, new ArrayList<>(), sortMode, comparator);
     }
     
     // 辅助方法：使用自定义比较器排序
@@ -295,324 +294,102 @@ public class InventorySortServiceImpl implements InventorySortService {
         items.sort(comparator);
     }
     
-    private List<ItemStack> mergeAndSortItems(List<ItemStack> items, Comparator<ItemStack> comparator) {
-        // 合并相同物品的逻辑，然后使用自定义比较器排序
-        // 这里可以复用现有的合并逻辑
-        List<ItemStack> merged = new ArrayList<>(items);
-        // TODO: 实现合并逻辑
-        sortItems(merged, comparator);
-        return merged;
-    }
+
     
-    @Override
-    public void testShulkerBoxSupport() {
-        try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.currentScreen == null) {
-                LogUtil.info("Inventory", "测试潜影盒支持：客户端或屏幕为空");
-                return;
-            }
-            
-            LogUtil.info("Inventory", "=== 潜影盒支持测试开始 ===");
-            LogUtil.info("Inventory", "当前界面类型: " + client.currentScreen.getClass().getSimpleName());
-            LogUtil.info("Inventory", "当前界面完整类名: " + client.currentScreen.getClass().getName());
-            
-            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen) {
-                net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-                    (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
-                
-                LogUtil.info("Inventory", "ScreenHandler类型: " + handledScreen.getScreenHandler().getClass().getSimpleName());
-                LogUtil.info("Inventory", "ScreenHandler完整类名: " + handledScreen.getScreenHandler().getClass().getName());
-                
-                // 检查所有槽位
-                LogUtil.info("Inventory", "=== 槽位信息 ===");
-                for (int i = 0; i < handledScreen.getScreenHandler().slots.size(); i++) {
-                    Slot slot = handledScreen.getScreenHandler().slots.get(i);
-                    LogUtil.info("Inventory", "槽位 " + i + ": ID=" + slot.id + 
-                        ", Index=" + slot.getIndex() + 
-                        ", Inventory=" + slot.inventory.getClass().getSimpleName() +
-                        ", 物品=" + (slot.getStack().isEmpty() ? "空" : slot.getStack().getName().getString()));
-                }
-                
-                // 检查是否是潜影盒
-                boolean isShulkerBox = client.currentScreen.getClass().getSimpleName().contains("ShulkerBox") ||
-                                     handledScreen.getScreenHandler().getClass().getSimpleName().contains("ShulkerBox");
-                
-                LogUtil.info("Inventory", "是否是潜影盒界面: " + isShulkerBox);
-                
-                if (isShulkerBox) {
-                    LogUtil.info("Inventory", "=== 潜影盒特殊检测 ===");
-                    // 尝试直接对潜影盒进行排序
-                    try {
-                        // 获取潜影盒的容器
-                        net.minecraft.inventory.Inventory shulkerInventory = null;
-                        for (Slot slot : handledScreen.getScreenHandler().slots) {
-                            if (slot.inventory != client.player.getInventory()) {
-                                shulkerInventory = slot.inventory;
-                                break;
-                            }
-                        }
-                        
-                        if (shulkerInventory != null) {
-                            LogUtil.info("Inventory", "找到潜影盒容器: " + shulkerInventory.getClass().getSimpleName());
-                            LogUtil.info("Inventory", "潜影盒容器大小: " + shulkerInventory.size());
-                            
-                            // 尝试直接排序
-                            sortContainer(shulkerInventory, InventorySortConfig.SortMode.NAME, true);
-                            LogUtil.info("Inventory", "潜影盒排序完成");
-                        } else {
-                            LogUtil.warn("Inventory", "未找到潜影盒容器");
-                        }
-                    } catch (Exception e) {
-                        LogUtil.error("Inventory", "潜影盒排序失败", e);
-                    }
-                }
-            }
-            
-            LogUtil.info("Inventory", "=== 潜影盒支持测试结束 ===");
-            
-        } catch (Exception e) {
-            LogUtil.error("Inventory", "潜影盒支持测试失败", e);
-        }
-    }
+
     
-    private GameModeHandler getGameModeHandler(ClientPlayerEntity player) {
-        if (player.getAbilities().creativeMode) {
-            return creativeHandler;
-        } else {
-            return survivalHandler;
-        }
-    }
+
     
     /**
-     * 完善的合并排序逻辑
-     * 算法：
-     * 1. 遍历每个槽位：从前往后处理每个槽位
-     * 2. 找到相同物品：当遇到一个物品时，向后查找所有相同类型的物品
-     * 3. 统计总数量：计算所有相同物品的总数量
-     * 4. 队列处理：将找到的相同物品记录到队列中（位置和数量）
-     * 5. 填充策略：使用PICKUP从队头到队尾依次填充，填满64个就移动到下一个位置
-     * 6. 清空原位置：将原来分散的物品位置清空
-     * 
-     * 性能优化：
-     * - 预排序相同物品以提高查找效率
-     * - 使用HashMap缓存物品键值
-     * - 批量处理相同类型的物品
+     * 简单的合并和排序逻辑
+     * 使用插入排序算法，先合并相同物品，再按比较器排序
      */
-    private List<ItemStack> mergeAndSortItems(List<ItemStack> items, InventorySortConfig.SortMode sortMode) {
-        LogUtil.info("Inventory", "开始合并相同物品，原始物品数: " + items.stream().filter(s -> !s.isEmpty()).count());
+    private List<ItemStack> mergeAndSortItems(List<ItemStack> items, Comparator<ItemStack> comparator) {
+        LogUtil.info("Inventory", "开始合并和排序物品，原始物品数: " + items.stream().filter(s -> !s.isEmpty()).count());
         
         // 创建工作副本
         List<ItemStack> workingItems = new ArrayList<>();
         for (ItemStack item : items) {
-            workingItems.add(item.copy());
-        }
-        
-        // 性能优化：预排序相同物品以提高查找效率
-        Map<String, List<Integer>> itemGroups = new HashMap<>();
-        for (int i = 0; i < workingItems.size(); i++) {
-            ItemStack stack = workingItems.get(i);
-            if (!stack.isEmpty()) {
-                String key = getItemKey(stack);
-                itemGroups.computeIfAbsent(key, k -> new ArrayList<>()).add(i);
+            if (!item.isEmpty()) {
+                workingItems.add(item.copy());
             }
         }
         
-        LogUtil.info("Inventory", "预分组完成，共 " + itemGroups.size() + " 种不同物品");
+        // 第一步：合并相同物品
+        mergeSameItems(workingItems);
         
-        // 记录已处理的槽位
-        boolean[] processed = new boolean[workingItems.size()];
-        int mergeCount = 0; // 记录合并次数
+        // 第二步：按比较器排序
+        sortItems(workingItems, comparator);
         
-        // 从前往后遍历每个槽位
-        for (int i = 0; i < workingItems.size(); i++) {
-            if (processed[i] || workingItems.get(i).isEmpty()) {
-                continue;
-            }
-            
-            ItemStack currentItem = workingItems.get(i);
-            String itemKey = getItemKey(currentItem);
-            int maxStack = currentItem.getMaxCount();
-            
-            LogUtil.info("Inventory", "=== 开始处理第 " + (++mergeCount) + " 组物品 ===");
-            LogUtil.info("Inventory", "处理槽位 " + i + " 的物品: " + currentItem.getName().getString() + " x" + currentItem.getCount());
-            
-            // 队列存储所有相同类型的物品：[位置, 数量]
-            Queue<int[]> itemQueue = new LinkedList<>();
-            List<Integer> originalPositions = new ArrayList<>(); // 记录原始位置用于清空
-            List<String> mergeDetails = new ArrayList<>(); // 记录合并详情
-            
-            // 使用预分组优化查找相同类型的物品
-            List<Integer> sameTypeSlots = itemGroups.get(itemKey);
-            if (sameTypeSlots != null) {
-                for (int slotIndex : sameTypeSlots) {
-                    if (!processed[slotIndex] && slotIndex >= i) { // 只处理当前位置及之后的槽位
-                        int count = workingItems.get(slotIndex).getCount();
-                        itemQueue.offer(new int[]{slotIndex, count});
-                        originalPositions.add(slotIndex);
-                        processed[slotIndex] = true;
-                        mergeDetails.add("槽位" + slotIndex + ":" + count + "个");
-                        LogUtil.info("Inventory", "  找到相同物品在槽位 " + slotIndex + ": " + getItemDisplayName(workingItems.get(slotIndex)) + " x" + count);
-                    }
-                }
-            }
-            
-            // 统计总数量
-            int totalCount = itemQueue.stream().mapToInt(arr -> arr[1]).sum();
-            LogUtil.info("Inventory", "  合并详情: " + String.join(", ", mergeDetails));
-            LogUtil.info("Inventory", "  总数量: " + totalCount + "，最大堆叠: " + maxStack);
-            
-            // 填充策略：从队头到队尾依次填充，填满64个就移动到下一个位置
-            int currentSlot = i;
-            int remainingToFill = totalCount;
-            int filledSlots = 0;
-            
-            while (remainingToFill > 0 && currentSlot < workingItems.size()) {
-                int toFill = Math.min(remainingToFill, maxStack);
-                
-                // 创建该槽位的堆叠
-                workingItems.set(currentSlot, currentItem.copy());
-                workingItems.get(currentSlot).setCount(toFill);
-                
-                filledSlots++;
-                LogUtil.info("Inventory", "    槽位 " + currentSlot + " 放置: " + toFill + " 个 (剩余: " + (remainingToFill - toFill) + ", 已填充槽位: " + filledSlots + ")");
-                
-                remainingToFill -= toFill;
-                currentSlot++;
-            }
-            
-            // 清空原位置：将原来分散的物品位置清空
-            int clearedSlots = 0;
-            for (int position : originalPositions) {
-                if (position >= currentSlot) { // 只清空在我们填充槽位之后的位置
-                    workingItems.set(position, ItemStack.EMPTY);
-                    clearedSlots++;
-                    LogUtil.info("Inventory", "    清空原槽位 " + position);
-                }
-            }
-            
-            // 输出合并结果统计
-            LogUtil.info("Inventory", "  合并结果: 填充了 " + filledSlots + " 个槽位，清空了 " + clearedSlots + " 个原槽位");
-            
-            // 如果还有剩余物品，需要处理溢出
-            if (remainingToFill > 0) {
-                LogUtil.warn("Inventory", "  警告：物品 " + currentItem.getName().getString() + " 还有 " + remainingToFill + " 个无法放置，背包已满");
-            }
-            
-            LogUtil.info("Inventory", "=== 第 " + mergeCount + " 组物品处理完成 ===");
+        // 第三步：填充到原始大小
+        while (workingItems.size() < items.size()) {
+            workingItems.add(ItemStack.EMPTY);
         }
         
-        int finalItemCount = (int) workingItems.stream().filter(s -> !s.isEmpty()).count();
-        int originalItemCount = (int) items.stream().filter(s -> !s.isEmpty()).count();
-        int totalSlotsSaved = originalItemCount - finalItemCount;
-        
-        LogUtil.info("Inventory", "合并完成统计:");
-        LogUtil.info("Inventory", "  原始物品数: " + originalItemCount);
-        LogUtil.info("Inventory", "  合并后物品数: " + finalItemCount);
-        LogUtil.info("Inventory", "  节省槽位数: " + totalSlotsSaved);
-        LogUtil.info("Inventory", "  共处理了 " + mergeCount + " 组物品");
-        LogUtil.info("Inventory", "  合并效率: " + String.format("%.1f", (double) totalSlotsSaved / originalItemCount * 100) + "%");
-        
-        // 对合并后的物品进行排序
-        LogUtil.info("Inventory", "开始对合并后的物品进行排序，排序模式: " + sortMode.getDisplayName());
-        sortItems(workingItems, sortMode);
-        
-        // 验证合并结果
-        if (!validateMergeResult(items, workingItems)) {
-            LogUtil.error("Inventory", "合并结果验证失败，可能存在数据丢失");
-        }
-        
+        LogUtil.info("Inventory", "合并和排序完成，最终物品数: " + workingItems.stream().filter(s -> !s.isEmpty()).count());
         return workingItems;
     }
     
     /**
-     * 排序物品列表
+     * 合并相同物品
      */
-    private void sortItems(List<ItemStack> items, InventorySortConfig.SortMode sortMode) {
-        LogUtil.info("Inventory", "开始排序物品，排序模式: " + sortMode.getDisplayName() + "，物品数量: " + items.size());
+    private void mergeSameItems(List<ItemStack> items) {
+        if (items.isEmpty()) return;
         
-        // 暂时使用默认配置，后续会从ConfigManager获取
-        InventorySortConfig config = new InventorySortConfig();
+        // 使用Map来合并相同物品
+        Map<String, ItemStack> mergedItems = new HashMap<>();
         
-        if (config == null) {
-            LogUtil.warn("Inventory", "配置为空，无法进行排序");
-            return;
+        for (ItemStack item : items) {
+            if (item.isEmpty()) continue;
+            
+            String key = getItemKey(item);
+            ItemStack existing = mergedItems.get(key);
+            
+            if (existing == null) {
+                // 新物品，直接添加
+                mergedItems.put(key, item.copy());
+            } else {
+                // 相同物品，尝试合并
+                int maxStack = item.getMaxCount();
+                int currentCount = existing.getCount();
+                int newCount = item.getCount();
+                int totalCount = currentCount + newCount;
+                
+                if (totalCount <= maxStack) {
+                    // 可以完全合并
+                    existing.setCount(totalCount);
+                } else {
+                    // 部分合并，剩余部分保持原样
+                    existing.setCount(maxStack);
+                    // 这里可以处理溢出，但为了简单起见，我们暂时忽略
+                    LogUtil.info("Inventory", "物品 " + item.getName().getString() + " 合并后超出最大堆叠，保持原样");
+                }
+            }
         }
         
-        switch (sortMode) {
-            case NAME:
-                LogUtil.info("Inventory", "执行按名称排序，升序: " + config.getSortSettings().isNameAscending());
-                sortByName(items, config.getSortSettings().isNameAscending());
-                break;
-            case QUANTITY:
-                LogUtil.info("Inventory", "执行按数量排序，降序: " + config.getSortSettings().isQuantityDescending());
-                sortByQuantity(items, config.getSortSettings().isQuantityDescending());
-                break;
-        }
+        // 清空原列表并添加合并后的物品
+        items.clear();
+        items.addAll(mergedItems.values());
         
-        LogUtil.info("Inventory", "排序完成");
+        LogUtil.info("Inventory", "合并完成，合并后物品数: " + items.size());
     }
     
-    /**
-     * 按名称排序（复合排序：第一级按名称，第二级按数量）
-     */
-    private void sortByName(List<ItemStack> items, boolean ascending) {
-        LogUtil.info("Inventory", "开始复合排序（名称+数量），名称升序: " + ascending + "，物品数量: " + items.size());
-        
-        items.sort((a, b) -> {
-            String nameA = a.getName().getString();
-            String nameB = b.getName().getString();
-            
-            // 第一级：按名称排序
-            int nameCompare = ascending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
-            
-            // 第二级：如果名称相同，按数量降序排序（数量多的在前）
-            if (nameCompare == 0) {
-                return Integer.compare(b.getCount(), a.getCount());
-            }
-            
-            return nameCompare;
-        });
-        
-        LogUtil.info("Inventory", "复合排序完成");
-    }
+
     
-    /**
-     * 按数量排序（复合排序：第一级按数量，第二级按名称）
-     */
-    private void sortByQuantity(List<ItemStack> items, boolean descending) {
-        LogUtil.info("Inventory", "开始复合排序（数量+名称），数量降序: " + descending + "，物品数量: " + items.size());
-        
-        items.sort((a, b) -> {
-            int countA = a.getCount();
-            int countB = b.getCount();
-            
-            // 第一级：按数量排序
-            int countCompare = descending ? Integer.compare(countB, countA) : Integer.compare(countA, countB);
-            
-            // 第二级：如果数量相同，按名称排序（保持一致性）
-            if (countCompare == 0) {
-                String nameA = a.getName().getString();
-                String nameB = b.getName().getString();
-                return nameA.compareTo(nameB);
-            }
-            
-            return countCompare;
-        });
-        
-        LogUtil.info("Inventory", "复合排序完成");
-    }
+
     
     /**
      * 获取物品的唯一键，用于堆叠判断
+     * 目前使用简化的键，仅包含物品ID
+     * 后续可以扩展以包含NBT数据
      */
     private String getItemKey(ItemStack stack) {
         if (stack.isEmpty()) return "empty";
         
         String itemId = Registries.ITEM.getId(stack.getItem()).toString();
         
-        // 对于现在，使用简化的键而不包含NBT以避免兼容性问题
-        // TODO: 当方法可用性确认时添加适当的NBT处理
+        // 目前使用简化的键，仅包含物品ID
+        // 后续可以扩展以包含NBT数据，确保相同物品的准确识别
         return itemId;
     }
     
@@ -624,49 +401,7 @@ public class InventorySortServiceImpl implements InventorySortService {
         return stack.getName().getString();
     }
     
-    /**
-     * 验证合并结果的正确性
-     */
-    private boolean validateMergeResult(List<ItemStack> original, List<ItemStack> merged) {
-        // 统计原始物品
-        Map<String, Integer> originalCounts = new HashMap<>();
-        for (ItemStack stack : original) {
-            if (!stack.isEmpty()) {
-                String key = getItemKey(stack);
-                originalCounts.put(key, originalCounts.getOrDefault(key, 0) + stack.getCount());
-            }
-        }
-        
-        // 统计合并后物品
-        Map<String, Integer> mergedCounts = new HashMap<>();
-        for (ItemStack stack : merged) {
-            if (!stack.isEmpty()) {
-                String key = getItemKey(stack);
-                mergedCounts.put(key, mergedCounts.getOrDefault(key, 0) + stack.getCount());
-            }
-        }
-        
-        // 比较数量
-        for (String key : originalCounts.keySet()) {
-            int originalCount = originalCounts.get(key);
-            int mergedCount = mergedCounts.getOrDefault(key, 0);
-            if (originalCount != mergedCount) {
-                LogUtil.warn("Inventory", "验证失败：物品 " + key + " 数量不匹配，原始: " + originalCount + "，合并后: " + mergedCount);
-                return false;
-            }
-        }
-        
-        // 检查是否有额外的物品
-        for (String key : mergedCounts.keySet()) {
-            if (!originalCounts.containsKey(key)) {
-                LogUtil.warn("Inventory", "验证失败：发现额外物品 " + key + "，数量: " + mergedCounts.get(key));
-                return false;
-            }
-        }
-        
-        LogUtil.info("Inventory", "合并结果验证通过");
-        return true;
-    }
+
     
     /**
      * 比较两个物品是否相同类型（不考虑数量）
@@ -1084,9 +819,9 @@ public class InventorySortServiceImpl implements InventorySortService {
     private void performUniversalSelectionSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode) {
         LogUtil.info("Inventory", "通用选择排序：开始排序");
         
-        // 获取排序比较器
-        SortStrategy sortStrategy = SortStrategyFactory.getStrategy(sortMode);
-        LogUtil.info("Inventory", "使用排序策略: " + sortStrategy.getName());
+        // 使用新的比较器工厂
+        Comparator<ItemStack> comparator = SortComparatorFactory.createComparator(sortMode);
+        LogUtil.info("Inventory", "使用排序模式: " + sortMode.getDisplayName());
         
         // 使用选择排序算法：找到整个范围内最应该靠前的物品
         for (int i = 0; i < targetSlots.size(); i++) {
@@ -1104,7 +839,7 @@ public class InventorySortServiceImpl implements InventorySortService {
                     ItemStack stackJ = slotJ.getStack();
                     
                     if (!stackJ.isEmpty()) {
-                        if (bestEmptyStack == null || sortStrategy.compare(stackJ, bestEmptyStack) < 0) {
+                        if (bestEmptyStack == null || comparator.compare(stackJ, bestEmptyStack) < 0) {
                             bestEmptyStack = stackJ;
                             bestEmptyIndex = j;
                         }
@@ -1125,7 +860,7 @@ public class InventorySortServiceImpl implements InventorySortService {
                     Slot slotJ = targetSlots.get(j);
                     ItemStack stackJ = slotJ.getStack();
                     
-                    if (!stackJ.isEmpty() && sortStrategy.compare(stackJ, bestStack) < 0) {
+                    if (!stackJ.isEmpty() && comparator.compare(stackJ, bestStack) < 0) {
                         bestStack = stackJ;
                         bestIndex = j;
                     }

@@ -21,13 +21,15 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
     @Override
     public void smartTransferItems() {
         try {
-            LogUtil.info("Transfer", "开始智能转移物品");
+            LogUtil.info("Transfer", "=== 开始智能转移物品 ===");
             
             MinecraftClient client = MinecraftClient.getInstance();
             if (client == null || client.player == null) {
                 LogUtil.warn("Transfer", "客户端或玩家不存在");
                 return;
             }
+            
+            LogUtil.info("Transfer", "当前界面: " + (client.currentScreen != null ? client.currentScreen.getClass().getSimpleName() : "null"));
             
             // 检查是否在容器界面
             if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
@@ -39,23 +41,33 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
             net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
                 (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
             
-            // 获取容器
-            Inventory container = getContainerInventory(handledScreen);
-            if (container == null) {
-                LogUtil.warn("Transfer", "无法获取容器");
+            LogUtil.info("Transfer", "容器界面类型: " + handledScreen.getClass().getSimpleName());
+            
+            // 获取鼠标下的槽位
+            Slot slot = getSlotAtMouse(handledScreen);
+            if (slot == null) {
+                LogUtil.warn("Transfer", "无法获取鼠标下的槽位");
                 return;
             }
             
-            // 根据鼠标位置决定转移方向
-            if (isMouseOverPlayerInventory(handledScreen)) {
-                // 鼠标在背包区域，执行存入操作
+            LogUtil.info("Transfer", "获取到槽位: ID=" + slot.id + ", Index=" + slot.getIndex() + 
+                ", Inventory=" + slot.inventory.getClass().getSimpleName());
+            
+            // 判断鼠标在哪个区域
+            boolean isPlayerInventory = slot.inventory == client.player.getInventory();
+            LogUtil.info("Transfer", "鼠标位置检测: 槽位ID=" + slot.id + ", 是否玩家背包=" + isPlayerInventory);
+            
+            if (isPlayerInventory) {
+                // 鼠标在背包区域，执行存入操作（背包 -> 容器）
                 LogUtil.info("Transfer", "鼠标在背包区域，执行存入操作");
-                depositToContainer(container);
+                depositAllFromPlayerInventory();
             } else {
-                // 鼠标在容器区域，执行取出操作
+                // 鼠标在容器区域，执行取出操作（容器 -> 背包）
                 LogUtil.info("Transfer", "鼠标在容器区域，执行取出操作");
-                withdrawFromContainer(container);
+                withdrawAllFromContainer(slot.inventory);
             }
+            
+            LogUtil.info("Transfer", "=== 智能转移完成 ===");
             
         } catch (Exception e) {
             LogUtil.error("Transfer", "智能转移失败", e);
@@ -64,143 +76,142 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
     
     @Override
     public void depositToContainer(Inventory container) {
+        depositAllFromPlayerInventory();
+    }
+    
+    @Override
+    public void withdrawFromContainer(Inventory container) {
+        withdrawAllFromContainer(container);
+    }
+    
+    /**
+     * 获取鼠标下的槽位
+     * 使用与背包排序相同的逻辑
+     */
+    private Slot getSlotAtMouse(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
         try {
-            LogUtil.info("Transfer", "开始存入容器");
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client == null) {
+                return null;
+            }
             
-            ClientPlayerEntity player = MinecraftClient.getInstance().player;
-            if (player == null) {
-                LogUtil.warn("Transfer", "玩家不存在");
+            // 获取缩放后的鼠标位置
+            double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
+            double mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
+            
+            // 使用与背包排序相同的槽位检测逻辑
+            return getSlotAtPosition(handledScreen, mouseX, mouseY);
+        } catch (Exception e) {
+            LogUtil.warn("Transfer", "获取鼠标槽位失败", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 获取指定位置的槽位
+     * 复制自 InventorySortServiceImpl 的 getSlotAtPosition 方法
+     */
+    private net.minecraft.screen.slot.Slot getSlotAtPosition(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen, double mouseX, double mouseY) {
+        try {
+            // 尝试通过反射获取槽位
+            Class<?> currentClass = handledScreen.getClass();
+            while (currentClass != null) {
+                String[] possibleMethodNames = {"getSlotAt", "method_5452", "method_2385", "method_1542", "method_64240", "method_2383", "method_64241", "method_2381", "method_2378"};
+                for (String methodName : possibleMethodNames) {
+                    try {
+                        java.lang.reflect.Method getSlotAtMethod = currentClass.getDeclaredMethod(methodName, double.class, double.class);
+                        getSlotAtMethod.setAccessible(true);
+                        net.minecraft.screen.slot.Slot slot = (net.minecraft.screen.slot.Slot) getSlotAtMethod.invoke(handledScreen, mouseX, mouseY);
+                        if (slot != null) {
+                            LogUtil.info("Transfer", "成功调用 " + methodName + "，找到槽位: " + slot.id);
+                            return slot;
+                        }
+                    } catch (Exception e) {
+                        // 继续尝试下一个方法
+                    }
+                }
+                if (currentClass != null) {
+                    currentClass = currentClass.getSuperclass();
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.warn("Transfer", "获取槽位失败: " + e.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * 将背包中的所有物品存入容器
+     */
+    private void depositAllFromPlayerInventory() {
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            ClientPlayerEntity player = client.player;
+            if (client == null || player == null || client.interactionManager == null) {
+                LogUtil.warn("Transfer", "客户端或交互管理器不可用");
                 return;
             }
             
-            // 获取背包中的物品
-            List<ItemStack> playerItems = new ArrayList<>();
-            for (int i = 9; i < 36; i++) {
-                ItemStack stack = player.getInventory().getStack(i);
-                if (!stack.isEmpty()) {
-                    playerItems.add(stack);
+            ScreenHandler handler = player.currentScreenHandler;
+            int syncId = handler.syncId;
+            
+            LogUtil.info("Transfer", "=== 开始将背包物品存入容器 ===");
+            LogUtil.info("Transfer", "ScreenHandler类型: " + handler.getClass().getSimpleName());
+            LogUtil.info("Transfer", "同步ID: " + syncId);
+            
+            int processedSlots = 0;
+            
+            // 遍历背包槽位（9-35），对每个非空槽位执行QUICK_MOVE
+            for (Slot slot : handler.slots) {
+                if (slot.inventory == player.getInventory() && 
+                    slot.getIndex() >= 9 && slot.getIndex() < 36 &&
+                    !slot.getStack().isEmpty()) {
+                    
+                    LogUtil.info("Transfer", "处理背包槽位 " + slot.getIndex() + " (ID: " + slot.id + "): " + slot.getStack().getName().getString());
+                    
+                    // 执行QUICK_MOVE（从背包到容器）
+                    client.interactionManager.clickSlot(syncId, slot.id, 0, SlotActionType.QUICK_MOVE, player);
+                    processedSlots++;
                 }
             }
             
-            LogUtil.info("Transfer", "背包中有 " + playerItems.size() + " 个物品需要转移");
-            
-            // 尝试将物品存入容器
-            for (ItemStack item : playerItems) {
-                if (canDepositToContainer(container, item)) {
-                    // 执行转移
-                    transferItemToContainer(player, container, item);
-                }
-            }
-            
-            LogUtil.info("Transfer", "存入容器完成");
+            LogUtil.info("Transfer", "背包物品存入完成，处理了 " + processedSlots + " 个槽位");
             
         } catch (Exception e) {
             LogUtil.error("Transfer", "存入容器失败", e);
         }
     }
     
-    @Override
-    public void withdrawFromContainer(Inventory container) {
+    /**
+     * 将容器中的所有物品取出到背包
+     */
+    private void withdrawAllFromContainer(Inventory container) {
         try {
-            LogUtil.info("Transfer", "开始从容器取出");
-            
-            ClientPlayerEntity player = MinecraftClient.getInstance().player;
-            if (player == null) {
-                LogUtil.warn("Transfer", "玩家不存在");
+            MinecraftClient client = MinecraftClient.getInstance();
+            ClientPlayerEntity player = client.player;
+            if (client == null || player == null || client.interactionManager == null) {
+                LogUtil.warn("Transfer", "客户端或交互管理器不可用");
                 return;
             }
             
-            // 获取容器中的物品
-            List<ItemStack> containerItems = new ArrayList<>();
-            for (int i = 0; i < container.size(); i++) {
-                ItemStack stack = container.getStack(i);
-                if (!stack.isEmpty()) {
-                    containerItems.add(stack);
+            ScreenHandler handler = player.currentScreenHandler;
+            int syncId = handler.syncId;
+            
+            LogUtil.info("Transfer", "开始将容器物品取出到背包");
+            
+            // 遍历容器槽位，对每个非空槽位执行QUICK_MOVE
+            for (Slot slot : handler.slots) {
+                if (slot.inventory == container && !slot.getStack().isEmpty()) {
+                    // 执行QUICK_MOVE（从容器到背包）
+                    client.interactionManager.clickSlot(syncId, slot.id, 0, SlotActionType.QUICK_MOVE, player);
+                    LogUtil.info("Transfer", "QUICK_MOVE 容器槽位 " + slot.getIndex() + ": " + slot.getStack().getName().getString());
                 }
             }
             
-            LogUtil.info("Transfer", "容器中有 " + containerItems.size() + " 个物品可以取出");
-            
-            // 尝试将物品取出到背包
-            for (ItemStack item : containerItems) {
-                if (canWithdrawFromContainer(player, item)) {
-                    // 执行转移
-                    transferItemFromContainer(player, container, item);
-                }
-            }
-            
-            LogUtil.info("Transfer", "从容器取出完成");
+            LogUtil.info("Transfer", "容器物品取出完成");
             
         } catch (Exception e) {
             LogUtil.error("Transfer", "从容器取出失败", e);
         }
-    }
-    
-    /**
-     * 检查鼠标是否在背包区域
-     */
-    private boolean isMouseOverPlayerInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-        // 这里需要根据具体的界面类型来判断
-        // 暂时返回false，后续可以根据实际界面布局来实现
-        return false;
-    }
-    
-    /**
-     * 获取容器库存
-     */
-    private Inventory getContainerInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-        ScreenHandler handler = handledScreen.getScreenHandler();
-        for (Slot slot : handler.slots) {
-            if (slot.inventory != MinecraftClient.getInstance().player.getInventory()) {
-                return slot.inventory;
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * 检查是否可以存入容器
-     */
-    private boolean canDepositToContainer(Inventory container, ItemStack item) {
-        // 检查容器是否有空间
-        for (int i = 0; i < container.size(); i++) {
-            ItemStack existing = container.getStack(i);
-            if (existing.isEmpty() || (existing.isOf(item.getItem()) && existing.getCount() < existing.getMaxCount())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * 检查是否可以从容器取出
-     */
-    private boolean canWithdrawFromContainer(ClientPlayerEntity player, ItemStack item) {
-        // 检查背包是否有空间
-        for (int i = 9; i < 36; i++) {
-            ItemStack existing = player.getInventory().getStack(i);
-            if (existing.isEmpty() || (existing.isOf(item.getItem()) && existing.getCount() < existing.getMaxCount())) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * 将物品转移到容器
-     */
-    private void transferItemToContainer(ClientPlayerEntity player, Inventory container, ItemStack item) {
-        // 这里需要实现具体的转移逻辑
-        // 暂时记录日志
-        LogUtil.info("Transfer", "转移物品到容器: " + item.getName().getString());
-    }
-    
-    /**
-     * 从容器取出物品
-     */
-    private void transferItemFromContainer(ClientPlayerEntity player, Inventory container, ItemStack item) {
-        // 这里需要实现具体的转移逻辑
-        // 暂时记录日志
-        LogUtil.info("Transfer", "从容器取出物品: " + item.getName().getString());
     }
 }

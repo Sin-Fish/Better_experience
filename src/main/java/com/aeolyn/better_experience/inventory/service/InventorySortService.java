@@ -76,8 +76,5 @@ public interface InventorySortService {
      */
     void simpleSelectionSort(InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator);
     
-    /**
-     * 测试潜影盒支持
-     */
-    void testShulkerBoxSupport();
+
 }

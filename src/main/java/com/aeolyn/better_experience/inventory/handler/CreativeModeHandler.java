@@ -4,13 +4,16 @@ import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
+import com.aeolyn.better_experience.inventory.core.SortComparatorFactory;
 import com.aeolyn.better_experience.inventory.strategy.SortStrategy;
 import com.aeolyn.better_experience.inventory.strategy.SortStrategyFactory;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -21,10 +24,15 @@ public class CreativeModeHandler implements GameModeHandler {
     
     @Override
     public void performSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
+        performSort(player, sortMode, mergeFirst, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    @Override
+    public void performSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
         Inventory inventory = player.getInventory();
         
         // 收集当前主背包状态（9-35槽位）
-        List<net.minecraft.item.ItemStack> currentItems = new ArrayList<>();
+        List<ItemStack> currentItems = new ArrayList<>();
         for (int i = 9; i < 36; i++) {
             currentItems.add(inventory.getStack(i).copy());
         }
@@ -39,15 +47,20 @@ public class CreativeModeHandler implements GameModeHandler {
 
         if (mergeFirst) {
             // 合并模式：先合并相同物品，再排序
-            performMergeSort(player, currentItems, sortMode);
+            performMergeSort(player, currentItems, sortMode, comparator);
         } else {
             // 普通模式：直接排序
-            performSimpleSort(player, currentItems, sortMode);
+            performSimpleSort(player, currentItems, sortMode, comparator);
         }
     }
     
     @Override
-    public void performMergeSort(ClientPlayerEntity player, List<net.minecraft.item.ItemStack> currentItems, InventorySortConfig.SortMode sortMode) {
+    public void performMergeSort(ClientPlayerEntity player, List<ItemStack> currentItems, InventorySortConfig.SortMode sortMode) {
+        performMergeSort(player, currentItems, sortMode, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    @Override
+    public void performMergeSort(ClientPlayerEntity player, List<ItemStack> currentItems, InventorySortConfig.SortMode sortMode, Comparator<ItemStack> comparator) {
         LogUtil.info("Inventory", "开始执行创造模式合并排序");
         
         ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
@@ -57,45 +70,48 @@ public class CreativeModeHandler implements GameModeHandler {
         mergeSameItems(player, strategy, mainSlots);
         
         // 第二步：重新收集物品状态
-        List<net.minecraft.item.ItemStack> mergedItems = new ArrayList<>();
+        List<ItemStack> mergedItems = new ArrayList<>();
         for (int i = 9; i < 36; i++) {
             mergedItems.add(player.getInventory().getStack(i).copy());
         }
         
         // 第三步：对合并后的物品进行排序
-        performSimpleSort(player, mergedItems, sortMode);
+        performSimpleSort(player, mergedItems, sortMode, comparator);
         
         LogUtil.info("Inventory", "创造模式合并排序完成");
     }
     
     @Override
-    public void performSimpleSort(ClientPlayerEntity player, List<net.minecraft.item.ItemStack> currentItems, InventorySortConfig.SortMode sortMode) {
+    public void performSimpleSort(ClientPlayerEntity player, List<ItemStack> currentItems, InventorySortConfig.SortMode sortMode) {
+        performSimpleSort(player, currentItems, sortMode, SortComparatorFactory.createComparator(sortMode));
+    }
+    
+    @Override
+    public void performSimpleSort(ClientPlayerEntity player, List<ItemStack> currentItems, InventorySortConfig.SortMode sortMode, Comparator<ItemStack> comparator) {
         LogUtil.info("Inventory", "开始执行创造模式简单排序");
         
         ItemMoveStrategy strategy = ItemMoveStrategyFactory.createStrategy(player);
         List<Slot> mainSlots = getMainInventorySlots(player);
         
-        // 获取排序比较器
-        SortStrategy sortStrategy = SortStrategyFactory.getStrategy(sortMode);
-        LogUtil.info("Inventory", "使用排序策略: " + sortStrategy.getName());
+        LogUtil.info("Inventory", "使用自定义比较器进行排序");
         
         // 使用选择排序算法：找到整个背包中最应该靠前的物品
         for (int i = 0; i < mainSlots.size(); i++) {
             Slot slotI = mainSlots.get(i);
-            net.minecraft.item.ItemStack stackI = slotI.getStack();
+            ItemStack stackI = slotI.getStack();
             
             // 如果当前位置为空，找到后面最应该靠前的非空物品
             if (stackI.isEmpty()) {
                 int bestEmptyIndex = -1;
-                net.minecraft.item.ItemStack bestEmptyStack = null;
+                ItemStack bestEmptyStack = null;
                 
                 // 找到后面最应该靠前的物品
                 for (int j = i + 1; j < mainSlots.size(); j++) {
                     Slot slotJ = mainSlots.get(j);
-                    net.minecraft.item.ItemStack stackJ = slotJ.getStack();
+                    ItemStack stackJ = slotJ.getStack();
                     
                     if (!stackJ.isEmpty()) {
-                        if (bestEmptyStack == null || sortStrategy.compare(stackJ, bestEmptyStack) < 0) {
+                        if (bestEmptyStack == null || comparator.compare(stackJ, bestEmptyStack) < 0) {
                             bestEmptyIndex = j;
                             bestEmptyStack = stackJ;
                         }
@@ -113,17 +129,17 @@ public class CreativeModeHandler implements GameModeHandler {
             
             // 当前位置有物品，找到整个背包中最应该靠前的物品
             int bestIndex = i;
-            net.minecraft.item.ItemStack bestStack = stackI;
+            ItemStack bestStack = stackI;
             
             // 从当前位置开始，找到最应该靠前的物品
             for (int j = i + 1; j < mainSlots.size(); j++) {
                 Slot slotJ = mainSlots.get(j);
-                net.minecraft.item.ItemStack stackJ = slotJ.getStack();
+                ItemStack stackJ = slotJ.getStack();
                 
                 if (stackJ.isEmpty()) continue;
                 
-                // 使用策略比较物品，找到最应该靠前的
-                if (sortStrategy.compare(stackJ, bestStack) < 0) {
+                // 使用比较器比较物品，找到最应该靠前的
+                if (comparator.compare(stackJ, bestStack) < 0) {
                     bestIndex = j;
                     bestStack = stackJ;
                 }
@@ -150,13 +166,13 @@ public class CreativeModeHandler implements GameModeHandler {
         // 使用简单的双指针方法合并相同物品
         for (int i = 0; i < mainSlots.size(); i++) {
             Slot slotI = mainSlots.get(i);
-            net.minecraft.item.ItemStack stackI = slotI.getStack();
+            ItemStack stackI = slotI.getStack();
             
             if (stackI.isEmpty()) continue;
             
             for (int j = i + 1; j < mainSlots.size(); j++) {
                 Slot slotJ = mainSlots.get(j);
-                net.minecraft.item.ItemStack stackJ = slotJ.getStack();
+                ItemStack stackJ = slotJ.getStack();
                 
                 if (stackJ.isEmpty()) continue;
                 
@@ -188,3 +204,4 @@ public class CreativeModeHandler implements GameModeHandler {
         return mainSlots;
     }
 }
+

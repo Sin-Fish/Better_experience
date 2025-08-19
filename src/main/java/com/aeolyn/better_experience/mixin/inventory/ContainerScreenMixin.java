@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ContainerScreenMixin {
     
     // 处理容器界面的 R 键和 Shift+R 键按下
-    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true, require = 0)
+    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
 
