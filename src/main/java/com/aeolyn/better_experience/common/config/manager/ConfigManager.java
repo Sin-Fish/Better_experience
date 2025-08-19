@@ -6,6 +6,7 @@ import com.aeolyn.better_experience.offhand.config.OffHandRestrictionConfig;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.common.config.cache.CacheStats;
 import com.aeolyn.better_experience.common.util.LogUtil;
+import com.aeolyn.better_experience.common.config.ModConfig;
 
 import java.util.Set;
 
@@ -364,5 +365,84 @@ public class ConfigManager {
      */
     public void updateInventorySortConfig(InventorySortConfig config) {
         impl.updateInventorySortConfig(config);
+    }
+    
+    // ==================== 通用配置管理 ====================
+    
+    /**
+     * 获取通用配置
+     */
+    public ModConfig getModConfig() {
+        return impl.getModConfig();
+    }
+    
+    /**
+     * 更新通用配置
+     */
+    public void updateModConfig(ModConfig config) {
+        impl.updateModConfig(config);
+    }
+    
+    /**
+     * 检查模块是否启用
+     */
+    public boolean isModuleEnabled(String moduleName) {
+        return impl.isModuleEnabled(moduleName);
+    }
+    
+    /**
+     * 启用/禁用模块
+     */
+    public void setModuleEnabled(String moduleName, boolean enabled) {
+        impl.setModuleEnabled(moduleName, enabled);
+    }
+    
+    /**
+     * 检查调试模式是否启用
+     */
+    public boolean isDebugModeEnabled() {
+        return impl.isDebugModeEnabled();
+    }
+    
+    /**
+     * 设置调试模式
+     */
+    public void setDebugMode(boolean enabled) {
+        impl.setDebugMode(enabled);
+    }
+    
+    /**
+     * 获取自动保存间隔
+     */
+    public int getAutoSaveInterval() {
+        return impl.getAutoSaveInterval();
+    }
+    
+    /**
+     * 设置自动保存间隔
+     */
+    public void setAutoSaveInterval(int interval) {
+        impl.setAutoSaveInterval(interval);
+    }
+    
+    /**
+     * 检查3D渲染模块是否启用
+     */
+    public boolean isRender3dEnabled() {
+        return impl.isRender3dEnabled();
+    }
+    
+    /**
+     * 检查副手限制模块是否启用
+     */
+    public boolean isOffhandRestrictionEnabled() {
+        return impl.isOffhandRestrictionEnabled();
+    }
+    
+    /**
+     * 检查背包排序模块是否启用
+     */
+    public boolean isInventorySortEnabled() {
+        return impl.isInventorySortEnabled();
     }
 }

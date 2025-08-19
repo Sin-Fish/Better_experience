@@ -53,6 +53,12 @@ public class ItemRenderer3D {
                            int light, int overlay) {
         
         try {
+            // 首先检查3D渲染模块是否启用
+            if (!configManager.isRender3dEnabled()) {
+                LogUtil.debug("Render3D", "3D渲染模块已禁用，跳过渲染");
+                return;
+            }
+            
             LogUtil.debug("Render3D", "开始3D渲染物品: {}", Registries.ITEM.getId(item));
             
             // 检查物品是否启用3D渲染

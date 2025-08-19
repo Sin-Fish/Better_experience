@@ -950,7 +950,7 @@ public class InventorySortController {
 
 
 
-
+    
     /**
      * 获取主背包槽位列表
      */
@@ -1794,9 +1794,19 @@ public class InventorySortController {
     private void performUniversalSort(ClientPlayerEntity player, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode, boolean mergeFirst) {
         LogUtil.info("Inventory", "通用排序：使用PICKUP操作，排序范围: " + targetSlots.size() + " 个槽位");
         
-        // 容器/通用排序一律使用生存策略（PICKUP），即使在创造模式也通过点击同步容器
-        ItemMoveStrategy strategy = ItemMoveStrategyFactory.createSurvivalStrategy();
-        LogUtil.info("Inventory", "通用排序：已强制使用生存模式PICKUP策略");
+        // 判断是否为玩家背包排序
+        boolean isPlayerInventory = targetSlots.size() > 0 && targetSlots.get(0).inventory == player.getInventory();
+        
+        ItemMoveStrategy strategy;
+        if (isPlayerInventory) {
+            // 玩家背包排序：根据游戏模式选择策略
+            strategy = ItemMoveStrategyFactory.createStrategy(player);
+            LogUtil.info("Inventory", "玩家背包排序：使用" + (player.getAbilities().creativeMode ? "创造" : "生存") + "模式策略");
+        } else {
+            // 容器排序：强制使用生存策略（PICKUP），确保服务端同步
+            strategy = ItemMoveStrategyFactory.createSurvivalStrategy();
+            LogUtil.info("Inventory", "容器排序：已强制使用生存模式PICKUP策略");
+        }
         
         if (mergeFirst) {
             // 合并：使用PICKUP的堆叠特性

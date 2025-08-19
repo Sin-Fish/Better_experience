@@ -68,6 +68,15 @@ public class ModConfigScreen extends BaseConfigScreen {
         int buttonHeight = 20;
         int spacing = 30;
         
+        // 通用配置按钮
+        this.addDrawableChild(ButtonWidget.builder(
+            Text.literal("通用配置"),
+            button -> {
+                this.client.setScreen(new GeneralConfigScreen(this, configManager));
+                LogUtil.logGuiAction("open_general_config", getScreenName(), "打开通用配置界面");
+            }
+        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
+        
         // 3D渲染配置按钮
         this.addDrawableChild(ButtonWidget.builder(
             Text.literal("3D渲染配置"),
@@ -75,7 +84,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new Render3DConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_3d_config", getScreenName(), "打开3D渲染配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
         
         // 副手限制配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -84,7 +93,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_offhand_config", getScreenName(), "打开副手限制配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
         
         // 背包整理配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -93,7 +102,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new InventorySortConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_inventory_config", getScreenName(), "打开背包整理配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight).build());
         
         // 导入导出配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -102,7 +111,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new ConfigImportExportScreen(this, configManager));
                 LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight).build());
+        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 4, buttonWidth, buttonHeight).build());
     }
     
     @Override

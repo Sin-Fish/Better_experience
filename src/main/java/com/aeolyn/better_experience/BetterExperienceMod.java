@@ -37,21 +37,36 @@ public class BetterExperienceMod implements ModInitializer {
         // 初始化调试配置
         DebugConfig.getInstance();
         
-        // 初始化各个模块
+        // 根据通用配置初始化各个模块
         try {
-            // 初始化3D渲染模块
-            com.aeolyn.better_experience.render3d.core.ItemRenderer3D.initialize();
+            ConfigManager configManager = ConfigManager.getInstance();
             
-            // 初始化副手限制模块
-            com.aeolyn.better_experience.offhand.core.OffHandRestrictionController.initialize();
+            // 初始化3D渲染模块（如果启用）
+            if (configManager.isRender3dEnabled()) {
+                com.aeolyn.better_experience.render3d.core.ItemRenderer3D.initialize();
+                LogUtil.info("General", "3D渲染模块已启用并初始化完成");
+            } else {
+                LogUtil.info("General", "3D渲染模块已禁用，跳过初始化");
+            }
             
-            // 初始化背包整理模块
-            com.aeolyn.better_experience.inventory.core.InventorySortController.initialize();
+            // 初始化副手限制模块（如果启用）
+            if (configManager.isOffhandRestrictionEnabled()) {
+                com.aeolyn.better_experience.offhand.core.OffHandRestrictionController.initialize();
+                LogUtil.info("General", "副手限制模块已启用并初始化完成");
+            } else {
+                LogUtil.info("General", "副手限制模块已禁用，跳过初始化");
+            }
             
-            // 初始化智能转移模块
-            com.aeolyn.better_experience.inventory.core.InventoryTransferController.initialize();
+            // 初始化背包整理模块（如果启用）
+            if (configManager.isInventorySortEnabled()) {
+                com.aeolyn.better_experience.inventory.core.InventorySortController.initialize();
+                com.aeolyn.better_experience.inventory.core.InventoryTransferController.initialize();
+                LogUtil.info("General", "背包整理和智能转移模块已启用并初始化完成");
+            } else {
+                LogUtil.info("General", "背包整理模块已禁用，跳过初始化");
+            }
             
-            LogUtil.info("General", "Better Experience mod 初始化完成! 通用3D渲染系统、副手限制系统、背包整理系统和智能转移系统已启用!");
+            LogUtil.info("General", "Better Experience mod 初始化完成! 根据通用配置启用了相应模块!");
         } catch (Exception e) {
             LOGGER.error("模块初始化失败", e);
         }
@@ -68,8 +83,18 @@ public class BetterExperienceMod implements ModInitializer {
                     var playerList = server.getPlayerManager().getPlayerList();
                     if (playerList != null && !playerList.isEmpty()) {
                         String versionInfo = VersionCompatibilityUtil.getCompatibilityInfo();
+                        ConfigManager configManager = ConfigManager.getInstance();
+                        
+                        StringBuilder enabledModules = new StringBuilder();
+                        if (configManager.isRender3dEnabled()) enabledModules.append("3D渲染 ");
+                        if (configManager.isOffhandRestrictionEnabled()) enabledModules.append("副手限制 ");
+                        if (configManager.isInventorySortEnabled()) enabledModules.append("背包整理 ");
+                        
+                        String moduleInfo = enabledModules.length() > 0 ? 
+                            "已启用模块: " + enabledModules.toString().trim() : "所有模块已禁用";
+                        
                         playerList.get(0).sendMessage(
-                            Text.literal("[Better Experience] 通用3D渲染和副手限制mod已成功加载! " + versionInfo), false
+                            Text.literal("[Better Experience] " + moduleInfo + " " + versionInfo), false
                         );
                     }
                 } catch (InterruptedException e) {

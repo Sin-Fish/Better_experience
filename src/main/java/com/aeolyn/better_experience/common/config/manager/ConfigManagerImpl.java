@@ -20,6 +20,9 @@ import com.aeolyn.better_experience.common.config.validator.ValidationResult;
 import com.aeolyn.better_experience.common.config.validator.impl.ItemConfigValidator;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.common.util.ConfigValidationUtil;
+import com.aeolyn.better_experience.common.config.ModConfig;
+import com.aeolyn.better_experience.common.config.loader.ModConfigLoader;
+import com.aeolyn.better_experience.common.config.saver.ModConfigSaver;
 
 import java.util.Set;
 
@@ -40,6 +43,10 @@ public class ConfigManagerImpl {
     private final ItemConfigValidator validator;
     private final ConfigFactory factory;
     private final ConfigCache cache;
+    private final ModConfigLoader modConfigLoader;
+    private final ModConfigSaver modConfigSaver;
+    
+    private ModConfig modConfig;
     
     private volatile boolean initialized = false;
     
@@ -53,13 +60,15 @@ public class ConfigManagerImpl {
         this.inventorySaver = new InventoryConfigSaver();
         this.validator = new ItemConfigValidator();
         this.cache = new MemoryConfigCache();
+        this.modConfigLoader = new ModConfigLoader();
+        this.modConfigSaver = new ModConfigSaver();
     }
     
     public ConfigManagerImpl(Render3DConfigLoader render3DLoader, Render3DConfigSaver render3DSaver,
                            OffHandConfigLoader offHandLoader, OffHandConfigSaver offHandSaver,
                            InventoryConfigLoader inventoryLoader, InventoryConfigSaver inventorySaver,
                            ItemConfigValidator validator, ConfigFactory factory,
-                           ConfigCache cache) {
+                           ConfigCache cache, ModConfigLoader modConfigLoader, ModConfigSaver modConfigSaver) {
         this.render3DLoader = render3DLoader;
         this.render3DSaver = render3DSaver;
         this.offHandLoader = offHandLoader;
@@ -69,6 +78,8 @@ public class ConfigManagerImpl {
         this.validator = validator;
         this.factory = factory;
         this.cache = cache;
+        this.modConfigLoader = modConfigLoader;
+        this.modConfigSaver = modConfigSaver;
     }
     
     /**
@@ -83,18 +94,27 @@ public class ConfigManagerImpl {
         try {
             LogUtil.logInitialization(LogUtil.MODULE_CONFIG, "配置管理器");
             
-            // 加载主配置
-            ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
+            // 首先加载通用配置
+            modConfig = modConfigLoader.loadModConfig();
+            LogUtil.info(LogUtil.MODULE_CONFIG, "通用配置加载完成");
             
-            // 验证主配置
-            ValidationResult mainValidation = ConfigValidationUtil.validate(itemsConfig);
-            ConfigValidationUtil.logValidationResult(LogUtil.MODULE_CONFIG, mainValidation);
-            if (!mainValidation.isValid()) {
-                throw new ConfigLoadException("Main config validation failed: " + ConfigValidationUtil.formatValidationErrors(mainValidation));
+            // 根据通用配置决定是否加载各个模块的配置
+            if (modConfig.isRender3dEnabled()) {
+                // 加载3D渲染配置
+                ItemsConfig itemsConfig = render3DLoader.loadItemsConfig();
+                
+                // 验证主配置
+                ValidationResult mainValidation = ConfigValidationUtil.validate(itemsConfig);
+                ConfigValidationUtil.logValidationResult(LogUtil.MODULE_CONFIG, mainValidation);
+                if (!mainValidation.isValid()) {
+                    throw new ConfigLoadException("Main config validation failed: " + ConfigValidationUtil.formatValidationErrors(mainValidation));
+                }
+                
+                // 初始化缓存
+                initializeCache(itemsConfig);
+            } else {
+                LogUtil.info(LogUtil.MODULE_CONFIG, "3D渲染模块已禁用，跳过相关配置加载");
             }
-            
-            // 初始化缓存
-            initializeCache(itemsConfig);
             
             initialized = true;
             LogUtil.logCompletion(LogUtil.MODULE_CONFIG, "配置管理器");
@@ -494,5 +514,121 @@ public class ConfigManagerImpl {
             LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新背包排序配置", e);
             throw new RuntimeException("Failed to update inventory sort config", e);
         }
+    }
+    
+    // ==================== 通用配置管理 ====================
+    
+    /**
+     * 获取通用配置
+     */
+    public ModConfig getModConfig() {
+        ensureInitialized();
+        return modConfig;
+    }
+    
+    /**
+     * 更新通用配置
+     */
+    public void updateModConfig(ModConfig config) {
+        ensureInitialized();
+        try {
+            this.modConfig = config;
+            modConfigSaver.saveModConfig(config);
+            LogUtil.logSuccess(LogUtil.MODULE_CONFIG, "通用配置更新");
+        } catch (Exception e) {
+            LogUtil.logFailure(LogUtil.MODULE_CONFIG, "更新通用配置", e);
+            throw new RuntimeException("Failed to update mod config", e);
+        }
+    }
+    
+    /**
+     * 检查模块是否启用
+     */
+    public boolean isModuleEnabled(String moduleName) {
+        ensureInitialized();
+        switch (moduleName.toLowerCase()) {
+            case "render3d":
+                return modConfig.isRender3dEnabled();
+            case "offhand":
+                return modConfig.isOffhandRestrictionEnabled();
+            case "inventory":
+                return modConfig.isInventorySortEnabled();
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * 启用/禁用模块
+     */
+    public void setModuleEnabled(String moduleName, boolean enabled) {
+        ensureInitialized();
+        switch (moduleName.toLowerCase()) {
+            case "render3d":
+                modConfig.setRender3dEnabled(enabled);
+                break;
+            case "offhand":
+                modConfig.setOffhandRestrictionEnabled(enabled);
+                break;
+            case "inventory":
+                modConfig.setInventorySortEnabled(enabled);
+                break;
+        }
+        updateModConfig(modConfig);
+    }
+    
+    /**
+     * 检查调试模式是否启用
+     */
+    public boolean isDebugModeEnabled() {
+        ensureInitialized();
+        return modConfig.isDebugMode();
+    }
+    
+    /**
+     * 设置调试模式
+     */
+    public void setDebugMode(boolean enabled) {
+        ensureInitialized();
+        modConfig.setDebugMode(enabled);
+        updateModConfig(modConfig);
+    }
+    
+    /**
+     * 获取自动保存间隔
+     */
+    public int getAutoSaveInterval() {
+        ensureInitialized();
+        return modConfig.getAutoSaveInterval();
+    }
+    
+    /**
+     * 设置自动保存间隔
+     */
+    public void setAutoSaveInterval(int interval) {
+        ensureInitialized();
+        modConfig.setAutoSaveInterval(interval);
+        updateModConfig(modConfig);
+    }
+    
+    /**
+     * 检查3D渲染模块是否启用
+     */
+    public boolean isRender3dEnabled() {
+        return isModuleEnabled("render3d");
+    }
+    
+    /**
+     * 检查副手限制模块是否启用
+     */
+    public boolean isOffhandRestrictionEnabled() {
+        return isModuleEnabled("offhand");
+    }
+    
+    /**
+     * 检查背包排序模块是否启用
+     */
+    public boolean isInventorySortEnabled() {
+        return isModuleEnabled("inventory");
     }
 }

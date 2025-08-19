@@ -1,0 +1,28 @@
+{
+  "render3d_enabled": true,
+  "offhand_restriction_enabled": false,
+  "inventory_sort_enabled": true,
+  "debug_mode": false,
+  "auto_save_interval": 300,
+  "config_version": "1.0.0",
+  "log_config": {
+    "enable_debug_logs": true,
+    "enable_render_logs": false,
+    "enable_config_logs": true,
+    "enable_gui_logs": false,
+    "enable_mixin_logs": false,
+    "enable_performance_logs": false
+  },
+  "performance_config": {
+    "enable_cache": true,
+    "cache_size": 1000,
+    "enable_async_loading": true,
+    "max_concurrent_operations": 4
+  },
+  "ui_config": {
+    "theme": "default",
+    "language": "zh_cn",
+    "show_tooltips": true,
+    "auto_close_delay": 3000
+  }
+}

@@ -53,6 +53,12 @@ public class OffHandRestrictionController {
     public boolean isBlockPlacementAllowed(Item item) {
         try {
             ConfigManager configManager = ConfigManager.getInstance();
+            
+            // 首先检查副手限制模块是否启用
+            if (!configManager.isOffhandRestrictionEnabled()) {
+                return true; // 模块已禁用，允许所有操作
+            }
+            
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
             if (config == null) {
@@ -86,6 +92,12 @@ public class OffHandRestrictionController {
     public boolean isItemUsageAllowed(Item item) {
         try {
             ConfigManager configManager = ConfigManager.getInstance();
+            
+            // 首先检查副手限制模块是否启用
+            if (!configManager.isOffhandRestrictionEnabled()) {
+                return true; // 模块已禁用，允许所有操作
+            }
+            
             OffHandRestrictionConfig config = configManager.getOffHandRestrictionConfig();
             
             if (config == null) {
