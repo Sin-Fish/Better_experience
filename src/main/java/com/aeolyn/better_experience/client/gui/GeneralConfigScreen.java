@@ -19,8 +19,7 @@ public class GeneralConfigScreen extends BaseConfigScreen {
     private ButtonWidget offhandToggleButton;
     private ButtonWidget inventoryToggleButton;
     private ButtonWidget debugToggleButton;
-    private ButtonWidget saveButton;
-    private TextFieldWidget autoSaveIntervalField;
+    
     
     private ModConfig modConfig;
     
@@ -43,10 +42,6 @@ public class GeneralConfigScreen extends BaseConfigScreen {
         // 渲染说明
         context.drawTextWithShadow(textRenderer, 
             Text.literal("在这里可以管理各个模块的开关和通用设置"), 10, 40, 0xAAAAAA);
-        
-        // 渲染自动保存间隔标签
-        context.drawTextWithShadow(textRenderer, 
-            Text.literal("自动保存间隔（秒）:"), 50, 200, 0xFFFFFF);
     }
     
     @Override
@@ -56,39 +51,18 @@ public class GeneralConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addStandardButtons() {
-        int centerX = getCenterX();
-        int buttonWidth = getButtonWidth();
-        int buttonHeight = getButtonHeight();
-        
-        // 返回按钮（保存并返回）
-        backButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.back"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "back");
-                saveConfig();
-                this.close();
-            }
-        ).dimensions(centerX - buttonWidth - 10, this.height - 30, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(backButton);
-        
-        // 保存按钮
-        saveButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.save"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "save");
-                saveConfig();
-            }
-        ).dimensions(centerX + 10, this.height - 30, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(saveButton);
+        super.addStandardButtons(); // 使用基类的并排按钮布局
     }
     
     @Override
     protected void addCustomButtons() {
-        int startX = 50;
+        int centerX = getCenterX();
         int startY = 80;
-        int buttonWidth = 200;
+        int buttonWidth = 240;
         int buttonHeight = 20;
-        int spacing = 30;
+        int spacing = 28;
+        
+        int listX = centerX - buttonWidth / 2;
         
         // 3D渲染模块开关
         render3dToggleButton = ButtonWidget.builder(
@@ -98,7 +72,7 @@ public class GeneralConfigScreen extends BaseConfigScreen {
                 updateToggleButtonText(render3dToggleButton, "3D渲染模块", modConfig.isRender3dEnabled());
                 LogUtil.logButtonClick(getScreenName(), "toggle_render3d");
             }
-        ).dimensions(startX, startY, buttonWidth, buttonHeight).build();
+        ).dimensions(listX, startY, buttonWidth, buttonHeight).build();
         this.addDrawableChild(render3dToggleButton);
         
         // 副手限制模块开关
@@ -109,7 +83,7 @@ public class GeneralConfigScreen extends BaseConfigScreen {
                 updateToggleButtonText(offhandToggleButton, "副手限制模块", modConfig.isOffhandRestrictionEnabled());
                 LogUtil.logButtonClick(getScreenName(), "toggle_offhand");
             }
-        ).dimensions(startX, startY + spacing, buttonWidth, buttonHeight).build();
+        ).dimensions(listX, startY + spacing, buttonWidth, buttonHeight).build();
         this.addDrawableChild(offhandToggleButton);
         
         // 背包排序模块开关
@@ -120,7 +94,7 @@ public class GeneralConfigScreen extends BaseConfigScreen {
                 updateToggleButtonText(inventoryToggleButton, "背包排序模块", modConfig.isInventorySortEnabled());
                 LogUtil.logButtonClick(getScreenName(), "toggle_inventory");
             }
-        ).dimensions(startX, startY + spacing * 2, buttonWidth, buttonHeight).build();
+        ).dimensions(listX, startY + spacing * 2, buttonWidth, buttonHeight).build();
         this.addDrawableChild(inventoryToggleButton);
         
         // 调试模式开关
@@ -131,41 +105,23 @@ public class GeneralConfigScreen extends BaseConfigScreen {
                 updateToggleButtonText(debugToggleButton, "调试模式", modConfig.isDebugMode());
                 LogUtil.logButtonClick(getScreenName(), "toggle_debug");
             }
-        ).dimensions(startX, startY + spacing * 3, buttonWidth, buttonHeight).build();
+        ).dimensions(listX, startY + spacing * 3, buttonWidth, buttonHeight).build();
         this.addDrawableChild(debugToggleButton);
-        
-        // 自动保存间隔输入框
-        autoSaveIntervalField = new TextFieldWidget(textRenderer, startX, startY + spacing * 4 + 5, 100, 20, 
-            Text.literal("自动保存间隔"));
-        autoSaveIntervalField.setText(String.valueOf(modConfig.getAutoSaveInterval()));
-        autoSaveIntervalField.setChangedListener(text -> {
-            try {
-                int interval = Integer.parseInt(text);
-                if (interval >= 0) {
-                    modConfig.setAutoSaveInterval(interval);
-                }
-            } catch (NumberFormatException e) {
-                // 忽略无效输入
-            }
-        });
-        this.addDrawableChild(autoSaveIntervalField);
-        
-        // 自动保存间隔标签 - 在renderCustomContent中渲染
     }
-    
     private void updateToggleButtonText(ButtonWidget button, String prefix, boolean enabled) {
         button.setMessage(Text.literal(prefix + ": " + (enabled ? "启用" : "禁用")));
     }
     
-    private void saveConfig() {
+    @Override
+    protected void saveConfig() {
         try {
             // 保存通用配置
             configManager.updateModConfig(modConfig);
             
             // 显示保存成功消息
-            if (client != null && client.player != null) {
-                client.player.sendMessage(Text.literal("[Better Experience] 通用配置保存成功！"), false);
-            }
+            // if (client != null && client.player != null) {
+            //     client.player.sendMessage(Text.literal("[Better Experience] 通用配置保存成功！"), false);
+            // }
             
             LogUtil.logSuccess(LogUtil.MODULE_GUI, "通用配置保存成功");
             

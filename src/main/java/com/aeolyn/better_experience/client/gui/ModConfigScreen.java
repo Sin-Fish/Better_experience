@@ -44,29 +44,18 @@ public class ModConfigScreen extends BaseConfigScreen {
     
     @Override
     protected void addStandardButtons() {
-        // 主界面只显示关闭按钮，不显示返回按钮
-        int centerX = getCenterX();
-        int buttonWidth = getButtonWidth();
-        int buttonHeight = getButtonHeight();
-        
-        // 关闭按钮
-        closeButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.close"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "close");
-                this.close();
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(closeButton);
+        super.addStandardButtons(); // 使用基类统一的并排返回/关闭
     }
     
     @Override
     protected void addCustomButtons() {
         int centerX = getCenterX();
         int startY = 100;
-        int buttonWidth = 200;
+        int buttonWidth = 240;
         int buttonHeight = 20;
-        int spacing = 30;
+        int spacing = 28;
+        
+        int listX = centerX - buttonWidth / 2;
         
         // 通用配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -75,7 +64,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new GeneralConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_general_config", getScreenName(), "打开通用配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight).build());
+        ).dimensions(listX, startY, buttonWidth, buttonHeight).build());
         
         // 3D渲染配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -84,7 +73,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new Render3DConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_3d_config", getScreenName(), "打开3D渲染配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight).build());
+        ).dimensions(listX, startY + spacing, buttonWidth, buttonHeight).build());
         
         // 副手限制配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -93,7 +82,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new OffHandRestrictionConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_offhand_config", getScreenName(), "打开副手限制配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight).build());
+        ).dimensions(listX, startY + spacing * 2, buttonWidth, buttonHeight).build());
         
         // 背包整理配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -102,7 +91,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new InventorySortConfigScreen(this, configManager));
                 LogUtil.logGuiAction("open_inventory_config", getScreenName(), "打开背包整理配置界面");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight).build());
+        ).dimensions(listX, startY + spacing * 3, buttonWidth, buttonHeight).build());
         
         // 导入导出配置按钮
         this.addDrawableChild(ButtonWidget.builder(
@@ -111,7 +100,7 @@ public class ModConfigScreen extends BaseConfigScreen {
                 this.client.setScreen(new ConfigImportExportScreen(this, configManager));
                 LogUtil.logGuiAction("open_config_export", getScreenName(), "打开配置导出对话框");
             }
-        ).dimensions(centerX - buttonWidth / 2, startY + spacing * 4, buttonWidth, buttonHeight).build());
+        ).dimensions(listX, startY + spacing * 4, buttonWidth, buttonHeight).build());
     }
     
     @Override

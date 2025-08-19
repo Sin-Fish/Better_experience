@@ -100,11 +100,11 @@ public class ConfigImportExportScreen extends Screen {
             button -> importConfigs()
         ).dimensions(centerX - fieldWidth/2, separatorY + spacing * 2, fieldWidth, fieldHeight).build();
         
-        // 返回按钮
+        // 返回按钮放在导入按钮下方，避免与其他控件重叠
         ButtonWidget backButton = ButtonWidget.builder(
             Text.literal("返回"),
             button -> this.close()
-        ).dimensions(centerX - fieldWidth/2, this.height - 40, fieldWidth, fieldHeight).build();
+        ).dimensions(centerX - fieldWidth/2, separatorY + spacing * 3, fieldWidth, fieldHeight).build();
         
         // 添加所有控件
         this.addDrawableChild(exportPathField);

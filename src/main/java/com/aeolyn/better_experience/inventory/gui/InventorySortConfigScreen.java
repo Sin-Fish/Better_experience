@@ -26,7 +26,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     private ButtonWidget smartTransferLogicButton;
     
     public InventorySortConfigScreen(Screen parentScreen, ConfigManager configManager) {
-        super(Text.literal("便捷背包配置"), parentScreen, configManager);
+        super(Text.literal("背包增强配置"), parentScreen, configManager);
     }
     
     // ==================== 抽象方法实现 ====================
@@ -52,7 +52,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         int startY = 50;
         
         // 渲染标题
-        context.drawCenteredTextWithShadow(this.textRenderer, "背包整理设置", centerX, startY, 0xFFFFFF);
+        context.drawCenteredTextWithShadow(this.textRenderer, "背包增强设置", centerX, startY, 0xFFFFFF);
         
         // 渲染说明
         context.drawTextWithShadow(this.textRenderer, "快捷键设置（留空表示不设置）:", centerX - 150, startY + 30, 0xCCCCCC);
@@ -65,7 +65,7 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
     protected void onAddClicked() {
         // 保存配置
         saveConfig();
-        LogUtil.info(LogUtil.MODULE_GUI, "保存背包整理配置");
+        LogUtil.info(LogUtil.MODULE_GUI, "保存背包增强配置");
     }
     
     // ==================== 自定义按钮 ====================
@@ -151,13 +151,14 @@ public class InventorySortConfigScreen extends BaseConfigScreen {
         smartTransferLogicButton.setMessage(Text.literal("智能转移: " + config.getSmartTransferLogic().getDisplayName()));
     }
     
-    private void saveConfig() {
+    @Override
+    protected void saveConfig() {
         // 保存配置到ConfigManager
         try {
             configManager.saveConfig(config);
-            LogUtil.info(LogUtil.MODULE_GUI, "保存背包整理配置成功");
+            LogUtil.logSuccess(LogUtil.MODULE_GUI, "背包整理配置保存成功");
         } catch (Exception e) {
-            LogUtil.error(LogUtil.MODULE_GUI, "保存背包整理配置失败: " + e.getMessage());
+            LogUtil.error(LogUtil.MODULE_GUI, "保存背包整理配置失败: {}", e.getMessage(), e);
         }
     }
     

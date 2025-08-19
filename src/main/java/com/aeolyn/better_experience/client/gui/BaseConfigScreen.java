@@ -95,29 +95,30 @@ public abstract class BaseConfigScreen extends Screen {
      */
     protected void addStandardButtons() {
         int centerX = getCenterX();
-        int buttonWidth = getButtonWidth();
+        int smallWidth = 100;
         int buttonHeight = getButtonHeight();
-        int spacing = getStandardSpacing();
-        
-        
-        // 返回按钮
+        int y = this.height - 26;
+
+        // 返回按钮（左侧）
         backButton = ButtonWidget.builder(
             Text.translatable("better_experience.config.back"),
             button -> {
                 LogUtil.logButtonClick(getScreenName(), "back");
+                saveConfig();
                 this.client.setScreen(parentScreen);
             }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 60, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX - smallWidth - 5, y, smallWidth, buttonHeight).build();
         this.addDrawableChild(backButton);
-        
-        // 关闭按钮
+
+        // 关闭按钮（右侧）
         closeButton = ButtonWidget.builder(
             Text.translatable("better_experience.config.close"),
             button -> {
                 LogUtil.logButtonClick(getScreenName(), "close");
+                saveConfig();
                 this.close();
             }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
+        ).dimensions(centerX + 5, y, smallWidth, buttonHeight).build();
         this.addDrawableChild(closeButton);
     }
     
@@ -133,6 +134,13 @@ public abstract class BaseConfigScreen extends Screen {
      */
     protected void setupScrollableList() {
         // 默认实现为空，子类可以重写设置滚动列表
+    }
+    
+    /**
+     * 保存配置（子类可以重写）
+     */
+    protected void saveConfig() {
+        // 默认实现为空，子类可以重写实现具体的保存逻辑
     }
     
     // ==================== 渲染方法 ====================

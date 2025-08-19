@@ -92,32 +92,17 @@ public class OffHandRestrictionConfigScreen extends BaseConfigScreen {
     
     // ==================== 重写标准按钮 ====================
     
+    // 继承基类的并排返回/关闭按钮布局
+    
     @Override
-    protected void addStandardButtons() {
-        // 子界面只显示返回和关闭按钮，不显示保存按钮（由主界面统一管理）
-        int centerX = getCenterX();
-        int buttonWidth = getButtonWidth();
-        int buttonHeight = getButtonHeight();
-        
-        // 返回按钮
-        backButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.back"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "back");
-                this.client.setScreen(parentScreen);
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 60, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(backButton);
-        
-        // 关闭按钮
-        closeButton = ButtonWidget.builder(
-            Text.translatable("better_experience.config.close"),
-            button -> {
-                LogUtil.logButtonClick(getScreenName(), "close");
-                this.close();
-            }
-        ).dimensions(centerX - buttonWidth / 2, this.height - 30, buttonWidth, buttonHeight).build();
-        this.addDrawableChild(closeButton);
+    protected void saveConfig() {
+        try {
+            // 保存副手限制配置
+            configManager.updateOffHandRestrictionConfig(config);
+            LogUtil.logSuccess(LogUtil.MODULE_OFFHAND, "副手限制配置保存成功");
+        } catch (Exception e) {
+            LogUtil.error(LogUtil.MODULE_OFFHAND, "保存副手限制配置失败: {}", e.getMessage(), e);
+        }
     }
     
     // ==================== 主菜单模式 ====================
