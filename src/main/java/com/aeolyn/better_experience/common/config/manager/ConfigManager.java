@@ -11,12 +11,11 @@ import com.aeolyn.better_experience.common.config.ModConfig;
 import java.util.Set;
 
 /**
- * 配置管理器门面类
- * 提供统一的配置管理接口，内部委托给ConfigManagerImpl
+ * func:配置管理器门面类
+ * 
  */
 public class ConfigManager {
     
-    // 使用统一日志工具
     private static volatile ConfigManager instance;
     private static volatile boolean initialized = false;
     
@@ -27,7 +26,7 @@ public class ConfigManager {
     }
     
     /**
-     * 获取单例实例
+     * func:获取单例实例
      */
     public static ConfigManager getInstance() {
         if (instance == null) {
@@ -41,7 +40,7 @@ public class ConfigManager {
     }
     
     /**
-     * 初始化配置管理器
+     * func:初始化配置管理器
      */
     public static void initialize() {
         if (initialized) {
