@@ -2,7 +2,6 @@ package com.aeolyn.better_experience.inventory.service;
 
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
-import com.aeolyn.better_experience.inventory.handler.CreativeModeHandler;
 
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
@@ -27,10 +26,7 @@ import java.util.stream.Collectors;
  */
 public class InventorySortServiceImpl implements InventorySortService {
     
-    private final CreativeModeHandler creativeHandler;
-    
     public InventorySortServiceImpl() {
-        this.creativeHandler = new CreativeModeHandler();
     }
     
     @Override
@@ -265,8 +261,9 @@ public class InventorySortServiceImpl implements InventorySortService {
     
     // 新增的私有方法
     private void performCreativeSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 调用创造模式处理器，使用自定义比较器
-        creativeHandler.performSort(player, sortMode, mergeFirst, comparator);
+        // 使用通用排序方法替代 CreativeModeHandler
+        List<Slot> mainSlots = getMainInventorySlots(player);
+        performUniversalSort(player, mainSlots, sortMode, mergeFirst);
     }
     
     private void performSurvivalSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
@@ -276,9 +273,9 @@ public class InventorySortServiceImpl implements InventorySortService {
     }
     
     private void performCreativeSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 创造模式简单排序实现
-        LogUtil.info("Inventory", "执行创造模式简单排序");
-        creativeHandler.performSimpleSort(player, new ArrayList<>(), sortMode, comparator);
+        // 使用通用简单排序方法替代 CreativeModeHandler
+        List<Slot> mainSlots = getMainInventorySlots(player);
+        performUniversalSort(player, mainSlots, sortMode, mergeFirst);
     }
     
     private void performSurvivalSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
@@ -765,7 +762,9 @@ public class InventorySortServiceImpl implements InventorySortService {
                 if (stackJ.isEmpty()) continue;
                 
                 // 检查是否是相同物品
-                if (stackI.isOf(stackJ.getItem())) {
+                String itemj_name = (Registries.ITEM.getId(stackJ.getItem())).getPath();
+                String itemi_name = (Registries.ITEM.getId(stackI.getItem())).getPath();
+                if (stackI.isOf(stackJ.getItem())&&!itemj_name.equals(itemi_name)) {
                     // 尝试堆叠
                     if (strategy.canStackItems(stackI, stackJ)) {
                         strategy.stackItem(player, slotJ, slotI);
@@ -784,64 +783,49 @@ public class InventorySortServiceImpl implements InventorySortService {
     /**
      * 通用选择排序
      */
-    private void performUniversalSelectionSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode) {
-        LogUtil.info("Inventory", "通用选择排序：开始排序");
+   private void performUniversalSelectionSort(ClientPlayerEntity player, ItemMoveStrategy strategy, List<Slot> targetSlots, InventorySortConfig.SortMode sortMode) {
+    LogUtil.info("Inventory", "通用选择排序：开始排序");
+    
+    // 使用新的比较器工厂
+    Comparator<ItemStack> comparator = SortComparatorFactory.createComparator(sortMode);
+    LogUtil.info("Inventory", "使用排序模式: " + sortMode.getDisplayName());
+    
+    // 使用选择排序算法：找到整个范围内最应该靠前的物品
+    for (int i = 0; i < targetSlots.size(); i++) {
+        Slot slotI = targetSlots.get(i);
+        ItemStack stackI = slotI.getStack();
         
-        // 使用新的比较器工厂
-        Comparator<ItemStack> comparator = SortComparatorFactory.createComparator(sortMode);
-        LogUtil.info("Inventory", "使用排序模式: " + sortMode.getDisplayName());
+        // 寻找从i位置开始的最佳物品（包括空物品）
+        int bestIndex = i;
+        ItemStack bestStack = stackI;
         
-        // 使用选择排序算法：找到整个范围内最应该靠前的物品
-        for (int i = 0; i < targetSlots.size(); i++) {
-            Slot slotI = targetSlots.get(i);
-            ItemStack stackI = slotI.getStack();
+        for (int j = i + 1; j < targetSlots.size(); j++) {
+            Slot slotJ = targetSlots.get(j);
+            ItemStack stackJ = slotJ.getStack();
             
-            // 如果当前位置为空，找到后面最应该靠前的非空物品
-            if (stackI.isEmpty()) {
-                int bestEmptyIndex = -1;
-                ItemStack bestEmptyStack = null;
-                
-                // 找到后面最应该靠前的物品
-                for (int j = i + 1; j < targetSlots.size(); j++) {
-                    Slot slotJ = targetSlots.get(j);
-                    ItemStack stackJ = slotJ.getStack();
-                    
-                    if (!stackJ.isEmpty()) {
-                        if (bestEmptyStack == null || comparator.compare(stackJ, bestEmptyStack) < 0) {
-                            bestEmptyStack = stackJ;
-                            bestEmptyIndex = j;
-                        }
-                    }
-                }
-                
-                // 如果找到了更好的物品，移动到当前位置
-                if (bestEmptyIndex != -1) {
-                    strategy.moveItem(player, targetSlots.get(bestEmptyIndex), slotI);
-                    LogUtil.info("Inventory", "移动槽位 " + bestEmptyIndex + " 到空槽位 " + i);
-                }
-            } else {
-                // 当前位置有物品，找到后面最应该靠前的物品
-                int bestIndex = i;
-                ItemStack bestStack = stackI;
-                
-                for (int j = i + 1; j < targetSlots.size(); j++) {
-                    Slot slotJ = targetSlots.get(j);
-                    ItemStack stackJ = slotJ.getStack();
-                    
-                    if (!stackJ.isEmpty() && comparator.compare(stackJ, bestStack) < 0) {
-                        bestStack = stackJ;
-                        bestIndex = j;
-                    }
-                }
-                
-                // 如果找到了更好的物品，交换位置
-                if (bestIndex != i) {
-                    strategy.swapSlots(player, slotI, targetSlots.get(bestIndex));
-                    LogUtil.info("Inventory", "移动槽位 " + i + " 和槽位 " + bestIndex);
-                }
+            // 空物品总是比非空物品"大"（应该排在后面）
+            if (stackJ.isEmpty()) continue;
+            
+            if (bestStack.isEmpty() || comparator.compare(stackJ, bestStack) < 0) {
+                bestStack = stackJ;
+                bestIndex = j;
             }
         }
         
-        LogUtil.info("Inventory", "通用选择排序完成");
+        // 如果找到了更好的物品，进行交换或移动
+        if (bestIndex != i) {
+            if (stackI.isEmpty()) {
+                // 当前位置为空，直接移动最佳物品过来
+                strategy.moveItem(player, targetSlots.get(bestIndex), slotI);
+                LogUtil.info("Inventory", "移动槽位 " + bestIndex + " 到空槽位 " + i);
+            } else {
+                // 当前位置有物品，交换位置
+                strategy.swapSlots(player, slotI, targetSlots.get(bestIndex));
+                LogUtil.info("Inventory", "交换槽位 " + i + " 和槽位 " + bestIndex);
+            }
+        }
     }
+    
+    LogUtil.info("Inventory", "通用选择排序完成");
+}
 }

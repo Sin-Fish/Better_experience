@@ -40,7 +40,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用三次PICKUP点击完成交换，不添加等待
+        
         client.interactionManager.clickSlot(syncId, slotA.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, slotB.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, slotA.id, 0, SlotActionType.PICKUP, player);
@@ -91,7 +91,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
         
         int syncId = player.currentScreenHandler.syncId;
         
-        // 使用PICKUP点击进行堆叠，不添加等待
+        
         client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);
         client.interactionManager.clickSlot(syncId, targetSlot.id, 0, SlotActionType.PICKUP, player);
         
