@@ -62,18 +62,23 @@ public abstract class GenericItemRendererMixin {
             String itemId = Registries.ITEM.getId(item).toString();
             ConfigManager configManager = ConfigManager.getInstance();
             
-            // 检查物品是否启用3D渲染
-            if (configManager.isItemEnabled(itemId)) {
-                ItemRenderer3D renderer = getRenderer3D();
-                
-                if (renderer.shouldRender3D(item, displayContext)) {
-                    // 取消原版渲染
-                    ci.cancel();
+            // 检查3D渲染模块是否启用
+            if (configManager.isRender3dEnabled()) {
+                // 检查物品是否启用3D渲染
+                if (configManager.isItemEnabled(itemId)) {
+                    ItemRenderer3D renderer = getRenderer3D();
                     
-                    // 执行3D渲染
-                    renderer.render3DItem(item, displayContext, matrices, vertexConsumers, light, overlay);
+                    if (renderer.shouldRender3D(item, displayContext)) {
+                        // 取消原版渲染
+                        ci.cancel();
+                        
+                        // 执行3D渲染
+                        renderer.render3DItem(item, displayContext, matrices, vertexConsumers, light, overlay);
+                    }
                 }
+                // 如果物品未启用3D渲染或shouldRender3D返回false，则不取消原版渲染，让原版渲染正常执行
             }
+            // 如果3D渲染模块未启用，则不取消原版渲染，让原版渲染正常执行
         }
     }
 }
