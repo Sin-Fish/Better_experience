@@ -1,15 +1,14 @@
 package com.aeolyn.better_experience.inventory.core;
 
+import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import net.minecraft.item.ItemStack;
 
+import java.text.Collator;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.function.Function;
 
-/**
- * 排序比较器工厂
- * 提供默认比较器和自定义比较器创建方法
- */
 public class SortComparatorFactory {
     
     /**
@@ -23,9 +22,10 @@ public class SortComparatorFactory {
                 if (a.isEmpty() && b.isEmpty()) return 0;
                 if (a.isEmpty()) return 1;
                 if (b.isEmpty()) return -1;
-                String nameA = a.getItem().getName().getString();
-                String nameB = b.getItem().getName().getString();
-                return nameA.compareToIgnoreCase(nameB);
+                String nameA = a.getName().getString(); // 使用自定义名称而不是基础名称
+                String nameB = b.getName().getString(); // 使用自定义名称而不是基础名称
+                Collator collator = Collator.getInstance(Locale.CHINESE);
+                return collator.compare(nameA, nameB);
             };
             case QUANTITY -> (a, b) -> {
                 if (a.isEmpty() && b.isEmpty()) return 0;
@@ -60,7 +60,8 @@ public class SortComparatorFactory {
             
             String nameA = nameExtractor.apply(a);
             String nameB = nameExtractor.apply(b);
-            return ascending ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
+            Collator collator = Collator.getInstance(Locale.CHINESE);
+            return ascending ? collator.compare(nameA, nameB) : collator.compare(nameB, nameA);
         };
     }
     

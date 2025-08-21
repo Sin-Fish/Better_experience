@@ -762,9 +762,9 @@ public class InventorySortServiceImpl implements InventorySortService {
                 if (stackJ.isEmpty()) continue;
                 
                 // 检查是否是相同物品
-                String itemj_name = (Registries.ITEM.getId(stackJ.getItem())).getPath();
-                String itemi_name = (Registries.ITEM.getId(stackI.getItem())).getPath();
-                if (stackI.isOf(stackJ.getItem())&&!itemj_name.equals(itemi_name)) {
+                String itemj_name = stackJ.getName().getString();
+                String itemi_name = stackI.getName().getString();
+                if (stackI.isOf(stackJ.getItem())&&itemj_name.equals(itemi_name)) {
                     // 尝试堆叠
                     if (strategy.canStackItems(stackI, stackJ)) {
                         strategy.stackItem(player, slotJ, slotI);
