@@ -111,7 +111,7 @@ public class InventorySortServiceImpl implements InventorySortService {
     }
     
     @Override
-    public void smartSortByMousePosition() {
+    public void smartSortByMousePosition(InventorySortConfig.SortMode sortMode) {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client == null) {
@@ -159,7 +159,7 @@ public class InventorySortServiceImpl implements InventorySortService {
             if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
                 // 背包界面：根据游戏模式选择排序策略
                 LogUtil.info("Inventory", "背包界面：根据游戏模式选择排序策略");
-                sortInventory(InventorySortConfig.SortMode.NAME, true);
+                sortInventory(sortMode, true);
             } else {
                 // 容器界面：统一使用PICKUP操作，不区分创造/生存模式
                 LogUtil.info("Inventory", "容器界面：统一使用PICKUP操作排序");

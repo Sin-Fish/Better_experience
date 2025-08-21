@@ -1,5 +1,6 @@
 package com.aeolyn.better_experience.inventory.core;
 
+import com.aeolyn.better_experience.common.config.manager.ConfigManager;
 import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.inventory.service.InventorySortService;
@@ -94,7 +95,27 @@ public class InventorySortController {
      * 智能排序：根据鼠标位置决定排序背包还是容器
      */
     public void smartSortByMousePosition() {
-        sortService.smartSortByMousePosition();
+        // 从配置中获取默认排序模式
+        InventorySortConfig config = ConfigManager.getInstance().getConfig(InventorySortConfig.class);
+        InventorySortConfig.SortMode sortMode = config != null ? config.getDefaultSortMode() : InventorySortConfig.SortMode.NAME;
+        sortService.smartSortByMousePosition(sortMode);
+    }
+    
+    /**
+     * 简单的选择排序算法（使用默认配置的排序模式）
+     */
+    public void simpleSelectionSort() {
+        // 从配置中获取默认排序模式
+        InventorySortConfig config = ConfigManager.getInstance().getConfig(InventorySortConfig.class);
+        InventorySortConfig.SortMode sortMode = config != null ? config.getDefaultSortMode() : InventorySortConfig.SortMode.NAME;
+        simpleSelectionSort(sortMode, true);
+    }
+    
+    /**
+     * 简单的选择排序算法（使用指定排序模式）
+     */
+    public void simpleSelectionSort(InventorySortConfig.SortMode sortMode) {
+        simpleSelectionSort(sortMode, true);
     }
     
     /**
@@ -111,5 +132,4 @@ public class InventorySortController {
         sortService.simpleSelectionSort(sortMode, mergeFirst, comparator);
     }
     
-
 }

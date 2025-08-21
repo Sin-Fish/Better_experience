@@ -59,7 +59,7 @@ public interface InventorySortService {
     /**
      * 智能排序：根据鼠标位置决定排序背包还是容器
      */
-    void smartSortByMousePosition();
+    void smartSortByMousePosition(InventorySortConfig.SortMode sortMode);
     
     /**
      * 简单的选择排序算法（使用默认比较器）
