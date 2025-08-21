@@ -1,11 +1,17 @@
 package com.aeolyn.better_experience.inventory.core;
 
+import java.rmi.registry.Registry;
+import java.security.Identity;
+
 import com.aeolyn.better_experience.common.util.LogUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.Identifier;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.Registries;
 
 /**
  * 生存模式物品移动策略
@@ -16,8 +22,19 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
     @Override
     public void swapSlots(ClientPlayerEntity player, Slot slotA, Slot slotB) {
         MinecraftClient client = MinecraftClient.getInstance();
+        ItemStack StackA = slotA.getStack().copy();
+        ItemStack StackB = slotB.getStack().copy();
+        Identifier StackID_A = Registries.ITEM.getId(StackA.getItem());
+        Identifier StackID_B = Registries.ITEM.getId(StackB.getItem());
+        String Name_A = StackID_A.getPath();
+        String Name_B = StackID_B.getPath();
         if (client == null || client.interactionManager == null) {
             LogUtil.warn("Inventory", "interactionManager 不可用，无法执行槽位交换");
+            return;
+        }
+        else if(Name_A.endsWith("bundle")||Name_B.endsWith("bundle"))
+        {
+            LogUtil.warn("Inventory", "跳过交换收纳袋");
             return;
         }
         
@@ -38,8 +55,7 @@ public class SurvivalItemMoveStrategy implements ItemMoveStrategy {
             LogUtil.warn("Inventory", "interactionManager 不可用，无法执行物品移动");
             return;
         }
-        
-        int syncId = player.currentScreenHandler.syncId;
+       int syncId = player.currentScreenHandler.syncId;
         
         // 使用两次PICKUP点击完成移动，不添加等待
         client.interactionManager.clickSlot(syncId, sourceSlot.id, 0, SlotActionType.PICKUP, player);

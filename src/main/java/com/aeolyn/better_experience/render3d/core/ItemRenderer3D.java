@@ -148,7 +148,7 @@ public class ItemRenderer3D {
         }
         
         LogUtil.debug("Render3D", "使用实体类型: {}", entityTypeId);
-        LogUtil.info("Render3D", "渲染物品 {} 使用实体: {}", Registries.ITEM.getId(item), entityTypeId);
+        LogUtil.info("Render3D", "渲染物品 {} 使用实体: {}",Registries.ITEM.getId(item), entityTypeId);
         
         try {
             // 通过实体类型ID获取实体类型
