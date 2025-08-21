@@ -224,6 +224,8 @@ public class InventoryTransferServiceImpl implements InventoryTransferService {
     
     /**
      * 将容器中的所有物品取出到背包
+     * @param container 容器库存
+     * 
      */
     private void withdrawAllFromContainer(Inventory container) {
         try {

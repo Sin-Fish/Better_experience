@@ -4,8 +4,6 @@ import com.aeolyn.better_experience.common.util.LogUtil;
 import com.aeolyn.better_experience.inventory.config.InventorySortConfig;
 import com.aeolyn.better_experience.inventory.handler.CreativeModeHandler;
 
-import com.aeolyn.better_experience.inventory.handler.SurvivalModeHandler;
-
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategy;
 import com.aeolyn.better_experience.inventory.core.ItemMoveStrategyFactory;
 import com.aeolyn.better_experience.inventory.core.SortComparatorFactory;
@@ -30,11 +28,9 @@ import java.util.stream.Collectors;
 public class InventorySortServiceImpl implements InventorySortService {
     
     private final CreativeModeHandler creativeHandler;
-    private final SurvivalModeHandler survivalHandler;
     
     public InventorySortServiceImpl() {
         this.creativeHandler = new CreativeModeHandler();
-        this.survivalHandler = new SurvivalModeHandler();
     }
     
     @Override
@@ -274,8 +270,9 @@ public class InventorySortServiceImpl implements InventorySortService {
     }
     
     private void performSurvivalSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 调用生存模式处理器，使用自定义比较器
-        survivalHandler.performSort(player, sortMode, mergeFirst, comparator);
+        // 使用通用排序方法替代 SurvivalModeHandler
+        List<Slot> mainSlots = getMainInventorySlots(player);
+        performUniversalSort(player, mainSlots, sortMode, mergeFirst);
     }
     
     private void performCreativeSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
@@ -285,9 +282,9 @@ public class InventorySortServiceImpl implements InventorySortService {
     }
     
     private void performSurvivalSimpleSort(ClientPlayerEntity player, InventorySortConfig.SortMode sortMode, boolean mergeFirst, Comparator<ItemStack> comparator) {
-        // 生存模式简单排序实现
-        LogUtil.info("Inventory", "执行生存模式简单排序");
-        survivalHandler.performSimpleSort(player, new ArrayList<>(), sortMode, comparator);
+        // 使用通用简单排序方法替代 SurvivalModeHandler
+        List<Slot> mainSlots = getMainInventorySlots(player);
+        performUniversalSort(player, mainSlots, sortMode, mergeFirst);
     }
     
     // 辅助方法：使用自定义比较器排序
