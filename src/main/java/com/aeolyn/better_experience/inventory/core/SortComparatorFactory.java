@@ -22,16 +22,26 @@ public class SortComparatorFactory {
                 if (a.isEmpty() && b.isEmpty()) return 0;
                 if (a.isEmpty()) return 1;
                 if (b.isEmpty()) return -1;
-                String nameA = a.getName().getString(); // 使用自定义名称而不是基础名称
-                String nameB = b.getName().getString(); // 使用自定义名称而不是基础名称
+                String nameA = a.getName().getString(); 
+                String nameB = b.getName().getString(); 
                 Collator collator = Collator.getInstance(Locale.CHINESE);
+                if(collator.compare(nameA, nameB) == 0){
+                    return Integer.compare(b.getCount(), a.getCount());
+                }
                 return collator.compare(nameA, nameB);
             };
             case QUANTITY -> (a, b) -> {
                 if (a.isEmpty() && b.isEmpty()) return 0;
                 if (a.isEmpty()) return 1;
                 if (b.isEmpty()) return -1;
-                return Integer.compare(b.getCount(), a.getCount()); // 数量降序
+                if(Integer.compare(b.getCount(), a.getCount())==0){
+                String nameA = a.getName().getString(); 
+                String nameB = b.getName().getString();
+                Collator collator = Collator.getInstance(Locale.CHINESE);
+                    return collator.compare(nameA, nameB);
+                }
+
+                return Integer.compare(b.getCount(), a.getCount());
             };
             case TYPE -> (a, b) -> {
                 if (a.isEmpty() && b.isEmpty()) return 0;
@@ -39,6 +49,15 @@ public class SortComparatorFactory {
                 if (b.isEmpty()) return -1;
                 String typeA = a.getItem().getClass().getSimpleName();
                 String typeB = b.getItem().getClass().getSimpleName();
+                if (typeA.compareTo(typeB)==0) {
+                String nameA = a.getName().getString();   
+                String nameB = b.getName().getString();
+                Collator collator = Collator.getInstance(Locale.CHINESE);
+                if (collator.compare(nameA, nameB)==0){
+                    return Integer.compare(b.getCount(), a.getCount());
+                }
+                    return collator.compare(nameA, nameB);
+                }
                 return typeA.compareTo(typeB);
             };
         };

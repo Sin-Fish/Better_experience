@@ -127,7 +127,7 @@ public class InventorySortServiceImpl implements InventorySortService {
             if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
                 LogUtil.info("Inventory", "在背包界面，执行背包排序");
                 // 启用合并模式：先用PICKUP堆叠再排序
-                sortInventory(InventorySortConfig.SortMode.NAME, true);
+                sortInventory(sortMode, true);
                 return;
             }
             
@@ -173,13 +173,13 @@ public class InventorySortServiceImpl implements InventorySortService {
                     // 鼠标在背包槽位上，整理背包（容器界面中统一用PICKUP）
                     LogUtil.info("Inventory", "容器界面中鼠标在背包槽位上，整理背包（统一用PICKUP）");
                     List<Slot> playerSlots = getMainInventorySlots(client.player);
-                    performUniversalSort(client.player, playerSlots, InventorySortConfig.SortMode.NAME, true);
+                    performUniversalSort(client.player, playerSlots, sortMode, true);
                 } else {
                     // 鼠标在容器槽位上，整理容器（统一用PICKUP）
                     LogUtil.info("Inventory", "容器界面中鼠标在容器槽位上，整理容器（统一用PICKUP）");
                     List<Slot> containerSlots = getContainerSlots(client.player, inventory);
                     LogUtil.info("Inventory", "获取到容器槽位数量: " + containerSlots.size());
-                    performUniversalSort(client.player, containerSlots, InventorySortConfig.SortMode.NAME, true);
+                    performUniversalSort(client.player, containerSlots, sortMode, true);
                 }
             }
             
