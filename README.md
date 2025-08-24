@@ -90,7 +90,7 @@ Better Experience is a Minecraft optimization mod focused on enhancing vanilla g
 ### For Developers
 ```bash
 # Clone project
-git clone https://github.com/Tanfreefish/better_experience.git
+git clone https://github.com/Sin-Fish/better_experience.git
 cd better_experience
 
 # Build project
@@ -414,7 +414,7 @@ chore: 构建过程或辅助工具的变动
 
 ## 👨‍💻 作者 / Author
 
-**Aeolyn** - [GitHub](https://github.com/Tanfreefish)
+**Aeolyn** - [GitHub](https://github.com/Sin-Fish)
 
 ## 🤝 贡献 / Contributing
 
@@ -422,8 +422,8 @@ chore: 构建过程或辅助工具的变动
 
 ## 📞 联系方式 / Contact
 
-- GitHub: [@Aeolyn](https://github.com/Tanfreefish)
-- 项目主页: [Better Experience](https://github.com/Tanfreefish/better_experience)
+- GitHub: [@Aeolyn](https://github.com/Sin-Fish)
+- 项目主页: [Better Experience](https://github.com/Sin-Fish/better_experience)
 
 ## 🔄 更新日志 / Changelog
 
